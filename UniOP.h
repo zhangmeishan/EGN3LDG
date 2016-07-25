@@ -8,16 +8,13 @@
 #ifndef UNIOP_H_
 #define UNIOP_H_
 
-#include "Eigen/Dense"
-#include "Utils.h"
+#include "Param.h"
 #include "MyLib.h"
-
-using namespace Eigen;
 
 class UniParam {
 public:
-	MatrixXd _W, _gradW, _eg2W;
-	MatrixXd _b, _gradb, _eg2b;
+	Param _W;
+	Param _b;
 
 	bool _bUseB;
 
@@ -27,22 +24,16 @@ public:
 	}
 
 	inline void exportAdaParams(AdaUpdate &ada) {
-		ada.addParam(&_W, &_gradW, &_eg2W);
+		ada.addParam(&_W);
 		if (_bUseB) {
-			ada.addParam(&_b, &_gradb, &_eg2b);
+			ada.addParam(&_b);
 		}
 	}
 
 	inline void initial(int nOSize, int nISize, bool bUseB = true, int seed = 0) {
 		srand(seed);
-
-		_W = MatrixXd(nOSize, nISize).unaryExpr(ptr_fun(urand));
-		_gradW = MatrixXd::Zero(nOSize, nISize);
-		_eg2W = MatrixXd::Zero(nOSize, nISize);
-
-		_b = MatrixXd(nOSize, 1).unaryExpr(ptr_fun(urand));
-		_gradb = MatrixXd::Zero(nOSize, 1);
-		_eg2b = MatrixXd::Zero(nOSize, 1);
+		_W.initial(nOSize, nISize);
+		_b.initial(nOSize, 1);
 
 		_bUseB = bUseB;
 	}
@@ -113,8 +104,8 @@ public:
 
 	inline void setParam(UniParam* param) {
 		_param = param;
-		_inDim = _param->_W.cols();
-		_outDim = _param->_W.rows();
+		_inDim = _param->_W.inDim();
+		_outDim = _param->_W.outDim();
 		if (!_param->_bUseB) {
 			cout << "please check whether _bUseB is true, usually this should be true for non-linear layer" << endl;
 		}
@@ -130,9 +121,9 @@ public:
 	void forward(MatrixXd& x) {
 		assert(_param != NULL);
 
-		_ty = _param->_W * x;
+		_ty = _param->_W.val * x;
 		for (int idx = 0; idx < _ty.cols(); idx++) {
-			_ty.row(idx) += _param->_b.row(0);
+			_ty.row(idx) += _param->_b.val.row(0);
 		}
 
 		_y = _f(_ty);
@@ -144,17 +135,17 @@ public:
 
 		_lty = _ly.cwiseProduct(_f_deri(_ty, _y));
 
-		_param->_gradW += _lty * _x->transpose();
+		_param->_W.grad += _lty * _x->transpose();
 
 		for (int idx = 0; idx < _y.cols(); idx++) {
-			_param->_gradb.row(0) += _lty.row(idx);
+			_param->_b.grad.row(0) += _lty.row(idx);
 		}
 
 		if (lx.size() == 0) {
 			lx = MatrixXd::Zero(_x->rows(), _x->cols());
 		}
 
-		lx += _param->_W.transpose() * _lty;
+		lx += _param->_W.val.transpose() * _lty;
 
 	}
 
@@ -191,8 +182,8 @@ public:
 
 	inline void setParam(UniParam* param) {
 		_param = param;
-		_inDim = _param->_W.cols();
-		_outDim = _param->_W.rows();
+		_inDim = _param->_W.inDim();
+		_outDim = _param->_W.outDim();
 		if (param->_bUseB) {
 			cout << "please check whether _bUseB is false, usually this should be false for linear layer" << endl;
 		}
@@ -201,20 +192,20 @@ public:
 public:
 	void forward(MatrixXd& x) {
 		assert(_param != NULL);
-		_y = _param->_W * x;
+		_y = _param->_W.val * x;
 		_x = &x;
 	}
 
 	void backward(MatrixXd& lx) {
 		assert(_param != NULL);
 
-		_param->_gradW += _ly * _x->transpose();
+		_param->_W.grad += _ly * _x->transpose();
 
 		if (lx.size() == 0) {
 			lx = MatrixXd::Zero(_x->rows(), _x->cols());
 		}
 
-		lx += _param->_W.transpose() * _ly;
+		lx += _param->_W.val.transpose() * _ly;
 
 	}
 
