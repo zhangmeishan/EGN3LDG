@@ -35,11 +35,10 @@ struct Param {
 		grad.setZero();
 	}
 
-
-	inline void updateAdagrad(double alpha, double reg, double eps){
+	inline void updateAdagrad(double alpha, double reg, double eps) {
 		grad = grad + val * reg;
 		eg = eg.array() + grad.array().square();
-		val = val.array() - grad.array() * alpha / (eg.array().sqrt() + eps);
+		val = val.array() - grad.array() * alpha / (eg.array() + eps).sqrt();
 	}
 
 };

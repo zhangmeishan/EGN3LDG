@@ -23,14 +23,15 @@ public:
 		_bUseB = true;
 	}
 
-	inline void exportAdaParams(AdaUpdate &ada) {
+	inline void exportAdaParams(AdaUpdate& ada) {
 		ada.addParam(&_W);
 		if (_bUseB) {
 			ada.addParam(&_b);
 		}
 	}
 
-	inline void initial(int nOSize, int nISize, bool bUseB = true, int seed = 0) {
+	inline void initial(int nOSize, int nISize, bool bUseB = true,
+			int seed = 0) {
 		srand(seed);
 		_W.initial(nOSize, nISize);
 		_b.initial(nOSize, 1);
@@ -48,14 +49,14 @@ class UniNode {
 public:
 	MatrixXd *_x;
 	MatrixXd _y, _ly;
-	MatrixXd _ty, _lty;  // t means temp, _ty is to save temp vector before activation
+	MatrixXd _ty, _lty; // t means temp, _ty is to save temp vector before activation
 
 	int _inDim, _outDim;
 
 	UniParam* _param;
 
 	MatrixXd (*_f)(const MatrixXd&);   // activation function
-	MatrixXd (*_f_deri)(const MatrixXd&, const MatrixXd&);  // derivation function of activation function
+	MatrixXd (*_f_deri)(const MatrixXd&, const MatrixXd&); // derivation function of activation function
 
 public:
 	UniNode() {
@@ -81,7 +82,8 @@ public:
 		setParam(param);
 	}
 
-	UniNode(MatrixXd (*f)(const MatrixXd&), MatrixXd (*f_deri)(const MatrixXd&, const MatrixXd&)) {
+	UniNode(MatrixXd (*f)(const MatrixXd&),
+			MatrixXd (*f_deri)(const MatrixXd&, const MatrixXd&)) {
 		_x = NULL;
 		setFunctions(f, f_deri);
 		_y.setZero();
@@ -92,7 +94,8 @@ public:
 		_inDim = _outDim = 0;
 	}
 
-	UniNode(UniParam* param, MatrixXd (*f)(const MatrixXd&), MatrixXd (*f_deri)(const MatrixXd&, const MatrixXd&)) {
+	UniNode(UniParam* param, MatrixXd (*f)(const MatrixXd&),
+			MatrixXd (*f_deri)(const MatrixXd&, const MatrixXd&)) {
 		_x = NULL;
 		setFunctions(f, f_deri);
 		_y.setZero();
@@ -107,12 +110,15 @@ public:
 		_inDim = _param->_W.inDim();
 		_outDim = _param->_W.outDim();
 		if (!_param->_bUseB) {
-			cout << "please check whether _bUseB is true, usually this should be true for non-linear layer" << endl;
+			cout
+					<< "please check whether _bUseB is true, usually this should be true for non-linear layer"
+					<< endl;
 		}
 	}
 
 	// define the activation function and its derivation form
-	inline void setFunctions(MatrixXd (*f)(const MatrixXd&), MatrixXd (*f_deri)(const MatrixXd&, const MatrixXd&)) {
+	inline void setFunctions(MatrixXd (*f)(const MatrixXd&),
+			MatrixXd (*f_deri)(const MatrixXd&, const MatrixXd&)) {
 		_f = f;
 		_f_deri = f_deri;
 	}
@@ -128,6 +134,7 @@ public:
 
 		_y = _f(_ty);
 		_x = &x;
+		_ly.resize(_y.rows(), _y.cols());
 	}
 
 	void backward(MatrixXd& lx) {
@@ -185,7 +192,9 @@ public:
 		_inDim = _param->_W.inDim();
 		_outDim = _param->_W.outDim();
 		if (param->_bUseB) {
-			cout << "please check whether _bUseB is false, usually this should be false for linear layer" << endl;
+			cout
+					<< "please check whether _bUseB is false, usually this should be false for linear layer"
+					<< endl;
 		}
 	}
 
@@ -194,13 +203,12 @@ public:
 		assert(_param != NULL);
 		_y = _param->_W.val * x;
 		_x = &x;
+		_ly.resize(_y.rows(), _y.cols());
 	}
 
 	void backward(MatrixXd& lx) {
 		assert(_param != NULL);
-
 		_param->_W.grad += _ly * _x->transpose();
-
 		if (lx.size() == 0) {
 			lx = MatrixXd::Zero(_x->rows(), _x->cols());
 		}
