@@ -11,7 +11,7 @@
 
 using namespace std;
 
-class Metric {
+struct Metric {
 
 public:
   int overall_label_count;

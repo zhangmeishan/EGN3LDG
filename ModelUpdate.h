@@ -1,26 +1,26 @@
 /*
- * AdaUpdate.h
+ * ModelUpdate.h
  *
  *  Created on: Jul 20, 2016
  *      Author: mason
  */
 
-#ifndef ADAUPDATE_H_
-#define ADAUPDATE_H_
+#ifndef ModelUpdate_H_
+#define ModelUpdate_H_
 
-#include "Param.h"
+#include "BaseParam.h"
 #include "MyLib.h"
 
 
-class AdaUpdate {
+class ModelUpdate {
 
 public:
-	vector<Param*> _params;
+	vector<BaseParam*> _params;
 
-	double _reg, _alpha, _eps;
+	dtype _reg, _alpha, _eps;
 
 public:
-	AdaUpdate(){
+	ModelUpdate(){
 		_params.clear();
 
 		_reg = 1e-8;
@@ -31,7 +31,7 @@ public:
 
 public:
 
-	inline void addParam(Param* param){
+	inline void addParam(BaseParam* param){
 		_params.push_back(param);
 	}
 
@@ -58,4 +58,4 @@ public:
 
 
 
-#endif /* ADAUPDATE_H_ */
+#endif /* ModelUpdate_H_ */

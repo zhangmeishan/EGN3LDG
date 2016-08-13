@@ -8,8 +8,8 @@ using namespace Eigen;
 
 class DropNode {
 public:
-	MatrixXd _mask;
-	double _prob;
+	Mat _mask;
+	dtype _prob;
 	
 public:
 	DropNode(){
@@ -25,8 +25,8 @@ public:
 public:
 	//Be careful that the row is the dim of input vector, and the col is the number of input vectors
 	//Another point is that we change the input vectors directly.
-	void forward(MatrixXd& x) {
-		_mask = MatrixXd::One(x.rows(), x.cols());
+	void forward(Mat& x) {
+		_mask = Mat::One(x.rows(), x.cols());
 
 		std::vector<int> indexes;
 		for (int i = 0; i < x.rows(); ++i)
@@ -45,7 +45,7 @@ public:
 	}
 	
 	
-	void backward(MatrixXd& lx){
+	void backward(Mat& lx){
 		lx = lx.array() * _mask.array();
 	}
 	

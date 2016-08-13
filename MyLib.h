@@ -29,17 +29,23 @@
 #include "Hash_map.hpp"
 #include "NRMat.h"
 #include "Utils.h"
+#include "Eigen/Dense"
 
 using namespace nr;
 using namespace std;
-
+using namespace Eigen;
 
 
 typedef double dtype;
+typedef MatrixXd Mat;
+typedef MatrixXd* PMat;
 
 const static dtype minlogvalue = -1000;
 const static dtype d_zero = 0.0;
 const static dtype d_one = 1.0;
+const static string nullkey = "-null-";
+const static string unknownkey = "-unknown-";
+const static string seperateKey = "#";
 
 typedef std::vector<std::string> CStringVector;
 

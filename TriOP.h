@@ -11,7 +11,7 @@
 #include "Param.h"
 #include "MyLib.h"
 
-class TriParam {
+struct TriParam {
 public:
 	Param _W1;
 	Param _W2;
@@ -25,7 +25,7 @@ public:
 		_bUseB = true;
 	}
 
-	inline void exportAdaParams(AdaUpdate& ada) {
+	inline void exportAdaParams(ModelUpdate& ada) {
 		ada.addParam(&_W1);
 		ada.addParam(&_W2);
 		ada.addParam(&_W3);
@@ -50,41 +50,27 @@ public:
 // input nodes should be specified by forward function
 // for input variables, we exploit column vector,
 // which means a concrete input vector x_i is represented by x(0, i), x(1, i), ..., x(n, i)
-class TriNode {
+struct TriNode {
 public:
-	MatrixXd *_x1, *_x2, *_x3;
-	MatrixXd _y, _ly;
-	MatrixXd _ty, _lty;  // t means temp, _ty is to save temp vector before activation
+	PMat _px1, _px2, _px3;
+	Mat _y, _ly;
+	Mat _ty, _lty;  // t means temp, _ty is to save temp vector before activation
 
 	int _inDim1, _inDim2, _inDim3, _outDim;
 
 	TriParam* _param;
 
-	MatrixXd (*_f)(const MatrixXd&);   // activation function
-	MatrixXd (*_f_deri)(const MatrixXd&, const MatrixXd&);  // derivation function of activation function
+	Mat (*_f)(const Mat&);   // activation function
+	Mat (*_f_deri)(const Mat&, const Mat&);  // derivation function of activation function
 
 public:
 	TriNode() {
-		_x1 = NULL;
-		_x2 = NULL;
-		_x3 = NULL;
-		_f = tanh;
-		_f_deri = tanh_deri;
-		_y.setZero();
-		_ly.setZero();
-		_ty.setZero();
-		_lty.setZero();
-		_param = NULL;
-		_inDim1 = 0;
-		_inDim2 = 0;
-		_inDim3 = 0;
-		_outDim = 0;
 	}
 
 	TriNode(TriParam* param) {
-		_x1 = NULL;
-		_x2 = NULL;
-		_x3 = NULL;
+		_px1 = NULL;
+		_px2 = NULL;
+		_px3 = NULL;
 		_f = tanh;
 		_f_deri = tanh_deri;
 		_y.setZero();
@@ -94,10 +80,10 @@ public:
 		setParam(param);
 	}
 
-	TriNode(MatrixXd (*f)(const MatrixXd&), MatrixXd (*f_deri)(const MatrixXd&, const MatrixXd&)) {
-		_x1 = NULL;
-		_x2 = NULL;
-		_x3 = NULL;
+	TriNode(Mat (*f)(const Mat&), Mat (*f_deri)(const Mat&, const Mat&)) {
+		_px1 = NULL;
+		_px2 = NULL;
+		_px3 = NULL;
 		setFunctions(f, f_deri);
 		_y.setZero();
 		_ly.setZero();
@@ -110,10 +96,10 @@ public:
 		_outDim = 0;
 	}
 
-	TriNode(TriParam* param, MatrixXd (*f)(const MatrixXd&), MatrixXd (*f_deri)(const MatrixXd&, const MatrixXd&)) {
-		_x1 = NULL;
-		_x2 = NULL;
-		_x3 = NULL;
+	TriNode(TriParam* param, Mat (*f)(const Mat&), Mat (*f_deri)(const Mat&, const Mat&)) {
+		_px1 = NULL;
+		_px2 = NULL;
+		_px3 = NULL;
 		setFunctions(f, f_deri);
 		_y.setZero();
 		_ly.setZero();
@@ -133,55 +119,86 @@ public:
 		}
 	}
 
+	inline void clear(){
+		_px1 = NULL;
+		_px2 = NULL;
+		_px3 = NULL;
+		_f = tanh;
+		_f_deri = tanh_deri;
+		_y.setZero();
+		_ly.setZero();
+		_ty.setZero();
+		_lty.setZero();
+		_param = NULL;
+		_inDim1 = 0;
+		_inDim2 = 0;
+		_inDim3 = 0;
+		_outDim = 0;
+	}
+
+	inline void clearValue(){
+		_px1 = NULL;
+		_px2 = NULL;
+		_px3 = NULL;
+		_y.setZero();
+		_ly.setZero();
+		_ty.setZero();
+		_lty.setZero();
+	}
+
 	// define the activation function and its derivation form
-	inline void setFunctions(MatrixXd (*f)(const MatrixXd&), MatrixXd (*f_deri)(const MatrixXd&, const MatrixXd&)) {
+	inline void setFunctions(Mat (*f)(const Mat&), Mat (*f_deri)(const Mat&, const Mat&)) {
 		_f = f;
 		_f_deri = f_deri;
 	}
 
 public:
-	void forward(MatrixXd& x1, MatrixXd& x2, MatrixXd& x3) {
+	void forward(PMat px1, PMat px2, PMat px3) {
 		assert(_param != NULL);
 
-		_ty = _param->_W1.val * x1 + _param->_W2.val * x2 + _param->_W3.val * x3; 
-		for (int idx = 0; idx < _ty.cols(); idx++) {
-			_ty.row(idx) += _param->_b.val.row(0);
+		_ty = _param->_W1.val * (*px1) + _param->_W2.val * (*px2) + _param->_W3.val * (*px3);
+		if(_param->_bUseB){
+			for (int idx = 0; idx < _ty.cols(); idx++) {
+				_ty.col(idx) += _param->_b.val.col(0);
+			}
 		}
 
 		_y = _f(_ty);
-		_x1 = &x1;
-		_x2 = &x2;
-		_x2 = &x3;
+		_px1 = px1;
+		_px2 = px2;
+		_px2 = px3;
 	}
 
-	void backward(MatrixXd& lx1, MatrixXd& lx2, MatrixXd& lx3) {
+	void backward(PMat plx1, PMat plx2, PMat plx3) {
 		assert(_param != NULL);
 
-		_lty = _ly.cwiseProduct(_f_deri(_ty, _y));
+		_lty = _ly.array() * _f_deri(_ty, _y).array();
 
-		_param->_W1.grad += _lty * _x1->transpose();
-		_param->_W2.grad += _lty * _x2->transpose();
-		_param->_W3.grad += _lty * _x3->transpose();
+		_param->_W1.grad += _lty * _px1->transpose();
+		_param->_W2.grad += _lty * _px2->transpose();
+		_param->_W3.grad += _lty * _px3->transpose();
 
-		for (int idx = 0; idx < _y.cols(); idx++) {
-			_param->_b.grad.row(0) += _lty.row(idx);
+		if(_param->_bUseB){
+			for (int idx = 0; idx < _y.cols(); idx++) {
+				_param->_b.grad.col(0) += _lty.col(idx);
+			}
 		}
 
-		if (lx1.size() == 0) {
-			lx1 = MatrixXd::Zero(_x1->rows(), _x1->cols());
+		if (plx1->size() == 0) {
+			*plx1 = Mat::Zero(_px1->rows(), _px1->cols());
 		}
 
-		if (lx2.size() == 0) {
-			lx2 = MatrixXd::Zero(_x2->rows(), _x2->cols());
+		if (plx2->size() == 0) {
+			*plx2 = Mat::Zero(_px2->rows(), _px2->cols());
 		}
 
-		if (lx3.size() == 0) {
-			lx3 = MatrixXd::Zero(_x3->rows(), _x3->cols());
+		if (plx3->size() == 0) {
+			*plx3 = Mat::Zero(_px3->rows(), _px3->cols());
 		}
 
-		lx1 += _param->_W1.val.transpose() * _lty;
-		lx2 += _param->_W2.val.transpose() * _lty;
-		lx3 += _param->_W3.val.transpose() * _lty;
+		*plx1 += _param->_W1.val.transpose() * _lty;
+		*plx2 += _param->_W2.val.transpose() * _lty;
+		*plx3 += _param->_W3.val.transpose() * _lty;
 	}
 
 };

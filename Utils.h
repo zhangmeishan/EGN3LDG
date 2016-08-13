@@ -31,7 +31,7 @@
 using namespace Eigen;
 using namespace std;
 
-inline istream& operator>>(istream& s, MatrixXd& m) {
+inline istream& operator>>(istream& s, Mat& m) {
 	for (uint i = 0; i < m.rows(); i++)
 		for (uint j = 0; j < m.cols(); j++)
 			s >> m(i, j);
@@ -44,39 +44,50 @@ inline istream& operator>>(istream& s, VectorXd& m) {
 	return s;
 }
 
+// this is used for randomly initializing an Eigen matrix
+inline dtype urand(dtype dummy) {
+	dtype min = -0.01, max = 0.01;
+	return (dtype(rand()) / RAND_MAX) * (max - min) + min;
+}
 
-inline MatrixXd softmax(const MatrixXd &x) {
+inline dtype ftanh(dtype x) {
+	return tanh(x);
+}
+
+
+
+inline Mat softmax(const Mat &x) {
 	RowVectorXd m = x.colwise().maxCoeff();
-	MatrixXd t = (x.rowwise() - m).array().exp();
+	Mat t = (x.rowwise() - m).array().exp();
 	return t.array().rowwise() / t.colwise().sum().array();
 }
 
-inline MatrixXd smaxentp(const MatrixXd &y, const MatrixXd &r) {
+inline Mat smaxentp(const Mat &y, const Mat &r) {
 	return y - r;
 }
 
-inline MatrixXd relu(const MatrixXd &x) {
+inline Mat relu(const Mat &x) {
 	return x.array().max(0);
 }
 
-inline MatrixXd tanh(const MatrixXd &x) {
-	return x.array().tan();
+inline Mat tanh(const Mat &x) {
+	return x.unaryExpr(ptr_fun(ftanh));
 }
 
-inline MatrixXd equal(const MatrixXd &x) {
+inline Mat equal(const Mat &x) {
 	return x;
 }
 
-inline MatrixXd tanh_deri(const MatrixXd &x, const MatrixXd &y) {
+inline Mat tanh_deri(const Mat &x, const Mat &y) {
 	return (1 + y.array()) * (1 - y.array());
 }
 
-inline MatrixXd equal_deri(const MatrixXd &x, const MatrixXd &y) {
-	return y;
+inline Mat equal_deri(const Mat &x, const Mat &y) {
+	return Mat::Ones(y.rows(), y.cols());
 }
 
 /*write by yunan*/
-inline void assign(MatrixXd &m, const NRMat<double>& wnr)
+inline void assign(Mat &m, const NRMat<dtype>& wnr)
 {
 	int rows = wnr.nrows();
 	int cols = wnr.ncols();
@@ -87,19 +98,19 @@ inline void assign(MatrixXd &m, const NRMat<double>& wnr)
 }
 
 /*write by yunan*/
-inline void norm2one(MatrixXd &w, int idx) {
-	double sum = 0.000001;
+inline void norm2one(Mat &w, int idx) {
+	dtype sum = 0.000001;
 	for (int idy = 0; idy < w.cols(); idy++) {
 		sum += w(idx,idy) * w(idx,idy);
 	}
-	double scale = sqrt(sum);
+	dtype scale = sqrt(sum);
 	for (int idy = 0; idy < w.cols(); idy++)
 		w(idx,idy) /= scale;
 }
 
-inline double str2double(const string& s) {
+inline dtype str2double(const string& s) {
 	istringstream i(s);
-	double x;
+	dtype x;
 	if (!(i >> x))
 		return 0;
 	return x;
@@ -107,7 +118,7 @@ inline double str2double(const string& s) {
 
 // index of max in a vector
 inline uint argmax(const VectorXd& x) {
-	double max = x(0);
+	dtype max = x(0);
 	uint maxi = 0;
 	for (uint i = 1; i < x.size(); i++) {
 		if (x(i) > max) {
@@ -118,11 +129,13 @@ inline uint argmax(const VectorXd& x) {
 	return maxi;
 }
 
-// this is used for randomly initializing an Eigen matrix
-inline double urand(double dummy) {
-	double min = -0.01, max = 0.01;
-	return (double(rand()) / RAND_MAX) * (max - min) + min;
-}
+
+
+/*
+inline dtype tanh(dtype dummy) {
+	dtype min = -0.01, max = 0.01;
+	return (dtype(rand()) / RAND_MAX) * (max - min) + min;
+}*/
 
 
 #endif

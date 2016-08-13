@@ -7,98 +7,104 @@
 
 using namespace Eigen;
 
-inline double softmax_loss(const MatrixXd &output, const vector<int> &answer,
-		MatrixXd &loutput, Metric & eval, int batchsize = 1) {
-	int dim2 = output.rows();
-	int odim2 = loutput.rows();
-	int labelsize = answer.size();
+struct SoftMaxLoss{
+public:
+	inline dtype loss(const Mat& x, Mat& lx, const vector<dtype> &answer, Metric& eval, int batchsize = 1){
+		int nDim = x.rows();
+		int nCol = x.cols();
+		int labelsize = answer.size();
+		if (labelsize != nDim || nCol != 1) {
+			std::cerr << "softmax_loss error: dim size invalid" << std::endl;
+			return -1.0;
+		}
+		if(lx.size() == 0){
+			lx = Mat::Zero(nDim, 1);
+		}
 
-	if (labelsize != odim2 || dim2 != odim2) {
-		std::cerr << "softmax_loss error: dim size invalid" << std::endl;
+		Mat scores = Mat::Zero(nDim, 1);
+
+		dtype cost = 0.0;
+
+		int optLabel = -1;
+		for (int i = 0; i < nDim; ++i) {
+			if (answer[i] >= 0) {
+				if (optLabel < 0 || x(i, 0) > x(optLabel, 0))
+					optLabel = i;
+			}
+		}
+
+		dtype sum1 = 0, sum2 = 0, maxScore = x(optLabel, 0);
+		for (int i = 0; i < nDim; ++i) {
+			scores(i, 0) = -1e10;
+			if (answer[i] >= 0) {
+				scores(i, 0) = exp(x(i, 0) - maxScore);
+				if (answer[i] == 1)
+					sum1 += scores(i, 0);
+				sum2 += scores(i, 0);
+			}
+		}
+		cost += (log(sum2) - log(sum1)) / batchsize;
+		if (answer[optLabel] == 1)
+			eval.correct_label_count++;
+		eval.overall_label_count++;
+
+		for (int i = 0; i < nDim; ++i) {
+			if (answer[i] >= 0) {
+				lx(i, 0) = (scores(i, 0) / sum2 - answer[i]) / batchsize;
+			}
+		}
+
+		return cost;
+
 	}
 
-	MatrixXd scores(dim2, 1);
-	scores.setZero();
-	loutput.setZero();
-	double cost = 0.0;
+	inline void predict(const Mat& x, int& y){
+		int nDim = x.rows();
 
-	int optLabel = -1;
-	for (int i = 0; i < dim2; ++i) {
-		if (answer[i] >= 0) {
-			if (optLabel < 0 || output(i, 0) > output(optLabel, 0))
+		int optLabel = -1;
+		for (int i = 0; i < nDim; ++i) {
+			if (optLabel < 0 || x(i, 0) > x(optLabel, 0))
 				optLabel = i;
 		}
+		y = optLabel;
 	}
 
-	double sum1 = 0, sum2 = 0, maxScore = output(optLabel, 0);
-	for (int i = 0; i < dim2; ++i) {
-		scores(i, 0) = -1e10;
-		if (answer[i] >= 0) {
-			scores(i, 0) = exp(output(i, 0) - maxScore);
-			if (answer[i] == 1)
-				sum1 += scores(i, 0);
-			sum2 += scores(i, 0);
+	inline dtype cost(const Mat& x, const vector<dtype> &answer, int batchsize = 1){
+		int nDim = x.rows();
+		int nCol = x.cols();
+		int labelsize = answer.size();
+		if (labelsize != nDim || nCol != 1) {
+			std::cerr << "softmax_loss error: dim size invalid" << std::endl;
+			return -1.0;
 		}
-	}
-	cost += (log(sum2) - log(sum1)) / batchsize;
-	if (answer[optLabel] == 1)
-		eval.correct_label_count++;
-	eval.overall_label_count++;
 
-	for (int i = 0; i < dim2; ++i) {
-		if (answer[i] >= 0) {
-			loutput(i, 0) = (scores(i, 0) / sum2 - answer[i]) / batchsize;
+		Mat scores = Mat::Zero(nDim, 1);
+
+		dtype cost = 0.0;
+
+		int optLabel = -1;
+		for (int i = 0; i < nDim; ++i) {
+			if (answer[i] >= 0) {
+				if (optLabel < 0 || x(i, 0) > x(optLabel, 0))
+					optLabel = i;
+			}
 		}
-	}
 
-	return cost;
-}
-
-inline void softmax_predict(const MatrixXd& output, int& result) {
-	int dim2 = output.rows();
-
-	int optLabel = -1;
-	for (int i = 0; i < dim2; ++i) {
-		if (optLabel < 0 || output(i, 0) > output(optLabel, 0))
-			optLabel = i;
-	}
-	result = optLabel;
-}
-
-//
-inline double softmax_cost(const MatrixXd& output, const vector<int>& answer,
-		int batchsize = 1) {
-	int dim2 = output.rows();
-	int labelsize = answer.size();
-
-	if (labelsize != dim2) {
-		std::cerr << "softmax_cost error: dim size invalid" << std::endl;
-	}
-
-	MatrixXd scores(dim2, 1);
-	scores.setZero();
-	double cost = 0.0;
-
-	int optLabel = -1;
-	for (int i = 0; i < dim2; ++Mi) {
-		if (answer[i] >= 0) {
-			if (optLabel < 0 || output(i, 0) > output(optLabel, 0))
-				optLabel = i;
+		dtype sum1 = 0, sum2 = 0, maxScore = x(optLabel, 0);
+		for (int i = 0; i < nDim; ++i) {
+			scores(i, 0) = -1e10;
+			if (answer[i] >= 0) {
+				scores(i, 0) = exp(x(i, 0) - maxScore);
+				if (answer[i] == 1)
+					sum1 += scores(i, 0);
+				sum2 += scores(i, 0);
+			}
 		}
+		cost += (log(sum2) - log(sum1)) / batchsize;
+		return cost;
 	}
 
-	double sum1 = 0.0, sum2 = 0.0, maxScore = output(optLabel, 0);
-	for (int i = 0; i < dim2; ++i) {
-		scores(i, 0) = -1e10;
-		if (answer[i] >= 0) {
-			scores(i, 0) = exp(output(i, 0) - maxScore);
-			if (answer[i] == 1)
-				sum1 += scores(i, 0);
-			sum2 += scores(i, 0);
-		}
-	}
-	cost += (log(sum2) - log(sum1)) / batchsize;
-	return cost;
-}
+};
+
 
 #endif /* _SOFTMAXLOSS_H_ */

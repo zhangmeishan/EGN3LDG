@@ -49,7 +49,7 @@ public:
    */
   int operator[](const std::string& str)
   {
-    typename StringToId::const_iterator it = m_string_to_id.find(str);
+    StringToId::const_iterator it = m_string_to_id.find(str);
     if (it != m_string_to_id.end()) {
       return it->second;
     } else if (!m_b_fixed){
@@ -90,7 +90,7 @@ public:
    */
   int from_string(const std::string& str)
   {
-    typename StringToId::const_iterator it = m_string_to_id.find(str);
+    StringToId::const_iterator it = m_string_to_id.find(str);
     if (it != m_string_to_id.end()) {
       return it->second;
     } else if (!m_b_fixed){

@@ -11,7 +11,7 @@
 #include "Param.h"
 #include "MyLib.h"
 
-class UniParam {
+struct UniParams {
 public:
 	Param _W;
 	Param _b;
@@ -19,11 +19,11 @@ public:
 	bool _bUseB;
 
 public:
-	UniParam() {
+	UniParams() {
 		_bUseB = true;
 	}
 
-	inline void exportAdaParams(AdaUpdate& ada) {
+	inline void exportAdaParams(ModelUpdate& ada) {
 		ada.addParam(&_W);
 		if (_bUseB) {
 			ada.addParam(&_b);
@@ -45,22 +45,61 @@ public:
 // input nodes should be specified by forward function
 // for input variables, we exploit column vector,
 // which means a concrete input vector x_i is represented by x(0, i), x(1, i), ..., x(n, i)
-class UniNode {
+struct UniNode {
 public:
-	MatrixXd *_x;
-	MatrixXd _y, _ly;
-	MatrixXd _ty, _lty; // t means temp, _ty is to save temp vector before activation
+	PMat _px;
+	Mat _y, _ly;
+	Mat _ty, _lty; // t means temp, _ty is to save temp vector before activation
 
 	int _inDim, _outDim;
 
-	UniParam* _param;
+	UniParams* _param;
 
-	MatrixXd (*_f)(const MatrixXd&);   // activation function
-	MatrixXd (*_f_deri)(const MatrixXd&, const MatrixXd&); // derivation function of activation function
+	Mat (*_f)(const Mat&);   // activation function
+	Mat (*_f_deri)(const Mat&, const Mat&); // derivation function of activation function
+
 
 public:
 	UniNode() {
-		_x = NULL;
+		clear();
+	}
+
+	UniNode(UniParams* param) {
+		_px = NULL;
+		_f = tanh;
+		_f_deri = tanh_deri;
+		_y.setZero();
+		_ly.setZero();
+		_ty.setZero();
+		_lty.setZero();
+		setParam(param);
+	}
+
+	UniNode(Mat (*f)(const Mat&),
+			Mat (*f_deri)(const Mat&, const Mat&)) {
+		_px = NULL;
+		setFunctions(f, f_deri);
+		_y.setZero();
+		_ly.setZero();
+		_ty.setZero();
+		_lty.setZero();
+		_param = NULL;
+		_inDim = _outDim = 0;
+	}
+
+	UniNode(UniParams* param, Mat (*f)(const Mat&),
+			Mat (*f_deri)(const Mat&, const Mat&)) {
+		_px = NULL;
+		setFunctions(f, f_deri);
+		_y.setZero();
+		_ly.setZero();
+		_ty.setZero();
+		_lty.setZero();
+		setParam(param);
+	}
+
+	inline void clear(){
+		_px = NULL;
 		_f = tanh;
 		_f_deri = tanh_deri;
 		_y.setZero();
@@ -71,41 +110,8 @@ public:
 		_inDim = _outDim = 0;
 	}
 
-	UniNode(UniParam* param) {
-		_x = NULL;
-		_f = tanh;
-		_f_deri = tanh_deri;
-		_y.setZero();
-		_ly.setZero();
-		_ty.setZero();
-		_lty.setZero();
-		setParam(param);
-	}
 
-	UniNode(MatrixXd (*f)(const MatrixXd&),
-			MatrixXd (*f_deri)(const MatrixXd&, const MatrixXd&)) {
-		_x = NULL;
-		setFunctions(f, f_deri);
-		_y.setZero();
-		_ly.setZero();
-		_ty.setZero();
-		_lty.setZero();
-		_param = NULL;
-		_inDim = _outDim = 0;
-	}
-
-	UniNode(UniParam* param, MatrixXd (*f)(const MatrixXd&),
-			MatrixXd (*f_deri)(const MatrixXd&, const MatrixXd&)) {
-		_x = NULL;
-		setFunctions(f, f_deri);
-		_y.setZero();
-		_ly.setZero();
-		_ty.setZero();
-		_lty.setZero();
-		setParam(param);
-	}
-
-	inline void setParam(UniParam* param) {
+	inline void setParam(UniParams* param) {
 		_param = param;
 		_inDim = _param->_W.inDim();
 		_outDim = _param->_W.outDim();
@@ -117,42 +123,53 @@ public:
 	}
 
 	// define the activation function and its derivation form
-	inline void setFunctions(MatrixXd (*f)(const MatrixXd&),
-			MatrixXd (*f_deri)(const MatrixXd&, const MatrixXd&)) {
+	inline void setFunctions(Mat (*f)(const Mat&),
+			Mat (*f_deri)(const Mat&, const Mat&)) {
 		_f = f;
 		_f_deri = f_deri;
 	}
 
+	inline void clearValue(){
+		_px = NULL;
+		_y.setZero();
+		_ly.setZero();
+		_ty.setZero();
+		_lty.setZero();
+	}
+
 public:
-	void forward(MatrixXd& x) {
+	void forward(PMat px) {
 		assert(_param != NULL);
 
-		_ty = _param->_W.val * x;
-		for (int idx = 0; idx < _ty.cols(); idx++) {
-			_ty.row(idx) += _param->_b.val.row(0);
+		_ty = _param->_W.val * (*px);
+		if(_param->_bUseB){
+			for (int idx = 0; idx < _ty.cols(); idx++) {
+				_ty.col(idx) += _param->_b.val.col(0);
+			}
 		}
 
 		_y = _f(_ty);
-		_x = &x;
-		_ly.resize(_y.rows(), _y.cols());
+		_px = px;
 	}
 
-	void backward(MatrixXd& lx) {
+	void backward(PMat plx) {
 		assert(_param != NULL);
 
-		_lty = _ly.cwiseProduct(_f_deri(_ty, _y));
+		_lty = _ly.array() * _f_deri(_ty, _y).array();
 
-		_param->_W.grad += _lty * _x->transpose();
+		_param->_W.grad += _lty * _px->transpose();
 
-		for (int idx = 0; idx < _y.cols(); idx++) {
-			_param->_b.grad.row(0) += _lty.row(idx);
+		if(_param->_bUseB){
+			for (int idx = 0; idx < _y.cols(); idx++) {
+				_param->_b.grad.col(0) += _lty.col(idx);
+			}
 		}
 
-		if (lx.size() == 0) {
-			lx = MatrixXd::Zero(_x->rows(), _x->cols());
+		if (plx->size() == 0) {
+			*plx = Mat::Zero(_px->rows(), _px->cols());
 		}
 
-		lx += _param->_W.val.transpose() * _lty;
+		*plx += _param->_W.val.transpose() * _lty;
 
 	}
 
@@ -162,58 +179,66 @@ public:
 // input nodes should be specified by forward function
 // for input variables, we exploit column vector,
 // which means a concrete input vector x_i is represented by x(0, i), x(1, i), ..., x(n, i)
-class LinearNode {
+struct LinearNode {
 public:
-	MatrixXd *_x;
-	MatrixXd _y, _ly;
+	PMat _px;
+	Mat _y, _ly;
 
 	int _inDim, _outDim;
 
-	UniParam* _param;
+	UniParams* _param;
 
 public:
 	LinearNode() {
-		_x = NULL;
+		clear();
+	}
+
+	LinearNode(UniParams* param) {
+		_px = NULL;
+		_y.setZero();
+		_ly.setZero();
+		setParam(param);
+	}
+
+	inline void clear(){
+		_px = NULL;
 		_y.setZero();
 		_ly.setZero();
 		_param = NULL;
 		_inDim = _outDim = 0;
 	}
 
-	LinearNode(UniParam* param) {
-		_x = NULL;
-		_y.setZero();
-		_ly.setZero();
-		setParam(param);
-	}
-
-	inline void setParam(UniParam* param) {
+	inline void setParam(UniParams* param) {
 		_param = param;
 		_inDim = _param->_W.inDim();
 		_outDim = _param->_W.outDim();
 		if (param->_bUseB) {
-			cout
-					<< "please check whether _bUseB is false, usually this should be false for linear layer"
+			cout << "please check whether _bUseB is false, usually this should be false for linear layer"
 					<< endl;
 		}
 	}
 
-public:
-	void forward(MatrixXd& x) {
-		assert(_param != NULL);
-		_y = _param->_W.val * x;
-		_x = &x;
-		_ly.resize(_y.rows(), _y.cols());
+	inline void clearValue(){
+		_px = NULL;
+		_y.setZero();
+		_ly.setZero();
 	}
 
-	void backward(MatrixXd& lx) {
+public:
+	void forward(PMat px) {
 		assert(_param != NULL);
-		_param->_W.grad += _ly * _x->transpose();
-		if (lx.size() == 0) {
-			lx = MatrixXd::Zero(_x->rows(), _x->cols());
+		_y = _param->_W.val * (*px);
+		_px = px;
+	}
+
+	void backward(PMat plx) {
+		assert(_param != NULL);
+		_param->_W.grad += _ly * _px->transpose();
+		if (plx->size() == 0) {
+			*plx = Mat::Zero(_px->rows(), _px->cols());
 		}
 
-		lx += _param->_W.val.transpose() * _ly;
+		*plx += _param->_W.val.transpose() * _ly;
 
 	}
 

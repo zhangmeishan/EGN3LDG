@@ -1,9 +1,9 @@
 #ifndef CML_ALL
 #define CML_ALL
 
-#include "AdaUpdate.h"
+#include "ModelUpdate.h"
 #include "Alphabet.h"
-#include "AP1OP.h"
+#include "APOP.h"
 #include "NRMat.h"
 #include "UniOP.h"
 #include "BiOP.h"
@@ -13,5 +13,9 @@
 #include "LookupTable.h"
 #include "SoftMaxLoss.h"
 #include "CheckGrad.h"
+#include "SparseOP.h"
+#include "Pooling.h"
+#include "Dropout.h"
+#include "Metric.h"
 
 #endif

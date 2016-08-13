@@ -6,111 +6,70 @@
 
 using namespace Eigen;
 
-template<typename Example, typename Classifier>
-void checkgrad(Classifier* classifier, const vector<Example>& examples,
-		MatrixXd& Wd, const MatrixXd& gradWd, const string& mark, int iter) {
-	int charseed = mark.length();
-	for (int i = 0; i < mark.length(); i++)
-		charseed = (int) (mark[i]) * 5 + charseed;
-	srand(iter + charseed);
-	std::vector<int> idRows, idCols;
-	idRows.clear();
-	idCols.clear();
-	for (int i = 0; i < Wd.rows(); i++)
-		idRows.push_back(i);
-	for (int i = 0; i < Wd.cols(); i++)
-		idCols.push_back(i);
+class CheckGrad {
 
-	random_shuffle(idRows.begin(), idRows.end());
-	random_shuffle(idCols.begin(), idCols.end());
+public:
+	vector<BaseParam*> _params;
+	vector<string> _names;
 
-	int check_i = idRows[0], check_j = idCols[0];
-
-	double orginValue = Wd(check_i, check_j);
-
-	Wd(check_i, check_j) = orginValue + 0.001;
-	double lossAdd = 0.0;
-	for (int i = 0; i < examples.size(); i++) {
-		Example oneExam = examples[i];
-		lossAdd += classifier->computeScore(oneExam);
+public:
+	CheckGrad(){
+		clear();
 	}
 
-	Wd(check_i, check_j) = orginValue - 0.001;
-	double lossPlus = 0.0;
-	for (int i = 0; i < examples.size(); i++) {
-		Example oneExam = examples[i];
-		lossPlus += classifier->computeScore(oneExam);
+	inline void clear(){
+		_params.clear();
+		_names.clear();
 	}
 
-	double mockGrad = (lossAdd - lossPlus) / 0.002;
-	mockGrad = mockGrad / examples.size();
-	double computeGrad = gradWd(check_i, check_j);
-
-	printf("Iteration %d, Checking gradient for %s[%d][%d]:\t", iter,
-			mark.c_str(), check_i, check_j);
-	printf("mock grad = %.18f, computed grad = %.18f\n", mockGrad, computeGrad);
-
-	Wd(check_i, check_j) = orginValue;
-}
-
-template<typename Example, typename Classifier>
-void checkgrad(Classifier* classifier, const vector<Example>& examples,
-		MatrixXd& Wd, const MatrixXd& gradWd, const string& mark, int iter,
-		const hash_set<int>& indexes, bool bRow = true) {
-	if (indexes.size() == 0)
-		return;
-	int charseed = mark.length();
-	for (int i = 0; i < mark.length(); i++) {
-		charseed = (int) (mark[i]) * 5 + charseed;
-	}
-	srand(iter + charseed);
-	std::vector<int> idRows, idCols;
-	idRows.clear();
-	idCols.clear();
-	static hash_set<int>::iterator it;
-	if (bRow) {
-		for (it = indexes.begin(); it != indexes.end(); ++it)
-			idRows.push_back(*it);
-		for (int idx = 0; idx < Wd.cols(); idx++)
-			idCols.push_back(idx);
-	} else {
-		for (it = indexes.begin(); it != indexes.end(); ++it)
-			idCols.push_back(*it);
-		for (int idx = 0; idx < Wd.rows(); idx++)
-			idRows.push_back(idx);
+	inline void add(BaseParam* param, const string& name){
+		_params.push_back(param);
+		_names.push_back(name);
 	}
 
-	random_shuffle(idRows.begin(), idRows.end());
-	random_shuffle(idCols.begin(), idCols.end());
+public:
+	template<typename Example, typename Classifier>
+	inline void check(Classifier* classifier, const vector<Example>& examples, const string& description){
+		int seed = description.length();
+		for (int i = 0; i < description.length(); i++)
+			seed = (int)(description[i]) * 5 + seed;
 
-	int check_i = idRows[0], check_j = idCols[0];
+		srand(seed);
 
-	double orginValue = Wd(check_i, check_j);
+		static dtype orginValue, lossAdd, lossPlus;
+		static int idx, idy;
+		static dtype mockGrad, computeGrad;
+		for (int i = 0; i < _params.size(); i++){
+			_params[i]->randpoint(idx, idy, rand() + i);
+			orginValue = _params[i]->val(idx, idy);
 
-	Wd(check_i, check_j) = orginValue + 0.001;
-	double lossAdd = 0.0;
-	for (int i = 0; i < examples.size(); i++) {
-		Example oneExam = examples[i];
-		lossAdd += classifier->computeScore(oneExam);
+			_params[i]->val(idx, idy) = orginValue + 0.001;
+			lossAdd = 0.0; 
+			for (int j = 0; j < examples.size(); j++){
+				lossAdd += classifier->cost(examples[j]);
+			}
+
+			_params[i]->val(idx, idy) = orginValue - 0.001;
+			lossPlus = 0.0;
+			for (int j = 0; j < examples.size(); j++){
+				lossPlus += classifier->cost(examples[j]);
+			}
+
+			mockGrad = (lossAdd - lossPlus) / 0.002;
+			mockGrad = mockGrad / examples.size();
+			computeGrad = _params[i]->grad(idx, idy);
+
+
+			printf("%s, Checking gradient for %s[%d][%d]:\t", description.c_str(),
+				_names[i].c_str(), idx, idy);
+			printf("mock grad = %.18f, computed grad = %.18f\n", mockGrad, computeGrad);
+
+			_params[i]->val(idx, idy) = orginValue;
+		}
 	}
 
-	Wd(check_i, check_j) = orginValue - 0.001;
-	double lossPlus = 0.0;
-	for (int i = 0; i < examples.size(); i++) {
-		Example oneExam = examples[i];
-		lossPlus += classifier->computeScore(oneExam);
-	}
+};
 
-	double mockGrad = (lossAdd - lossPlus) / 0.002;
-	mockGrad = mockGrad / examples.size();
-	double computeGrad = gradWd(check_i, check_j);
 
-	printf("Iteration %d, Checking gradient for %s[%d][%d]:\t", iter,
-			mark.c_str(), check_i, check_j);
-	printf("mock grad = %.18f, computed grad = %.18f\n", mockGrad, computeGrad);
-
-	Wd(check_i, check_j) = orginValue;
-
-}
 
 #endif /*CHECKGREAD_H_*/
