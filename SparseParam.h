@@ -16,23 +16,23 @@
 // The in-out dimension definiation is different with dense parameters.
 struct SparseParam : BaseParam{
 	Mat aux;
-	hash_set<int> _indexers;
+	hash_set<int> indexers;
 
 	// allow sparse and dense parameters have different parameter initialization methods
 	inline void initial(int outDim, int inDim) {
 		val = Mat(inDim, outDim).unaryExpr(ptr_fun(urand));
 		grad = Mat::Zero(inDim, outDim);
 		aux = Mat::Zero(inDim, outDim);
-		_indexers.clear();
+		indexers.clear();
 	}
 
 	inline void clearGrad() {
 		static hash_set<int>::iterator it;
-		for (it = _indexers.begin(); it != _indexers.end(); ++it) {
+		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
 			grad.row(index).setZero();
 		}
-		_indexers.clear();
+		indexers.clear();
 	}
 	
 	inline int outDim() {
@@ -45,7 +45,7 @@ struct SparseParam : BaseParam{
 
 	inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) {
 		static hash_set<int>::iterator it;
-		for (it = _indexers.begin(); it != _indexers.end(); ++it) {
+		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
 			grad.row(index) = grad.row(index) + val.row(index) * reg;
 			aux.row(index) = aux.row(index).array() + grad.row(index).array().square();
@@ -61,7 +61,7 @@ struct SparseParam : BaseParam{
 		idRows.clear();
 		idCols.clear();
 		static hash_set<int>::iterator it;
-		for (it = _indexers.begin(); it != _indexers.end(); ++it) {
+		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			idRows.push_back(*it);
 		}
 		for (int i = 0; i < val.cols(); i++){

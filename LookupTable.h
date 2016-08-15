@@ -4,6 +4,7 @@
 #include "SparseParam.h"
 #include "MyLib.h"
 #include "Alphabet.h"
+#include "Node.h"
 
 #include <Eigen/Dense>
 
@@ -11,12 +12,12 @@ using namespace Eigen;
 
 struct LookupTable {
 public:
-	Alphabet _elems;
-	SparseParam _E;
-	bool _bFineTune;
-	int _nDim;
-	int _nVSize;
-	int _nUNKId;
+	Alphabet elems;
+	SparseParam E;
+	bool bFineTune;
+	int nDim;
+	int nVSize;
+	int nUNKId;
 
 public:
 
@@ -24,9 +25,9 @@ public:
 	}
 
 	//random initialization
-	inline void initial(const hash_map<string, int>& elem_stat, int cutOff, int nDim, int seed, bool bFineTune){
+	inline void initial(const hash_map<string, int>& elem_stat, int cutOff, int dim, int seed, bool bFineTune){
 		initialAlpha(elem_stat, cutOff);
-		initialWeights(nDim, seed, bFineTune);
+		initialWeights(dim, seed, bFineTune);
 	}
 
 	//initialization by pre-trained embeddings
@@ -38,37 +39,37 @@ public:
 	// for sepcial elements such as UNK and NULL, please add insert them into the elem_stat
 	// I will not implement another addAlpha function, thus please collect alpha all at once
 	inline void initialAlpha(const hash_map<string, int>& elem_stat, int cutOff = 0){
-		_elems.clear();
+		elems.clear();
 
 		static hash_map<string, int>::const_iterator elem_iter;
 		for (elem_iter = elem_stat.begin(); elem_iter != elem_stat.end(); elem_iter++) {
 			if (elem_iter->second > cutOff) {
-				_elems.from_string(elem_iter->first);
+				elems.from_string(elem_iter->first);
 			}
 		}
-		_elems.set_fixed_flag(true);
-		_nVSize = _elems.size();
-		_nUNKId = _elems.from_string(unknownkey);
+		elems.set_fixed_flag(true);
+		nVSize = elems.size();
+		nUNKId = elems.from_string(unknownkey);
 	}
 
-	inline void initialWeights(int nDim, int seed = 0, bool bFineTune = true) {
-		if (_nVSize == 0){
+	inline void initialWeights(int dim, int seed = 0, bool tune = true) {
+		if (nVSize == 0){
 			std::cout << "please check the alphabet" << std::endl;
 			return;
 		}
-		_nDim = nDim;
+		nDim = dim;
 		srand(seed);
-		_E.initial(_nDim, _nVSize);
-		for (int idx = 0; idx < _nVSize; idx++){
-			norm2one(_E.val, idx);
+		E.initial(nDim, nVSize);
+		for (int idx = 0; idx < nVSize; idx++){
+			norm2one(E.val, idx);
 		}
 
-		_bFineTune = bFineTune;
+		bFineTune = tune;
 	}
 
 	// default should be fineTune, just for initialization
-	inline void initialWeights(const string& inFile, bool bFineTune = true) {
-		if (_nVSize == 0){
+	inline void initialWeights(const string& inFile, bool tune = true) {
+		if (nVSize == 0){
 			std::cout << "please check the alphabet" << std::endl;
 			return;
 		}
@@ -98,145 +99,130 @@ public:
 		//find the first line, decide the wordDim;
 		static vector<string> vecInfo;
 		split_bychar(sLines[0], vecInfo, ' ');
-		_nDim = vecInfo.size() - 1;
+		nDim = vecInfo.size() - 1;
 
-		_E.initial(_nDim, _nVSize);
-		_E.val.setZero();
+		E.initial(nDim, nVSize);
+		E.val.setZero();
 
-		std::cout << "word embedding dim is " << _nDim << std::endl;
+		std::cout << "word embedding dim is " << nDim << std::endl;
 
 		bool bHasUnknown = false;
 		hash_set<int> indexers;
-		VectorXd sum = VectorXd::Zero(_nDim);
+		VectorXd sum = VectorXd::Zero(nDim);
 		int count = 0;
 		for (int idx = 0; idx < sLines.size(); idx++){
 			split_bychar(sLines[idx], vecInfo, ' ');
-			if (vecInfo.size() != _nDim + 1) {
+			if (vecInfo.size() != nDim + 1) {
 				std::cout << "error embedding file" << std::endl;
 			}
 			curWord = vecInfo[0];
 			//we assume the keys are normalized
-			wordId = _elems.from_string(curWord);
+			wordId = elems.from_string(curWord);
 			if (wordId >= 0) {
 				count++;
-				if (_nUNKId == wordId){
+				if (nUNKId == wordId){
 					bHasUnknown = true;
 				}
 				indexers.insert(wordId);
 
-				for (int idy = 0; idy < _nDim; idy++) {
+				for (int idy = 0; idy < nDim; idy++) {
 					dtype curValue = atof(vecInfo[idy + 1].c_str());
 					sum(idy) += curValue;
-					_E.val(wordId, idy) += curValue;
+					E.val(wordId, idy) += curValue;
 				}
 			}
 		}
 
-		if (_nUNKId >= 0 && !bHasUnknown){
-			for (int idx = 0; idx < _nDim; idx++) {
-				_E.val(_nUNKId, idx) = sum(idx) / count;
+		if (nUNKId >= 0 && !bHasUnknown){
+			for (int idx = 0; idx < nDim; idx++) {
+				E.val(nUNKId, idx) = sum(idx) / count;
 			}
-			indexers.insert(_nUNKId);
+			indexers.insert(nUNKId);
 			count++;
 			std::cout << unknownkey << " not found, using averaged value to initialize." << std::endl;
 		}
 
 		int oovWords = 0;
-		for (int id = 0; id < _nVSize; id++) {
+		for (int id = 0; id < nVSize; id++) {
 			if (indexers.find(id) == indexers.end()) {
 				oovWords++;
-				for (int idy = 0; idy < _nDim; idy++){
-					_E.val(id, idy) = _nUNKId >= 0 ? _E.val(_nUNKId, idy) : sum(idy) / count;
+				for (int idy = 0; idy < nDim; idy++){
+					E.val(id, idy) = nUNKId >= 0 ? E.val(nUNKId, idy) : sum(idy) / count;
 				}
 			}
 		}
 
-		std::cout << "OOV num is " << oovWords << ", total num is " << _nVSize << ", embedding oov ratio is " << oovWords * 1.0 / _nVSize << std::endl;
+		std::cout << "OOV num is " << oovWords << ", total num is " << nVSize << ", embedding oov ratio is " << oovWords * 1.0 / nVSize << std::endl;
 
-		for (int idx = 0; idx < _nVSize; idx++){
-			norm2one(_E.val, idx);
+		for (int idx = 0; idx < nVSize; idx++){
+			norm2one(E.val, idx);
 		}
 
-		_bFineTune = bFineTune;
+		bFineTune = tune;
 	}
 
 	inline void exportAdaParams(ModelUpdate& ada) {
-		if (_bFineTune) {
-			ada.addParam(&_E);
+		if (bFineTune) {
+			ada.addParam(&E);
 		}
 	}
 
 
 	inline int getElemId(const string& strFeat){
-		return _elems.from_string(strFeat);
+		return elems.from_string(strFeat);
 	}
 
 };
 
-struct LookupNode {
+struct LookupNode : Node {
 public:
-	LookupTable* _param;
-	int _xid;
-	Mat _y;
-	Mat _ly;
-
-	int _inDim;
-	int _outDim;
+	LookupTable* param;
+	int xid;
 
 public:
 	LookupNode() {
 		clear();
 	}
 
-	LookupNode(LookupTable* param) {
-		_xid = -1;
-		_y.setZero();
-		_ly.setZero();
-		setParam(param);
-	}
-
-	inline void setParam(LookupTable* param) {
-		_param = param;
-		_inDim = _param->_nVSize;
-		_outDim = _param->_nDim;
+	inline void setParam(LookupTable* paramInit) {
+		param = paramInit;
+		dim = param->nDim;
 	}
 
 	inline void clear(){
-		_xid = -1;
-		_y.setZero();
-		_ly.setZero();
-		_param = NULL;
-		_inDim = _outDim = 0;
+		Node::clear();
+		xid = -1;
+		param = NULL;
 	}
 
 	inline void clearValue(){
-		_xid = -1;
-		_y.setZero();
-		_ly.setZero();
+		Node::clearValue();
+		xid = -1;
 	}
 
 public:
 	//notice the output
+	//this should be leaf nodes
 	void forward(const string& strNorm) {
-		assert(_param != NULL);
-		_xid = _param->getElemId(strNorm);
-		if (_xid < 0 && _param->_nUNKId >= 0){
-			_xid = _param->_nUNKId;
+		assert(param != NULL);
+		xid = param->getElemId(strNorm);
+		if (xid < 0 && param->nUNKId >= 0){
+			xid = param->nUNKId;
 		}
-		if (_xid >= 0){
-			_y = _param->_E.val.row(_xid).transpose();
+		if (xid >= 0){
+			val = param->E.val.row(xid).transpose();
 		}
 		else{
 			std::cout << "Caution: unknown words are not modeled !" << std::endl;
-			_y = Mat::Zero(_outDim, 1);
+			val = Mat::Zero(dim, 1);
 		}
 	}
 
 	void backward() {
-		assert(_param != NULL);
-		if (_xid >= 0 && _param->_bFineTune){
-			_param->_E.grad.row(_xid) += _ly.col(0).transpose();
-			_param->_E._indexers.insert(_xid);
+		assert(param != NULL);
+		if (xid >= 0 && param->bFineTune){
+			param->E.grad.row(xid) += loss.col(0).transpose();
+			param->E.indexers.insert(xid);
 		}
 	}
 

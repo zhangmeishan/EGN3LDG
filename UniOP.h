@@ -10,33 +10,32 @@
 
 #include "Param.h"
 #include "MyLib.h"
+#include "Node.h"
 
 struct UniParams {
 public:
-	Param _W;
-	Param _b;
-
-	bool _bUseB;
+	Param W;
+	Param b;
+	bool bUseB;
 
 public:
 	UniParams() {
-		_bUseB = true;
+		bUseB = true;
 	}
 
 	inline void exportAdaParams(ModelUpdate& ada) {
-		ada.addParam(&_W);
-		if (_bUseB) {
-			ada.addParam(&_b);
+		ada.addParam(&W);
+		if (bUseB) {
+			ada.addParam(&b);
 		}
 	}
 
-	inline void initial(int nOSize, int nISize, bool bUseB = true,
-			int seed = 0) {
+	inline void initial(int nOSize, int nISize, bool useB = true,	int seed = 0) {
 		srand(seed);
-		_W.initial(nOSize, nISize);
-		_b.initial(nOSize, 1);
+		W.initial(nOSize, nISize);
+		b.initial(nOSize, 1);
 
-		_bUseB = bUseB;
+		bUseB = useB;
 	}
 
 };
@@ -45,18 +44,16 @@ public:
 // input nodes should be specified by forward function
 // for input variables, we exploit column vector,
 // which means a concrete input vector x_i is represented by x(0, i), x(1, i), ..., x(n, i)
-struct UniNode {
+struct UniNode : Node{
 public:
-	PMat _px;
-	Mat _y, _ly;
-	Mat _ty, _lty; // t means temp, _ty is to save temp vector before activation
+	PNode in;
+	Mat ty, lty; // t means temp, ty is to save temp vector before activate
+	int inDim;
 
-	int _inDim, _outDim;
+	UniParams* param;
 
-	UniParams* _param;
-
-	Mat (*_f)(const Mat&);   // activation function
-	Mat (*_f_deri)(const Mat&, const Mat&); // derivation function of activation function
+	Mat (*activate)(const Mat&);   // activate function
+	Mat (*derivate)(const Mat&, const Mat&); // derivation function of activate function
 
 
 public:
@@ -64,113 +61,80 @@ public:
 		clear();
 	}
 
-	UniNode(UniParams* param) {
-		_px = NULL;
-		_f = tanh;
-		_f_deri = tanh_deri;
-		_y.setZero();
-		_ly.setZero();
-		_ty.setZero();
-		_lty.setZero();
-		setParam(param);
-	}
-
-	UniNode(Mat (*f)(const Mat&),
-			Mat (*f_deri)(const Mat&, const Mat&)) {
-		_px = NULL;
-		setFunctions(f, f_deri);
-		_y.setZero();
-		_ly.setZero();
-		_ty.setZero();
-		_lty.setZero();
-		_param = NULL;
-		_inDim = _outDim = 0;
-	}
-
-	UniNode(UniParams* param, Mat (*f)(const Mat&),
-			Mat (*f_deri)(const Mat&, const Mat&)) {
-		_px = NULL;
-		setFunctions(f, f_deri);
-		_y.setZero();
-		_ly.setZero();
-		_ty.setZero();
-		_lty.setZero();
-		setParam(param);
-	}
 
 	inline void clear(){
-		_px = NULL;
-		_f = tanh;
-		_f_deri = tanh_deri;
-		_y.setZero();
-		_ly.setZero();
-		_ty.setZero();
-		_lty.setZero();
-		_param = NULL;
-		_inDim = _outDim = 0;
+		Node::clear();
+		in = NULL;
+		activate = tanh;
+		derivate = tanh_deri;
+		ty.setZero();
+		lty.setZero();
+		param = NULL;
+		inDim = 0;
 	}
 
 
-	inline void setParam(UniParams* param) {
-		_param = param;
-		_inDim = _param->_W.inDim();
-		_outDim = _param->_W.outDim();
-		if (!_param->_bUseB) {
+	inline void setParam(UniParams* paramInit) {
+		param = paramInit;
+		inDim = param->W.inDim();
+		dim = param->W.outDim();
+		if (!param->bUseB) {
 			cout
-					<< "please check whether _bUseB is true, usually this should be true for non-linear layer"
+					<< "please check whether bUseB is true, usually this should be true for non-linear layer"
 					<< endl;
 		}
 	}
 
-	// define the activation function and its derivation form
+	// define the activate function and its derivation form
 	inline void setFunctions(Mat (*f)(const Mat&),
 			Mat (*f_deri)(const Mat&, const Mat&)) {
-		_f = f;
-		_f_deri = f_deri;
+		activate = f;
+		derivate = f_deri;
 	}
 
 	inline void clearValue(){
-		_px = NULL;
-		_y.setZero();
-		_ly.setZero();
-		_ty.setZero();
-		_lty.setZero();
+		Node::clearValue();
+		in = NULL;
+		ty.setZero();
+		lty.setZero();
 	}
 
 public:
-	void forward(PMat px) {
-		assert(_param != NULL);
+	void forward(PNode x) {
+		assert(param != NULL);
 
-		_ty = _param->_W.val * (*px);
-		if(_param->_bUseB){
-			for (int idx = 0; idx < _ty.cols(); idx++) {
-				_ty.col(idx) += _param->_b.val.col(0);
+		in = x;
+		assert(inDim == in->val.rows());
+
+		ty = param->W.val * in->val;
+
+		if(param->bUseB){
+			for (int idx = 0; idx < ty.cols(); idx++) {
+				ty.col(idx) += param->b.val.col(0);
 			}
 		}
 
-		_y = _f(_ty);
-		_px = px;
+		val = activate(ty);
 	}
 
-	void backward(PMat plx) {
-		assert(_param != NULL);
+	void backward() {
+		assert(param != NULL);
 
-		_lty = _ly.array() * _f_deri(_ty, _y).array();
+		lty = loss.array() * derivate(ty, val).array();
 
-		_param->_W.grad += _lty * _px->transpose();
+		param->W.grad += lty * in->val.transpose();
 
-		if(_param->_bUseB){
-			for (int idx = 0; idx < _y.cols(); idx++) {
-				_param->_b.grad.col(0) += _lty.col(idx);
+		if(param->bUseB){
+			for (int idx = 0; idx < val.cols(); idx++) {
+				param->b.grad.col(0) += lty.col(idx);
 			}
 		}
 
-		if (plx->size() == 0) {
-			*plx = Mat::Zero(_px->rows(), _px->cols());
+		if (in->loss.size() == 0) {
+			in->loss = Mat::Zero(in->val.rows(), in->val.cols());
 		}
 
-		*plx += _param->_W.val.transpose() * _lty;
-
+		in->loss += param->W.val.transpose() * lty;
 	}
 
 };
@@ -179,67 +143,57 @@ public:
 // input nodes should be specified by forward function
 // for input variables, we exploit column vector,
 // which means a concrete input vector x_i is represented by x(0, i), x(1, i), ..., x(n, i)
-struct LinearNode {
+struct LinearNode : Node {
 public:
-	PMat _px;
-	Mat _y, _ly;
-
-	int _inDim, _outDim;
-
-	UniParams* _param;
+	PNode in;
+	int inDim;
+	UniParams* param;
 
 public:
 	LinearNode() {
 		clear();
 	}
 
-	LinearNode(UniParams* param) {
-		_px = NULL;
-		_y.setZero();
-		_ly.setZero();
-		setParam(param);
-	}
-
 	inline void clear(){
-		_px = NULL;
-		_y.setZero();
-		_ly.setZero();
-		_param = NULL;
-		_inDim = _outDim = 0;
+		Node::clear();
+		in = NULL;
+		param = NULL;
+		inDim = 0;
 	}
 
-	inline void setParam(UniParams* param) {
-		_param = param;
-		_inDim = _param->_W.inDim();
-		_outDim = _param->_W.outDim();
-		if (param->_bUseB) {
-			cout << "please check whether _bUseB is false, usually this should be false for linear layer"
+	inline void setParam(UniParams* paramInit) {
+		param = paramInit;
+		inDim = param->W.inDim();
+		dim = param->W.outDim();
+		if (param->bUseB) {
+			cout << "please check whether bUseB is false, usually this should be false for linear layer"
 					<< endl;
 		}
 	}
 
 	inline void clearValue(){
-		_px = NULL;
-		_y.setZero();
-		_ly.setZero();
+		Node::clearValue();
+		in = NULL;
 	}
 
 public:
-	void forward(PMat px) {
-		assert(_param != NULL);
-		_y = _param->_W.val * (*px);
-		_px = px;
+	void forward(PNode x) {
+		assert(param != NULL);
+
+		in = x;
+		assert(inDim == in->val.rows());
+
+		val = param->W.val * (in->val);	
 	}
 
-	void backward(PMat plx) {
-		assert(_param != NULL);
-		_param->_W.grad += _ly * _px->transpose();
-		if (plx->size() == 0) {
-			*plx = Mat::Zero(_px->rows(), _px->cols());
+	void backward() {
+		assert(param != NULL);
+		param->W.grad += loss * in->val.transpose();
+		if (in->loss.size() == 0) {
+			in->loss = Mat::Zero(in->val.rows(), in->val.cols());
 		}
 
-		*plx += _param->_W.val.transpose() * _ly;
-
+		in->loss += param->W.val.transpose() * loss;
 	}
 
 };

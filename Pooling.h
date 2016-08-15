@@ -1,91 +1,92 @@
-#ifndef DROPOUT
-#define DROPOUT
+#ifndef POOLING
+#define POOLING
 
 #include "MyLib.h"
+#include "Node.h"
 
-struct PoolNode {
+struct PoolNode : Node {
 public:
-	vector<Mat> _masks;
-	Mat _y;
-	Mat _ly;
-	
+	vector<Mat> masks;
+	vector<PNode> ins;
+
 public:
 	PoolNode(){
-		_masks.clear();
-		_y.setZero();
-		_ly.setZero();
+		clear();
+	}
+
+	inline void clear(){
+		Node::clear();
+		masks.clear();
+		ins.clear();
 	}
 
 	inline void clearValue(){
-		_masks.clear();
-		_y.setZero();
-		_ly.setZero();
+		Node::clearValue();
+		masks.clear();
+		ins.clear();
 	}
 
-public:	
+public:
 
-	virtual void forward(vector<PMat>& px) = 0;
-	
-	void backward(vector<PMat>& plx){
-		if (plx.size() != _masks.size()){
-			std::cout << "forward size does not equal backward size" << std::endl;
-			return;
-		}
-		
-		for (int i = 0; i < plx.size(); i++){
-			if (plx[i]->size() == 0){
-				*(plx[i]) = Mat::Zero(_ly.rows(), _ly.cols());
+	virtual void forward(vector<PNode>& x) = 0;
+
+	void backward(){
+		for (int i = 0; i < ins.size(); i++){
+			if (ins[i]->loss.size() == 0){
+				ins[i]->loss = Mat::Zero(ins[i]->val.rows(), ins[i]->val.cols());
 			}
-			*(plx[i]) = plx[i]->array() + _ly.array() * _masks[i].array();
+			ins[i]->loss = ins[i]->loss.array() + loss.array() * masks[i].array();
 		}
 	}
 };
 
-struct MaxPoolNode: PoolNode {
-
+struct MaxPoolNode : PoolNode {
 public:
 	MaxPoolNode(){
 	}
-	
+
 public:
 	//Be careful that the row is the dim of input vector, and the col is the number of input vectors
 	//Another point is that we change the input vectors directly.
-	void forward(vector<PMat>& px) {
-		if(px.size() == 0){
+	void forward(vector<PNode>& x) {
+		if (x.size() == 0 ){
 			std::cout << "empty inputs for max pooling" << std::endl;
 			return;
 		}
-		
-		int rows = px[0]->rows(), cols = px[0]->cols();
-		_masks.resize(px.size());
 
-		for (int i = 0; i < px.size(); ++i){
-			if (px[i]->rows() != rows || px[i]->cols() != cols){
+		ins.clear();
+		for (int i = 0; i < x.size(); i++){
+			ins.push_back(x[i]);
+		}
+
+		dim = ins[0]->val.rows();
+		masks.resize(ins.size());
+		for (int i = 0; i < ins.size(); ++i){
+			if (ins[i]->val.rows() != dim){
 				std::cout << "input matrixes are not matched" << std::endl;
-				_masks.clear();
+				clearValue();
 				return;
 			}
-			_masks[i] = Mat::Zero(rows, cols);
+			masks[i] = Mat::Zero(dim, 1);
 		}
-		
-		for(int idx = 0; idx < rows; idx++){
-			for(int idy = 0; idy < cols; idy++){
-				int maxIndex = -1;
-				for (int i = 0; i < px.size(); ++i){
-					if (maxIndex == -1 || (*(px[i]))(idx, idy) >(*(px[maxIndex]))(idx, idy)){
-						maxIndex = i;
-					}
+
+
+		for (int idx = 0; idx < dim; idx++){
+			int maxIndex = -1;
+			for (int i = 0; i < ins.size(); ++i){
+				if (maxIndex == -1 || ins[i]->val(idx, 0) > ins[maxIndex]->val(idx, 0)){
+					maxIndex = i;
 				}
-				 _masks[maxIndex](idx, idy) = 1.0;
 			}
+			masks[maxIndex](idx, 0) = 1.0;
 		}
-		
-		_y = Mat::Zero(rows, cols);
-		for (int i = 0; i < px.size(); ++i){
-			_y = _y.array() + _masks[i].array() * px[i]->array();
+
+		val = Mat::Zero(dim, 1);
+		for (int i = 0; i < ins.size(); ++i){
+			val = val.array() + masks[i].array() *ins[i]->val.array();
 		}
 	}
-		
+
 };
 
 

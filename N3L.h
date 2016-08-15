@@ -17,5 +17,9 @@
 #include "Pooling.h"
 #include "Dropout.h"
 #include "Metric.h"
+#include "Windowlized.h"
+#include "Concat.h"
+#include "Node.h"
+#include "Graph.h"
 
 #endif

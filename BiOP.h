@@ -10,35 +10,36 @@
 
 #include "Param.h"
 #include "MyLib.h"
+#include "Node.h"
 
 struct BiParams {
 public:
-	Param _W1;
-	Param _W2;
-	Param _b;
+	Param W1;
+	Param W2;
+	Param b;
 
-	bool _bUseB;
+	bool bUseB;
 
 public:
 	BiParams() {
-		_bUseB = true;
+		bUseB = true;
 	}
 
 	inline void exportAdaParams(ModelUpdate& ada) {
-		ada.addParam(&_W1);
-		ada.addParam(&_W2);
-		if (_bUseB) {
-			ada.addParam(&_b);
+		ada.addParam(&W1);
+		ada.addParam(&W2);
+		if (bUseB) {
+			ada.addParam(&b);
 		}
 	}
 
-	inline void initial(int nOSize, int nISize1, int nISize2, bool bUseB = true, int seed = 0) {
+	inline void initial(int nOSize, int nISize1, int nISize2, bool useB = true, int seed = 0) {
 		srand(seed);
-		_W1.initial(nOSize, nISize1);
-		_W2.initial(nOSize, nISize2);
-		_b.initial(nOSize, 1);
+		W1.initial(nOSize, nISize1);
+		W2.initial(nOSize, nISize2);
+		b.initial(nOSize, 1);
 
-		_bUseB = bUseB;
+		bUseB = useB;
 	}
 
 };
@@ -47,141 +48,102 @@ public:
 // input nodes should be specified by forward function
 // for input variables, we exploit column vector,
 // which means a concrete input vector x_i is represented by x(0, i), x(1, i), ..., x(n, i)
-struct BiNode {
+struct BiNode : Node {
 public:
-	PMat _px1, _px2;
-	Mat _y, _ly;
-	Mat _ty, _lty;  // t means temp, _ty is to save temp vector before activation
+	PNode in1, in2;
+	Mat ty, lty;  // t means temp, ty is to save temp vector before activation
 
-	int _inDim1, _inDim2, _outDim;
+	int inDim1, inDim2;
 
-	BiParams* _param;
+	BiParams* param;
 
-	Mat (*_f)(const Mat&);   // activation function
-	Mat (*_f_deri)(const Mat&, const Mat&);  // derivation function of activation function
+	Mat (*activate)(const Mat&);   // activation function
+	Mat (*derivate)(const Mat&, const Mat&);  // derivation function of activation function
 
 public:
 	BiNode() {
 		clear();
 	}
 
-	BiNode(BiParams* param) {
-		_px1 = NULL;
-		_px2 = NULL;
-		_f = tanh;
-		_f_deri = tanh_deri;
-		_y.setZero();
-		_ly.setZero();
-		_ty.setZero();
-		_lty.setZero();
-		setParam(param);
-	}
-
-	BiNode(Mat (*f)(const Mat&), Mat (*f_deri)(const Mat&, const Mat&)) {
-		_px1 = NULL;
-		_px2 = NULL;
-		setFunctions(f, f_deri);
-		_y.setZero();
-		_ly.setZero();
-		_ty.setZero();
-		_lty.setZero();
-		_param = NULL;
-		_inDim1 = 0;
-		_inDim2 = 0;
-		_outDim = 0;
-	}
-
-	BiNode(BiParams* param, Mat (*f)(const Mat&), Mat (*f_deri)(const Mat&, const Mat&)) {
-		_px1 = NULL;
-		_px2 = NULL;
-		setFunctions(f, f_deri);
-		_y.setZero();
-		_ly.setZero();
-		_ty.setZero();
-		_lty.setZero();
-		setParam(param);
-	}
-
-	inline void setParam(BiParams* param) {
-		_param = param;
-		_inDim1 = _param->_W1.inDim();
-		_inDim2 = _param->_W2.inDim();
-		_outDim = _param->_W1.outDim();
-		if (!_param->_bUseB) {
-			cout << "please check whether _bUseB is true, usually this should be true for non-linear layer" << endl;
+	inline void setParam(BiParams* paramInit) {
+		param = paramInit;
+		inDim1 = param->W1.inDim();
+		inDim2 = param->W2.inDim();
+		dim = param->W1.outDim();
+		if (!param->bUseB) {
+			cout << "please check whether bUseB is true, usually this should be true for non-linear layer" << endl;
 		}
 	}
 
 	inline void clear(){
-		_px1 = NULL;
-		_px2 = NULL;
-		_f = tanh;
-		_f_deri = tanh_deri;
-		_y.setZero();
-		_ly.setZero();
-		_ty.setZero();
-		_lty.setZero();
-		_param = NULL;
-		_inDim1 = 0;
-		_inDim2 = 0;
-		_outDim = 0;
+		Node::clear();
+		in1 = NULL;
+		in2 = NULL;
+		activate = tanh;
+		derivate = tanh_deri;
+		ty.setZero();
+		lty.setZero();
+		param = NULL;
+		inDim1 = 0;
+		inDim2 = 0;
 	}
 
 	inline void clearValue(){
-		_px1 = NULL;
-		_px2 = NULL;
-		_y.setZero();
-		_ly.setZero();
-		_ty.setZero();
-		_lty.setZero();
+		Node::clearValue();
+		in1 = NULL;
+		in2 = NULL;
+		ty.setZero();
+		lty.setZero();
 	}
 
 	// define the activation function and its derivation form
 	inline void setFunctions(Mat (*f)(const Mat&), Mat (*f_deri)(const Mat&, const Mat&)) {
-		_f = f;
-		_f_deri = f_deri;
+		activate = f;
+		derivate = f_deri;
 	}
 
 public:
-	void forward(PMat px1, PMat px2) {
-		assert(_param != NULL);
+	void forward(PNode x1, PNode x2) {
+		assert(param != NULL);
 
-		_ty = _param->_W1.val * (*px1) + _param->_W2.val * (*px2);
-		if(_param->_bUseB){
-			for (int idx = 0; idx < _ty.cols(); idx++) {
-				_ty.col(idx) += _param->_b.val.col(0);
+		in1 = x1;
+		in2 = x2;
+		assert(inDim1 == in1->val.rows() && inDim2 == in2->val.rows());
+
+		ty = param->W1.val * (in1->val) + param->W2.val * (in2->val);
+
+		if(param->bUseB){
+			for (int idx = 0; idx < ty.cols(); idx++) {
+				ty.col(idx) += param->b.val.col(0);
 			}
 		}
 
-		_y = _f(_ty);
-		_px1 = px1;
-		_px2 = px2;
+		val = activate(ty);
 	}
 
-	void backward(PMat plx1, PMat plx2) {
-		assert(_param != NULL);
+	void backward() {
+		assert(param != NULL);
 
-		_lty = _ly.array() * _f_deri(_ty, _y).array();
+		lty = loss.array() * derivate(ty, val).array();
 
-		_param->_W1.grad += _lty * _px1->transpose();
-		_param->_W2.grad += _lty * _px2->transpose();
+		param->W1.grad += lty * in1->val.transpose();
+		param->W2.grad += lty * in2->val.transpose();
 
-		if(_param->_bUseB){
-			for (int idx = 0; idx < _y.cols(); idx++) {
-				_param->_b.grad.col(0) += _lty.col(idx);
+		if(param->bUseB){
+			for (int idx = 0; idx < val.cols(); idx++) {
+				param->b.grad.col(0) += lty.col(idx);
 			}
 		}
 
-		if (plx1->size() == 0) {
-			*plx1 = Mat::Zero(_px1->rows(), _px1->cols());
+		if (in1->loss.size() == 0) {
+			in1->loss = Mat::Zero(in1->val.rows(), in1->val.cols());
 		}
+		in1->loss += param->W1.val.transpose() * lty;
 
-		if (plx2->size() == 0) {
-			*plx2 = Mat::Zero(_px2->rows(), _px2->cols());
-		}
-
-		*plx1 += _param->_W1.val.transpose() * _lty;
-		*plx2 += _param->_W2.val.transpose() * _lty;
+		if (in2->loss.size() == 0) {
+			in2->loss = Mat::Zero(in2->val.rows(), in2->val.cols());
+		}		
+		in2->loss += param->W2.val.transpose() * lty;
 	}
 
 };

@@ -16,9 +16,7 @@ struct BaseParam {
 	Mat val;
 	Mat grad;
 
-
-
-
+public:
 	virtual inline void initial(int outDim, int inDim) = 0;
 	virtual inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) = 0;
 	virtual inline int outDim() = 0;

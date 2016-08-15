@@ -9,16 +9,15 @@ using namespace Eigen;
 
 struct SoftMaxLoss{
 public:
-	inline dtype loss(const Mat& x, Mat& lx, const vector<dtype> &answer, Metric& eval, int batchsize = 1){
-		int nDim = x.rows();
-		int nCol = x.cols();
+	inline dtype loss(PNode x, const vector<dtype> &answer, Metric& eval, int batchsize = 1){
+		int nDim = x->dim;
 		int labelsize = answer.size();
-		if (labelsize != nDim || nCol != 1) {
+		if (labelsize != nDim) {
 			std::cerr << "softmax_loss error: dim size invalid" << std::endl;
 			return -1.0;
 		}
-		if(lx.size() == 0){
-			lx = Mat::Zero(nDim, 1);
+		if(x->loss.size() == 0){
+			x->loss = Mat::Zero(nDim, 1);
 		}
 
 		Mat scores = Mat::Zero(nDim, 1);
@@ -28,16 +27,16 @@ public:
 		int optLabel = -1;
 		for (int i = 0; i < nDim; ++i) {
 			if (answer[i] >= 0) {
-				if (optLabel < 0 || x(i, 0) > x(optLabel, 0))
+				if (optLabel < 0 || x->val(i, 0) > x->val(optLabel, 0))
 					optLabel = i;
 			}
 		}
 
-		dtype sum1 = 0, sum2 = 0, maxScore = x(optLabel, 0);
+		dtype sum1 = 0, sum2 = 0, maxScore = x->val(optLabel, 0);
 		for (int i = 0; i < nDim; ++i) {
 			scores(i, 0) = -1e10;
 			if (answer[i] >= 0) {
-				scores(i, 0) = exp(x(i, 0) - maxScore);
+				scores(i, 0) = exp(x->val(i, 0) - maxScore);
 				if (answer[i] == 1)
 					sum1 += scores(i, 0);
 				sum2 += scores(i, 0);
@@ -50,7 +49,7 @@ public:
 
 		for (int i = 0; i < nDim; ++i) {
 			if (answer[i] >= 0) {
-				lx(i, 0) = (scores(i, 0) / sum2 - answer[i]) / batchsize;
+				x->loss(i, 0) = (scores(i, 0) / sum2 - answer[i]) / batchsize;
 			}
 		}
 
@@ -58,22 +57,21 @@ public:
 
 	}
 
-	inline void predict(const Mat& x, int& y){
-		int nDim = x.rows();
+	inline void predict(PNode x, int& y){
+		int nDim = x->dim;
 
 		int optLabel = -1;
 		for (int i = 0; i < nDim; ++i) {
-			if (optLabel < 0 || x(i, 0) > x(optLabel, 0))
+			if (optLabel < 0 || x->val(i, 0) >  x->val(optLabel, 0))
 				optLabel = i;
 		}
 		y = optLabel;
 	}
 
-	inline dtype cost(const Mat& x, const vector<dtype> &answer, int batchsize = 1){
-		int nDim = x.rows();
-		int nCol = x.cols();
+	inline dtype cost(PNode x, const vector<dtype> &answer, int batchsize = 1){
+		int nDim = x->dim;
 		int labelsize = answer.size();
-		if (labelsize != nDim || nCol != 1) {
+		if (labelsize != nDim) {
 			std::cerr << "softmax_loss error: dim size invalid" << std::endl;
 			return -1.0;
 		}
@@ -85,16 +83,16 @@ public:
 		int optLabel = -1;
 		for (int i = 0; i < nDim; ++i) {
 			if (answer[i] >= 0) {
-				if (optLabel < 0 || x(i, 0) > x(optLabel, 0))
+				if (optLabel < 0 || x->val(i, 0) > x->val(optLabel, 0))
 					optLabel = i;
 			}
 		}
 
-		dtype sum1 = 0, sum2 = 0, maxScore = x(optLabel, 0);
+		dtype sum1 = 0, sum2 = 0, maxScore = x->val(optLabel, 0);
 		for (int i = 0; i < nDim; ++i) {
 			scores(i, 0) = -1e10;
 			if (answer[i] >= 0) {
-				scores(i, 0) = exp(x(i, 0) - maxScore);
+				scores(i, 0) = exp(x->val(i, 0) - maxScore);
 				if (answer[i] == 1)
 					sum1 += scores(i, 0);
 				sum2 += scores(i, 0);

@@ -3,53 +3,75 @@
 
 #include "Eigen/Dense"
 #include "MyLib.h"
+#include "Node.h"
 
 using namespace Eigen;
 
-class DropNode {
+class DropNode : Node {
 public:
-	Mat _mask;
-	dtype _prob;
+	PNode in;
+	Mat mask;
+	dtype p;
 	
 public:
 	DropNode(){
-		_mask.setOne();
-		_prob = 1.0;
+		clear();
 	}
-	
-	DropNode(duble prob){
-		_mask.setOne();
-		_prob = prob;
-	}	
+
+	inline void clear(){
+		Node::clear();
+		mask.setOnes();
+		p = 1.0;
+		in = NULL;
+	}
+
+	inline void clearValue(){
+		Node::clearValue();
+		mask.setOnes();
+		in = NULL;
+	}
+
+	inline void setDropValue(dtype v){
+		p = v;
+	}
+		
 	
 public:
 	//Be careful that the row is the dim of input vector, and the col is the number of input vectors
-	//Another point is that we change the input vectors directly.
-	void forward(Mat& x) {
-		_mask = Mat::One(x.rows(), x.cols());
+	void forward(PNode x, bool bTrain) {
+		in = x;
 
-		std::vector<int> indexes;
-		for (int i = 0; i < x.rows(); ++i)
-			indexes.push_back(i);
-		
-		int dropNum =   (int) (x.rows() * dropOut);
-		
-		for(int j = 0; j < x.cols(); j++){
-			random_shuffle(indexes.begin(), indexes.end());
-			for(int i = 0; i < dropNum; i++){
-				_mask(i, j) = 0.0;
+		mask = Mat::Ones(in->val.rows(), in->val.cols());
+		if (bTrain){
+			std::vector<int> indexes;
+			for (int i = 0; i < in->val.rows(); ++i)
+				indexes.push_back(i);
+
+			int dropNum = (int)(in->val.rows() * p);
+
+			for (int j = 0; j < in->val.cols(); j++){
+				random_shuffle(indexes.begin(), indexes.end());
+				for (int i = 0; i < dropNum; i++){
+					mask(i, j) = 0.0;
+				}
 			}
 		}
+		else{
+			mask = mask * p;
+		}
 		
-		x = x.array() * _mask.array();
+		val = in->val.array() * mask.array();
 	}
 	
 	
-	void backward(Mat& lx){
-		lx = lx.array() * _mask.array();
+	inline void backward(){
+		if (in->loss.size() == 0) {
+			in->loss = Mat::Zero(in->val.rows(), in->val.cols());
+		}
+		in->loss = loss.array() * mask.array();
 	}
 	
-}
+};
 
 
 #endif
