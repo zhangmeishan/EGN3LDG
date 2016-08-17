@@ -91,7 +91,6 @@ public:
   }
 };
 
-
 /*==============================================================
  *
  * CSentenceTemplate
@@ -264,21 +263,26 @@ inline dtype logsumexp(dtype a[], int length) {
 
   dtype sum = 0;
   for (int idx = 0; idx < length; idx++) {
-    if (a[idx] > minlogvalue + 1) {
       sum += exp(a[idx] - max);
-    }
-  }
-
-  dtype result = max + log(sum);
-
-  if (isnan(result) || isinf(result)) {
-    std::cout << "sum = " << sum << ", max = " << max << ", result = " << result << std::endl;
-    for (int idx = 0; idx < length; idx++)
-      std::cout << a[idx] << " ";
-    std::cout << std::endl;
   }
 
   return max + log(sum);
+}
+
+inline dtype logsumexp(const vector<dtype>& a) {
+	int length = a.size();
+	dtype max = a[0];
+	for (int idx = 1; idx < length; idx++) {
+		if (a[idx] > max)
+			max = a[idx];
+	}
+
+	dtype sum = 0;
+	for (int idx = 0; idx < length; idx++) {
+			sum += exp(a[idx] - max);
+	}
+
+	return max + log(sum);
 }
 
 inline bool isPunc(std::string thePostag) {
@@ -697,6 +701,102 @@ inline string tolowcase(const string& word) {
 		}
 	}
   return newword;
+}
+
+
+//segmentation index
+struct segIndex{
+	int start;
+	int end;
+	string label;
+};
+
+
+inline void getSegs(const vector<string>& labels, vector<segIndex>& segs){
+	static int idx, idy, endpos;
+	static segIndex seg;
+	// segmentation should be agree in both layers, usually, the first layer defines segmentation
+	idx = 0;
+	segs.clear();
+	while (idx < labels.size()) {
+		if (is_start_label(labels[idx])) {
+			idy = idx;
+			endpos = -1;
+			while (idy < labels.size()) {
+				if (!is_continue_label(labels[idy], labels[idx], idy - idx)) {
+					endpos = idy - 1;
+					break;
+				}
+				endpos = idy;
+				idy++;
+			}
+			seg.start = idx;
+			seg.end = endpos;
+			seg.label = cleanLabel(labels[idx]);
+			segs.push_back(seg);
+			idx = endpos;
+		}
+		idx++;
+	}
+}
+
+// vector operations
+template<typename A>
+inline void clearVec(vector<vector<A> >& bivec){
+	for (int idx = 0; idx < bivec.size(); idx++){
+		bivec[idx].clear();
+	}
+	bivec.clear();
+}
+
+template<typename A>
+inline void clearVec(vector<vector<vector<A> > >& trivec){
+	for (int idx = 0; idx < trivec.size(); idx++){
+		for (int idy = 0; idy < trivec[idx].size(); idy++){
+			trivec[idx][idy].clear();
+		}
+		trivec[idx].clear();
+	}
+	trivec.clear();
+}
+
+template<typename A>
+inline void resizeVec(vector<vector<A> >& bivec, int size1, int size2){
+	bivec.resize(size1);
+	for (int idx = 0; idx < bivec.size(); idx++){
+		bivec[idx].resize(size2);
+	}
+}
+
+template<typename A>
+inline void resizeVec(vector<vector<vector<A> > >& trivec, int size1, int size2, int size3){
+	trivec.resize(size1);
+	for (int idx = 0; idx < trivec.size(); idx++){
+		trivec[idx].resize(size2);
+		for (int idy = 0; idy < trivec[idx].size(); idy++){
+			trivec[idx][idy].resize(size3);
+		}
+	}
+}
+
+template<typename A>
+inline void assignVec(vector<vector<A> >& bivec, const A& a){
+	for (int idx = 0; idx < bivec.size(); idx++){
+		for (int idy = 0; idy < bivec[idx].size(); idy++){
+			bivec[idx][idy] = a;
+		}
+	}
+}
+
+template<typename A>
+inline void assignVec(vector<vector<vector<A> > >& trivec, const A& a){
+	for (int idx = 0; idx < trivec.size(); idx++){
+		for (int idy = 0; idy < trivec[idx].size(); idy++){
+			for (int idz = 0; idz < trivec[idx][idy].size(); idz++){
+				trivec[idx][idy][idz] = a;
+			}
+		}
+	}
 }
 
 #endif

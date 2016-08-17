@@ -77,7 +77,7 @@ public:
 	inline void setParam(UniParams* paramInit) {
 		param = paramInit;
 		inDim = param->W.inDim();
-		dim = param->W.outDim();
+		dim = param->W.outDim();	
 		if (!param->bUseB) {
 			cout
 					<< "please check whether bUseB is true, usually this should be true for non-linear layer"

@@ -21,5 +21,7 @@
 #include "Concat.h"
 #include "Node.h"
 #include "Graph.h"
+#include "CRFMLLoss.h"
+#include "Semi0CRFMLLoss.h"
 
 #endif

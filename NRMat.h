@@ -540,6 +540,8 @@ public:
   NRMat3d();
   NRMat3d & resize(const int n, const int m, const int k);
   explicit NRMat3d(const int n, const int m, const int k); // zero-based array
+  NRMat3d(const NRMat3d &rhs); // copy constructor
+  NRMat3d & operator=(const NRMat3d &rhs); // assignment
   NRMat3d & operator=(const T &a); // assign a to every element
   inline T**operator[](const int i); // subscripting: pointer to row i. should not it be: T* const *?? (i think the pointers should not change).
   inline const T* const * operator[](const int i) const;
@@ -551,12 +553,6 @@ public:
   inline T* c_buf();
   inline void randu(int seed = 0);
   ~NRMat3d();
-
-private:
-  NRMat3d(const NRMat3d &rhs) {
-  } // forbid: copy constructor
-  NRMat3d & operator=(const NRMat3d &rhs) {
-  } // forbid: assignment
 
 };
 
@@ -626,6 +622,29 @@ NRMat3d<T> & NRMat3d<T>::resize(const int n, const int m, const int k) {
     }
   }
   return *this;
+}
+
+template<typename T>
+NRMat3d<T>::NRMat3d(const NRMat3d &rhs) {
+	resize(rhs.nn, rhs.mm, rhs.kk);
+	for (int i = 0; i < nn; i++)
+		for (int j = 0; j < mm; j++)
+			for (int k = 0; k < kk; k++)
+				v[i][j][k] = rhs[i][j][k];
+}
+
+template<typename T>
+NRMat3d<T> & NRMat3d<T>::operator=(const NRMat3d<T> &rhs) {
+	// postcondition: normal assignment via copying has been performed;
+	//		if matrix and rhs were of different sizes, matrix has been resized to match the size of rhs
+	if (this != &rhs) {
+		resize(rhs.nn, rhs.mm, rhs.kk);
+		for (int i = 0; i < nn; i++)
+			for (int j = 0; j < mm; j++)
+				for (int k = 0; k < kk; k++)
+					v[i][j][k] = rhs[i][j][k];
+	}
+	return *this;
 }
 
 template<typename T>

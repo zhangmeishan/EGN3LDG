@@ -28,7 +28,7 @@ public:
 
 public:
 
-	virtual void forward(vector<PNode>& x) = 0;
+	virtual void forward(const vector<PNode>& x) = 0;
 
 	void backward(){
 		for (int i = 0; i < ins.size(); i++){
@@ -48,7 +48,7 @@ public:
 public:
 	//Be careful that the row is the dim of input vector, and the col is the number of input vectors
 	//Another point is that we change the input vectors directly.
-	void forward(vector<PNode>& x) {
+	void forward(const vector<PNode>& x) {
 		if (x.size() == 0 ){
 			std::cout << "empty inputs for max pooling" << std::endl;
 			return;

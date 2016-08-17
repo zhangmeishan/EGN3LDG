@@ -12,12 +12,10 @@ using namespace Eigen;
 struct Graph {
 
 protected:
-	vector<PNode> pnodes;
 	vector<PNode> execs; //backward
 
 public:
 	Graph(){
-		pnodes.clear();
 		execs.clear();
 	}
 
@@ -26,7 +24,6 @@ public:
 		for (int idx = 0; idx < execs.size(); idx++){
 			execs[idx]->clearValue();
 		}
-		pnodes.clear();
 		execs.clear();
 	}
 
@@ -38,29 +35,38 @@ public:
 
 public: // virtual functions
 	virtual inline void clear(){
-		pnodes.clear();
 		execs.clear();
 	}
 	//virtual inline void createNodes(...) = 0; // create nodes, as large as possible
 	//virtual inline void initial(...) = 0;  // initial params
 	//virtual inline void forward(...) = 0; // define graph, and compute
 
-protected:
-	//size is a must variable
-	template<typename DerivedNode>
-	inline vector<PNode>& getPNodes(vector<DerivedNode>& inputs, int size){
-		int usedSize = inputs.size();
-		if (size >= 0 && size < usedSize) usedSize = size;
-		pnodes.clear();
-		for (int idx = 0; idx < usedSize; idx++){
-			pnodes.push_back(&(inputs[idx]));
-		}
-
-		return pnodes;
-	}
-
 };
 
+// one very useful function to collect pointers of derived nodes
+template<typename DerivedNode>
+inline vector<PNode> getPNodes(vector<DerivedNode>& inputs, int size){
+	int usedSize = inputs.size();
+	if (size >= 0 && size < usedSize) usedSize = size;
+	vector<PNode> pnodes;
+	for (int idx = 0; idx < usedSize; idx++){
+		pnodes.push_back(&(inputs[idx]));
+	}
 
+	return pnodes;
+}
+
+template<typename DerivedNode>
+inline vector<PNode> getPNodes(DerivedNode inputs[], int size){
+	//int usedSize = inputs.;
+	//if (size >= 0 && size < usedSize) usedSize = size;
+	int usedSize = size;
+	vector<PNode> pnodes;
+	for (int idx = 0; idx < usedSize; idx++){
+		pnodes.push_back(&(inputs[idx]));
+	}
+
+	return pnodes;
+}
 
 #endif

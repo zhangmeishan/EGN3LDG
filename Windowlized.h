@@ -43,7 +43,7 @@ public:
 
 public:	
 
-	inline void forward(vector<PNode>& x){
+	inline void forward(const vector<PNode>& x){
 		if (x.size() == 0){
 			std::cout << "empty inputs for windowlized operation" << std::endl;
 			return;

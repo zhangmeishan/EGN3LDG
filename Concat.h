@@ -27,7 +27,7 @@ public:
 
 public:
 	// please better restrict col to 1
-	void forward(vector<PNode>& x) {
+	void forward(const vector<PNode>& x) {
 		if (x.size() == 0){
 			std::cout << "empty inputs for concat" << std::endl;
 			return;
