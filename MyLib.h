@@ -780,6 +780,13 @@ inline void resizeVec(vector<vector<vector<A> > >& trivec, int size1, int size2,
 }
 
 template<typename A>
+inline void assignVec(vector<A>& univec, const A& a){
+	for (int idx = 0; idx < univec.size(); idx++){
+		univec[idx] = a;
+	}
+}
+
+template<typename A>
 inline void assignVec(vector<vector<A> >& bivec, const A& a){
 	for (int idx = 0; idx < bivec.size(); idx++){
 		for (int idy = 0; idy < bivec[idx].size(); idy++){

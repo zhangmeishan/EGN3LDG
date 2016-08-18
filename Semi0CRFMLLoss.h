@@ -13,28 +13,33 @@ public:
 	int labelSize;
 	vector<dtype> buffer;
 	dtype eps;
-	vector<int> maxLen;
+	vector<int> maxLens;
+	int maxLen;
+
 
 public:
 	Semi0CRFMLLoss(){
 		labelSize = 0;
 		buffer.clear();
 		eps = 1e-20;
-		maxLen.clear();
+		maxLens.clear();
+		maxLen = 0;
 	}
 
 	~Semi0CRFMLLoss(){
 		labelSize = 0;
 		buffer.clear();
-		maxLen.clear();
+		maxLens.clear();
+		maxLen = 0;
 	}
 
 public:
-	inline void initial(const vector<int>& lens, int seed = 0){
+	inline void initial(const vector<int>& lens, int maxLength, int seed = 0){
 		labelSize = lens.size();
-		maxLen.resize(labelSize);
+		maxLen = maxLength;
+		maxLens.resize(labelSize);
 		for (int idx = 0; idx < labelSize; idx++){
-			maxLen[idx] = lens[idx];
+			maxLens[idx] = lens[idx];
 		}
 	}
 
@@ -51,50 +56,45 @@ public:
 		}*/
 
 		int seq_size = x.nrows();
+		//int maxLength = x.ncols();
 
 		for (int idx = 0; idx < seq_size; idx++) {
-			for (int idy = idx; idy < seq_size; idy++) {
-				if (x[idx][idy]->loss.size() == 0){
-					x[idx][idy]->loss = Mat::Zero(labelSize, 1);
+			for (int dist = 0; dist < seq_size - idx && dist < maxLen; dist++) {
+				if (x[idx][dist]->loss.size() == 0){
+					x[idx][dist]->loss = Mat::Zero(labelSize, 1);
 				}
 			}
 		}
 
 
 		// comute alpha values, only the above parts are valid
-		NRMat3d<dtype> alpha(seq_size, seq_size, labelSize);
-		NRMat3d<dtype> alpha_answer(seq_size, seq_size, labelSize);
+		NRMat3d<dtype> alpha(seq_size, maxLen, labelSize);
+		NRMat3d<dtype> alpha_answer(seq_size, maxLen, labelSize);
 		alpha = 0.0; alpha_answer = 0.0;
 		for (int idx = 0; idx < seq_size; idx++) {
 			for (int i = 0; i < labelSize; ++i) {
-				int maxEnd = seq_size;
-				if (maxLen[i] > 0 && maxEnd > idx + maxLen[i]) maxEnd = idx + maxLen[i];
-				for (int idy = idx; idy < maxEnd; idy++) {
+				for (int dist = 0; dist < seq_size - idx && dist < maxLens[i]; dist++) {
 					// can be changed with probabilities in future work
 					if (idx == 0) {
-						alpha[idx][idy][i] = x[idx][idy]->val(i, 0);
-						alpha_answer[idx][idy][i] = x[idx][idy]->val(i, 0) + log(answer[idx][idy][i] + eps);
+						alpha[idx][dist][i] = x[idx][dist]->val(i, 0);
+						alpha_answer[idx][dist][i] = x[idx][dist]->val(i, 0) + log(answer[idx][dist][i] + eps);
 					}
 					else {
 						buffer.clear();
 						for (int j = 0; j < labelSize; ++j) {
-							int minStart = 0;
-							if (maxLen[j] > 0 && minStart < idx - maxLen[j]) minStart = idx - maxLen[j];
-							for (int idz = minStart; idz < idx; idz++){
-								buffer.push_back(x[idx][idy]->val(i, 0) + alpha[idz][idx - 1][j]);
+							for (int prevdist = 1; prevdist <= idx && prevdist <= maxLens[j]; prevdist++) {
+								buffer.push_back(x[idx][dist]->val(i, 0) + alpha[idx - prevdist][prevdist - 1][j]);
 							}
 						}
-						alpha[idx][idy][i] = logsumexp(buffer);
+						alpha[idx][dist][i] = logsumexp(buffer);
 
 						buffer.clear();
 						for (int j = 0; j < labelSize; ++j) {
-							int minStart = 0;
-							if (maxLen[j] > 0 && minStart < idx - maxLen[j]) minStart = idx - maxLen[j];
-							for (int idz = minStart; idz < idx; idz++){
-								buffer.push_back(x[idx][idy]->val(i, 0) + alpha_answer[idz][idx - 1][j]);
+							for (int prevdist = 1; prevdist <= idx && prevdist <= maxLens[j]; prevdist++) {
+								buffer.push_back(x[idx][dist]->val(i, 0) + alpha_answer[idx - prevdist][prevdist - 1][j]);
 							}
 						}
-						alpha_answer[idx][idy][i] = logsumexp(buffer) + log(answer[idx][idy][i] + eps);
+						alpha_answer[idx][dist][i] = logsumexp(buffer) + log(answer[idx][dist][i] + eps);
 					}
 
 				}
@@ -104,74 +104,63 @@ public:
 		// loss computation
 		buffer.clear();
 		for (int j = 0; j < labelSize; ++j) {
-			int minStart = 0;
-			if (maxLen[j] > 0 && minStart < seq_size - maxLen[j]) minStart = seq_size - maxLen[j];
-			for (int idz = minStart; idz < seq_size; idz++){
-				buffer.push_back(alpha[idz][seq_size - 1][j]);
+			for (int dist = 1; dist <= seq_size && dist <= maxLens[j]; dist++) {
+				buffer.push_back(alpha[seq_size - dist][dist - 1][j]);
 			}
 		}
 		dtype logZ = logsumexp(buffer);
 
 		buffer.clear();
 		for (int j = 0; j < labelSize; ++j) {
-			int minStart = 0;
-			if (maxLen[j] > 0 && minStart < seq_size - maxLen[j]) minStart = seq_size - maxLen[j];
-			for (int idz = minStart; idz < seq_size; idz++){
-				buffer.push_back(alpha_answer[idz][seq_size - 1][j]);
+			for (int dist = 1; dist <= seq_size && dist <= maxLens[j]; dist++) {
+				buffer.push_back(alpha_answer[seq_size - dist][dist - 1][j]);
 			}
 		}
 		dtype logZ_answer = logsumexp(buffer);
+
 		dtype cost = (logZ - logZ_answer) / batchsize;
 
 		// comute belta values
-		NRMat3d<dtype> belta(seq_size, seq_size, labelSize);
-		NRMat3d<dtype> belta_answer(seq_size, seq_size, labelSize);
+		NRMat3d<dtype> belta(seq_size, maxLen, labelSize);
+		NRMat3d<dtype> belta_answer(seq_size, maxLen, labelSize);
 		belta = 0.0; belta_answer = 0.0;
-		for (int idy = seq_size - 1; idy >= 0; idy--) {
+		for (int idx = seq_size; idx > 0; idx--) {
 			for (int i = 0; i < labelSize; ++i) {
-				int minStart = 0;
-				if (maxLen[i] > 0 && minStart < idy + 1 - maxLen[i]) minStart = idy + 1 - maxLen[i];
-				for (int idx = minStart; idx <= idy; idx++){
-					if (idy == seq_size - 1) {
-						belta[idx][idy][i] = 0.0;
-						belta_answer[idx][idy][i] = log(answer[idx][idy][i] + eps);
+				for (int dist = 1; dist <= idx && dist <= maxLens[i]; dist++) {
+					if (idx == seq_size) {
+						belta[idx - dist][dist - 1][i] = 0.0;
+						belta_answer[idx - dist][dist - 1][i] = log(answer[idx - dist][dist - 1][i] + eps);
 					}
 					else {
 						buffer.clear();
 						for (int j = 0; j < labelSize; ++j) {
-							int maxEnd = seq_size;
-							if (maxLen[j] > 0 && maxEnd > idy + 1 + maxLen[j]) maxEnd = idy + 1 + maxLen[j];
-							for (int idz = idy + 1; idz < maxEnd; idz++){
-								buffer.push_back(x[idy + 1][idz]->val(j, 0) + belta[idy + 1][idz][j]);
+							for (int nextdist = 0; nextdist < seq_size - idx && nextdist < maxLens[j]; nextdist++) {
+								buffer.push_back(x[idx][nextdist]->val(j, 0) + belta[idx][nextdist][j]);
 							}
 						}
-						belta[idx][idy][i] = logsumexp(buffer);
+						belta[idx - dist][dist - 1][i] = logsumexp(buffer);
 
 						buffer.clear();
 						for (int j = 0; j < labelSize; ++j) {
-							int maxEnd = seq_size;
-							if (maxLen[j] > 0 && maxEnd > idy + 1 + maxLen[j]) maxEnd = idy + 1 + maxLen[j];
-							for (int idz = idy + 1; idz < maxEnd; idz++){
-								buffer.push_back(x[idy + 1][idz]->val(j, 0) + belta_answer[idy + 1][idz][j]);
+							for (int nextdist = 0; nextdist < seq_size - idx && nextdist < maxLens[j]; nextdist++) {
+								buffer.push_back(x[idx][nextdist]->val(j, 0) + belta_answer[idx][nextdist][j]);
 							}
 						}
-						belta_answer[idx][idy][i] = logsumexp(buffer) + log(answer[idx][idy][i] + eps);
+						belta_answer[idx - dist][dist - 1][i] = logsumexp(buffer) + log(answer[idx - dist][dist - 1][i] + eps);
 					}
 				}
 			}
 		}
 
 		//compute margins
-		NRMat3d<dtype> margin(seq_size, seq_size, labelSize);
-		NRMat3d<dtype> margin_answer(seq_size, seq_size, labelSize);
+		NRMat3d<dtype> margin(seq_size, maxLen, labelSize);
+		NRMat3d<dtype> margin_answer(seq_size, maxLen, labelSize);
 		margin = 0.0; margin_answer = 0.0;
 		for (int idx = 0; idx < seq_size; idx++) {
 			for (int i = 0; i < labelSize; ++i) {
-				int maxEnd = seq_size;
-				if (maxLen[i] > 0 && maxEnd > idx + maxLen[i]) maxEnd = idx + maxLen[i];
-				for (int idy = idx; idy < maxEnd; idy++) {
-					margin[idx][idy][i] = exp(alpha[idx][idy][i] + belta[idx][idy][i] - logZ);
-					margin_answer[idx][idy][i] = exp(alpha_answer[idx][idy][i] + belta_answer[idx][idy][i] - logZ_answer);
+				for (int dist = 0; dist < seq_size - idx && dist < maxLens[i]; dist++) {
+					margin[idx][dist][i] = exp(alpha[idx][dist][i] + belta[idx][dist][i] - logZ);
+					margin_answer[idx][dist][i] = exp(alpha_answer[idx][dist][i] + belta_answer[idx][dist][i] - logZ_answer);
 				}
 			}
 		}
@@ -179,16 +168,14 @@ public:
 		//compute loss
 		for (int idx = 0; idx < seq_size; idx++) {
 			for (int i = 0; i < labelSize; ++i) {
-				int maxEnd = seq_size;
-				if (maxLen[i] > 0 && maxEnd > idx + maxLen[i]) maxEnd = idx + maxLen[i];
-				for (int idy = idx; idy < maxEnd; idy++) {
-					if (margin_answer[idx][idy][i] > 0.5){
+				for (int dist = 0; dist < seq_size - idx && dist < maxLens[i]; dist++) {
+					if (margin_answer[idx][dist][i] > 0.5){
 						eval.overall_label_count++;
-						if (margin[idx][idy][i] > 0.5){
+						if (margin[idx][dist][i] > 0.5){
 							eval.correct_label_count++;
 						}
 					}
-					x[idx][idy]->loss(i, 0) = (margin[idx][idy][i] - margin_answer[idx][idy][i]) / batchsize;
+					x[idx][dist]->loss(i, 0) = (margin[idx][dist][i] - margin_answer[idx][dist][i]) / batchsize;
 				}
 			}
 		}
@@ -208,46 +195,42 @@ public:
 
 		int seq_size = x.nrows();
 
-		NRMat3d<dtype> maxScores(seq_size, seq_size, labelSize);
-		NRMat3d<int> maxLastLabels(seq_size, seq_size, labelSize);
-		NRMat3d<int> maxLastStarts(seq_size, seq_size, labelSize);
-		NRMat3d<int> maxLastEnds(seq_size, seq_size, labelSize);
+		NRMat3d<dtype> maxScores(seq_size, maxLen, labelSize);
+		NRMat3d<int> maxLastLabels(seq_size, maxLen, labelSize);
+		NRMat3d<int> maxLastStarts(seq_size, maxLen, labelSize);
+		NRMat3d<int> maxLastDists(seq_size, maxLen, labelSize);
 
 		maxScores = 0.0; maxLastLabels = -2; 
-		maxLastStarts = -2; maxLastEnds = -2;
+		maxLastStarts = -2; maxLastDists = -2;
 		for (int idx = 0; idx < seq_size; idx++) {
 			for (int i = 0; i < labelSize; ++i) {
-				int maxEnd = seq_size;
-				if (maxLen[i] > 0 && maxEnd > idx + maxLen[i]) maxEnd = idx + maxLen[i];
-				for (int idy = idx; idy < maxEnd; idy++) {
+				for (int dist = 0; dist < seq_size - idx && dist < maxLens[i]; dist++) {
 					// can be changed with probabilities in future work
 					if (idx == 0) {
-						maxScores[idx][idy][i] = x[idx][idy]->val(i, 0);
-						maxLastLabels[idx][idy][i] = -1;
-						maxLastStarts[idx][idy][i] = -1;
-						maxLastEnds[idx][idy][i] = -1;
+						maxScores[idx][dist][i] = x[idx][dist]->val(i, 0);
+						maxLastLabels[idx][dist][i] = -1;
+						maxLastStarts[idx][dist][i] = -1;
+						maxLastDists[idx][dist][i] = -1;
 					}
 					else {
 						int maxLastLabel = -1;
 						int maxLastStart = -1;
-						int maxLastEnd = -1;
+						int LastDist = -1;
 						dtype maxscore = 0.0;
 						for (int j = 0; j < labelSize; ++j) {
-							int minStart = 0;
-							if (maxLen[j] > 0 && minStart < idx - maxLen[j]) minStart = idx - maxLen[j];
-							for (int idz = minStart; idz < idx; idz++){
-								dtype curScore = maxScores[idz][idx - 1][j];
+							for (int prevdist = 1; prevdist <= idx && prevdist <= maxLens[j]; prevdist++) {
+								dtype curScore = maxScores[idx - prevdist][prevdist - 1][j];
 								if (maxLastLabel == -1 || curScore > maxscore){
 									maxLastLabel = j;
-									maxLastStart = idz;
-									maxLastEnd = idx - 1;
+									maxLastStart = idx - prevdist;
+									LastDist = prevdist - 1;
 								}
 							}
 						}
-						maxScores[idx][idy][i] = x[idx][idy]->val(i, 0) + maxscore;
-						maxLastLabels[idx][idy][i] = maxLastLabel;
-						maxLastStarts[idx][idy][i] = maxLastStart;
-						maxLastEnds[idx][idy][i] = maxLastEnd;
+						maxScores[idx][dist][i] = x[idx][dist]->val(i, 0) + maxscore;
+						maxLastLabels[idx][dist][i] = maxLastLabel;
+						maxLastStarts[idx][dist][i] = maxLastStart;
+						maxLastDists[idx][dist][i] = LastDist;
 					}
 
 				}
@@ -255,43 +238,41 @@ public:
 		}
 
 		// below zero denotes no such segment
-		y.resize(seq_size, seq_size);
+		y.resize(seq_size, maxLen);
 		y = -1;
 
 		dtype maxFinalScore = 0.0;
 		int maxFinalLabel = -1;
 		int maxFinalStart = -1;
-		int maxFinalEnd = -1;
+		int maxFinalDist = -1;
 		for (int j = 0; j < labelSize; ++j) {
-			int minStart = 0;
-			if (maxLen[j] > 0 && minStart < seq_size - maxLen[j]) minStart = seq_size - maxLen[j];
-			for (int idz = minStart; idz < seq_size; idz++){
-				dtype curScore = maxScores[idz][seq_size - 1][j];
+			for (int dist = 1; dist <= seq_size && dist <= maxLens[j]; dist++) {
+				dtype curScore = maxScores[seq_size - dist][dist - 1][j];
 				if (maxFinalLabel == -1 || curScore > maxFinalScore){
 					maxFinalLabel = j;
-					maxFinalStart = idz;
-					maxFinalEnd = seq_size - 1;
+					maxFinalStart = seq_size - dist;
+					maxFinalDist = dist - 1;
 					maxFinalScore = curScore;
 				}
 			}
 		}
 
-		y[maxFinalStart][maxFinalEnd] = maxFinalLabel;
+		y[maxFinalStart][maxFinalDist] = maxFinalLabel;
 
 		while (1){
-			int lastLabel = maxLastLabels[maxFinalStart][maxFinalEnd][maxFinalLabel];
-			int lastStart = maxLastStarts[maxFinalStart][maxFinalEnd][maxFinalLabel];
-			int lastEnd = maxLastEnds[maxFinalStart][maxFinalEnd][maxFinalLabel];
+			int lastLabel = maxLastLabels[maxFinalStart][maxFinalDist][maxFinalLabel];
+			int lastStart = maxLastStarts[maxFinalStart][maxFinalDist][maxFinalLabel];
+			int lastDist = maxLastDists[maxFinalStart][maxFinalDist][maxFinalLabel];
 
 			if (lastStart < 0){
 				assert(maxFinalStart == 0);
 				break;
 			}
 
-			y[lastStart][lastEnd] = lastLabel;
+			y[lastStart][lastDist] = lastLabel;
 			maxFinalLabel = lastLabel;
 			maxFinalStart = lastStart;
-			maxFinalEnd = lastEnd;
+			maxFinalDist = lastDist;
 		}
 	}
 
@@ -306,39 +287,33 @@ public:
 
 		int seq_size = x.nrows();
 		// comute alpha values, only the above parts are valid
-		NRMat3d<dtype> alpha(seq_size, seq_size, labelSize);
-		NRMat3d<dtype> alpha_answer(seq_size, seq_size, labelSize);
+		NRMat3d<dtype> alpha(seq_size, maxLen, labelSize);
+		NRMat3d<dtype> alpha_answer(seq_size, maxLen, labelSize);
 		alpha = 0.0; alpha_answer = 0.0;
 		for (int idx = 0; idx < seq_size; idx++) {
 			for (int i = 0; i < labelSize; ++i) {
-				int maxEnd = seq_size;
-				if (maxLen[i] > 0 && maxEnd > idx + maxLen[i]) maxEnd = idx + maxLen[i];
-				for (int idy = idx; idy < maxEnd; idy++) {
+				for (int dist = 0; dist < seq_size - idx && dist < maxLens[i]; dist++) {
 					// can be changed with probabilities in future work
 					if (idx == 0) {
-						alpha[idx][idy][i] = x[idx][idy]->val(i, 0);
-						alpha_answer[idx][idy][i] = x[idx][idy]->val(i, 0) + log(answer[idx][idy][i] + eps);
+						alpha[idx][dist][i] = x[idx][dist]->val(i, 0);
+						alpha_answer[idx][dist][i] = x[idx][dist]->val(i, 0) + log(answer[idx][dist][i] + eps);
 					}
 					else {
 						buffer.clear();
 						for (int j = 0; j < labelSize; ++j) {
-							int minStart = 0;
-							if (maxLen[j] > 0 && minStart < idx - maxLen[j]) minStart = idx - maxLen[j];
-							for (int idz = minStart; idz < idx; idz++){
-								buffer.push_back(x[idx][idy]->val(i, 0) + alpha[idz][idx - 1][j]);
+							for (int prevdist = 1; prevdist <= idx && prevdist <= maxLens[j]; prevdist++) {
+								buffer.push_back(x[idx][dist]->val(i, 0) + alpha[idx - prevdist][prevdist - 1][j]);
 							}
 						}
-						alpha[idx][idy][i] = logsumexp(buffer);
+						alpha[idx][dist][i] = logsumexp(buffer);
 
 						buffer.clear();
 						for (int j = 0; j < labelSize; ++j) {
-							int minStart = 0;
-							if (maxLen[j] > 0 && minStart < idx - maxLen[j]) minStart = idx - maxLen[j];
-							for (int idz = minStart; idz < idx; idz++){
-								buffer.push_back(x[idx][idy]->val(i, 0) + alpha_answer[idz][idx - 1][j]);
+							for (int prevdist = 1; prevdist <= idx && prevdist <= maxLens[j]; prevdist++) {
+								buffer.push_back(x[idx][dist]->val(i, 0) + alpha_answer[idx - prevdist][prevdist - 1][j]);
 							}
 						}
-						alpha_answer[idx][idy][i] = logsumexp(buffer) + log(answer[idx][idy][i] + eps);
+						alpha_answer[idx][dist][i] = logsumexp(buffer) + log(answer[idx][dist][i] + eps);
 					}
 
 				}
@@ -348,20 +323,16 @@ public:
 		// loss computation
 		buffer.clear();
 		for (int j = 0; j < labelSize; ++j) {
-			int minStart = 0;
-			if (maxLen[j] > 0 && minStart < seq_size - maxLen[j]) minStart = seq_size - maxLen[j];
-			for (int idz = minStart; idz < seq_size; idz++){
-				buffer.push_back(alpha[idz][seq_size - 1][j]);
+			for (int dist = 1; dist <= seq_size && dist <= maxLens[j]; dist++) {
+				buffer.push_back(alpha[seq_size - dist][dist - 1][j]);
 			}
 		}
 		dtype logZ = logsumexp(buffer);
 
 		buffer.clear();
 		for (int j = 0; j < labelSize; ++j) {
-			int minStart = 0;
-			if (maxLen[j] > 0 && minStart < seq_size - maxLen[j]) minStart = seq_size - maxLen[j];
-			for (int idz = minStart; idz < seq_size; idz++){
-				buffer.push_back(alpha_answer[idz][seq_size - 1][j]);
+			for (int dist = 1; dist <= seq_size && dist <= maxLens[j]; dist++) {
+				buffer.push_back(alpha_answer[seq_size - dist][dist - 1][j]);
 			}
 		}
 		dtype logZ_answer = logsumexp(buffer);
