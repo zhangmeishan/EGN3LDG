@@ -29,6 +29,7 @@ public:
 
 public:
 	inline void initial(int labelNum, int seed = 0){
+		srand(seed);
 		labelSize = labelNum;
 		T.initial(labelSize, labelSize);
 		buffer.resize(labelSize);
@@ -37,6 +38,7 @@ public:
 	inline void exportAdaParams(ModelUpdate& ada){
 		ada.addParam(&T);
 	}
+
 public:
 	inline dtype loss(const vector<PNode>& x, const vector<vector<dtype> >&answer, Metric& eval, int batchsize = 1){
 		assert(x.size() > 0 && x.size() == answer.size());

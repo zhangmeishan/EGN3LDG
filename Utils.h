@@ -54,7 +54,18 @@ inline dtype ftanh(dtype x) {
 	return tanh(x);
 }
 
+inline dtype fsigmoid(dtype x) {
+	return 1.0 / (1.0 + exp(-x));
+}
 
+inline dtype frelu(dtype x) {
+	return x > 0.0 ?  x : 0.0;
+}
+
+inline dtype frelu_deri(dtype x) {
+	if (x > 0) return 1;
+	return 0;
+}
 
 inline Mat softmax(const Mat &x) {
 	RowVectorXd m = x.colwise().maxCoeff();
@@ -67,19 +78,32 @@ inline Mat smaxentp(const Mat &y, const Mat &r) {
 }
 
 inline Mat relu(const Mat &x) {
-	return x.array().max(0);
+	return x.unaryExpr(ptr_fun(frelu));
+}
+
+inline Mat relu_deri(const Mat &x, const Mat &y) {
+	return y.unaryExpr(ptr_fun(frelu_deri));
 }
 
 inline Mat tanh(const Mat &x) {
 	return x.unaryExpr(ptr_fun(ftanh));
 }
 
-inline Mat equal(const Mat &x) {
-	return x;
+inline Mat tanh_deri(const Mat &x, const Mat &y) {
+	return (1.0 + y.array()) * (1.0 - y.array());
 }
 
-inline Mat tanh_deri(const Mat &x, const Mat &y) {
-	return (1 + y.array()) * (1 - y.array());
+inline Mat sigmoid(const Mat &x) {
+	return x.unaryExpr(ptr_fun(fsigmoid));
+}
+
+inline Mat sigmoid_deri(const Mat &x, const Mat &y) {
+	return (1 - y.array()) * y.array();
+}
+
+
+inline Mat equal(const Mat &x) {
+	return x;
 }
 
 inline Mat equal_deri(const Mat &x, const Mat &y) {
@@ -129,13 +153,6 @@ inline uint argmax(const VectorXd& x) {
 	return maxi;
 }
 
-
-
-/*
-inline dtype tanh(dtype dummy) {
-	dtype min = -0.01, max = 0.01;
-	return (dtype(rand()) / RAND_MAX) * (max - min) + min;
-}*/
 
 
 #endif

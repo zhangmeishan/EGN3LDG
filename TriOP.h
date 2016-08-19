@@ -117,7 +117,7 @@ public:
 		in3 = x3;
 		assert(inDim1 == in1->val.rows() && inDim2 == in2->val.rows() && inDim3 == in3->val.rows());
 
-		ty = param->W1.val * (in1->val) + param->W2.val * (in3->val) + param->W3.val * (in3->val);
+		ty = param->W1.val * (in1->val) + param->W2.val * (in2->val) + param->W3.val * (in3->val);
 		if(param->bUseB){
 			for (int idx = 0; idx < ty.cols(); idx++) {
 				ty.col(idx) += param->b.val.col(0);

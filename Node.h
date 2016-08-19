@@ -34,7 +34,6 @@ public:
 	}
 
 	virtual inline void backward(){
-
 	}
 
 	void check(){

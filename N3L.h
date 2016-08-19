@@ -23,5 +23,8 @@
 #include "Graph.h"
 #include "CRFMLLoss.h"
 #include "Semi0CRFMLLoss.h"
+#include "SemiCRFMLLoss.h"
+#include "LSTM.h"
+#include "AtomicOP.h"
 
 #endif
