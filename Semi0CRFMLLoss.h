@@ -224,6 +224,7 @@ public:
 									maxLastLabel = j;
 									maxLastStart = idx - prevdist;
 									LastDist = prevdist - 1;
+									maxscore = curScore;
 								}
 							}
 						}
@@ -240,7 +241,6 @@ public:
 		// below zero denotes no such segment
 		y.resize(seq_size, maxLen);
 		y = -1;
-
 		dtype maxFinalScore = 0.0;
 		int maxFinalLabel = -1;
 		int maxFinalStart = -1;
@@ -274,6 +274,7 @@ public:
 			maxFinalStart = lastStart;
 			maxFinalDist = lastDist;
 		}
+
 	}
 
 	inline dtype cost(const NRMat<PNode>& x, const vector<vector<vector<dtype> > >& answer, int batchsize = 1){
