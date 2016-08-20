@@ -29,6 +29,15 @@ struct LSTMParams {
 		forget.initial(nOSize, nOSize, nOSize, nISize, true, seed + 2);
 		cell.initial(nOSize, nOSize, nISize, true, seed + 3);
 	}
+
+	inline int inDim(){
+		return input.W3.inDim();
+	}
+
+	inline int outDim(){
+		return input.W3.outDim();
+	}
+
 };
 
 // standard LSTM using tanh as activation function
@@ -64,11 +73,11 @@ public:
 
 public:
 	LSTMBuilder(){
-
+		clear();
 	}
 
 	~LSTMBuilder(){
-
+		clear();
 	}
 
 public:
@@ -104,6 +113,11 @@ public:
 		_hiddens.resize(maxsize);
 	}
 
+	//whether vectors have been allocated
+	inline bool empty(){
+		return _hiddens.empty();
+	}
+
 	inline void clear(){
 		_inputgates.clear();
 		_forgetgates.clear();
@@ -114,6 +128,13 @@ public:
 		_outputgates.clear();
 		_halfhiddens.clear();
 		_hiddens.clear();
+		_left2right = true;
+		_param = NULL;
+		_execNodes.clear();
+		bucket.clear();
+		_nSize = 0;
+		_inDim = 0;
+		_outDim = 0;
 	}
 
 public:
@@ -204,8 +225,8 @@ protected:
 				_inputgates[idx].forward(&_hiddens[idx - 1], &_cells[idx - 1], x[idx]);
 				_execNodes.push_back(&_inputgates[idx]);
 
-				_outputgates[idx].forward(&_hiddens[idx - 1], &_cells[idx - 1], x[idx]);
-				_execNodes.push_back(&_outputgates[idx]);
+				_forgetgates[idx].forward(&_hiddens[idx - 1], &_cells[idx - 1], x[idx]);
+				_execNodes.push_back(&_forgetgates[idx]);
 
 				_halfcells[idx].forward(&_hiddens[idx - 1], x[idx]);
 				_execNodes.push_back(&_halfcells[idx]);
@@ -213,7 +234,7 @@ protected:
 				_inputfilters[idx].forward(&_halfcells[idx], &_inputgates[idx]);
 				_execNodes.push_back(&_inputfilters[idx]);
 
-				_forgetfilters[idx].forward(&_cells[idx - 1], &_outputgates[idx]);
+				_forgetfilters[idx].forward(&_cells[idx - 1], &_forgetgates[idx]);
 				_execNodes.push_back(&_forgetfilters[idx]);
 
 				_cells[idx].forward(&_inputfilters[idx], &_forgetfilters[idx]);
@@ -259,8 +280,8 @@ protected:
 				_inputgates[idx].forward(&_hiddens[idx + 1], &_cells[idx + 1], x[idx]);
 				_execNodes.push_back(&_inputgates[idx]);
 
-				_outputgates[idx].forward(&_hiddens[idx + 1], &_cells[idx + 1], x[idx]);
-				_execNodes.push_back(&_outputgates[idx]);
+				_forgetgates[idx].forward(&_hiddens[idx + 1], &_cells[idx + 1], x[idx]);
+				_execNodes.push_back(&_forgetgates[idx]);
 
 				_halfcells[idx].forward(&_hiddens[idx + 1], x[idx]);
 				_execNodes.push_back(&_halfcells[idx]);
@@ -268,7 +289,7 @@ protected:
 				_inputfilters[idx].forward(&_halfcells[idx], &_inputgates[idx]);
 				_execNodes.push_back(&_inputfilters[idx]);
 
-				_forgetfilters[idx].forward(&_cells[idx + 1], &_outputgates[idx]);
+				_forgetfilters[idx].forward(&_cells[idx + 1], &_forgetgates[idx]);
 				_execNodes.push_back(&_forgetfilters[idx]);
 
 				_cells[idx].forward(&_inputfilters[idx], &_forgetfilters[idx]);

@@ -19,11 +19,11 @@ public:
 
 public:
 	WindowBuilder(){
-
+		clear();
 	}
 
 	~WindowBuilder(){
-
+		clear();
 	}
 
 
@@ -33,6 +33,11 @@ public:
 
 	inline void clear(){
 		_outputs.clear();
+		_context = 0;
+		_window = 0;
+		_nSize = 0;
+		_inDim = 0;
+		_outDim = 0;
 	}
 
 

@@ -59,12 +59,13 @@ inline dtype fsigmoid(dtype x) {
 }
 
 inline dtype frelu(dtype x) {
-	return x > 0.0 ?  x : 0.0;
+	if (x <= 0) return 0;
+	return x;
 }
 
 inline dtype frelu_deri(dtype x) {
-	if (x > 0) return 1;
-	return 0;
+	if (x <= 0) return 0;
+	return 1;
 }
 
 inline Mat softmax(const Mat &x) {

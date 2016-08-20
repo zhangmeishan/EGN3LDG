@@ -90,4 +90,93 @@ public:
 };
 
 
+struct SumPoolNode : PoolNode {
+public:
+	SumPoolNode(){
+	}
+
+public:
+	//Be careful that the row is the dim of input vector, and the col is the number of input vectors
+	//Another point is that we change the input vectors directly.
+	void forward(const vector<PNode>& x) {
+		if (x.size() == 0){
+			std::cout << "empty inputs for max pooling" << std::endl;
+			return;
+		}
+
+		ins.clear();
+		for (int i = 0; i < x.size(); i++){
+			ins.push_back(x[i]);
+		}
+
+		dim = ins[0]->val.rows();
+		masks.resize(ins.size());
+		for (int i = 0; i < ins.size(); ++i){
+			if (ins[i]->val.rows() != dim){
+				std::cout << "input matrixes are not matched" << std::endl;
+				clearValue();
+				return;
+			}
+			masks[i] = Mat::Ones(dim, 1);
+		}
+
+		val = Mat::Zero(dim, 1);
+		for (int i = 0; i < ins.size(); ++i){
+			val = val.array() + masks[i].array() *ins[i]->val.array();
+		}
+	}
+
+};
+
+
+struct MinPoolNode : PoolNode {
+public:
+	MinPoolNode(){
+	}
+
+public:
+	//Be careful that the row is the dim of input vector, and the col is the number of input vectors
+	//Another point is that we change the input vectors directly.
+	void forward(const vector<PNode>& x) {
+		if (x.size() == 0){
+			std::cout << "empty inputs for max pooling" << std::endl;
+			return;
+		}
+
+		ins.clear();
+		for (int i = 0; i < x.size(); i++){
+			ins.push_back(x[i]);
+		}
+
+		dim = ins[0]->val.rows();
+		masks.resize(ins.size());
+		for (int i = 0; i < ins.size(); ++i){
+			if (ins[i]->val.rows() != dim){
+				std::cout << "input matrixes are not matched" << std::endl;
+				clearValue();
+				return;
+			}
+			masks[i] = Mat::Zero(dim, 1);
+		}
+
+
+		for (int idx = 0; idx < dim; idx++){
+			int minIndex = -1;
+			for (int i = 0; i < ins.size(); ++i){
+				if (minIndex == -1 || ins[i]->val(idx, 0) < ins[minIndex]->val(idx, 0)){
+					minIndex = i;
+				}
+			}
+			masks[minIndex](idx, 0) = 1.0;
+		}
+
+		val = Mat::Zero(dim, 1);
+		for (int i = 0; i < ins.size(); ++i){
+			val = val.array() + masks[i].array() *ins[i]->val.array();
+		}
+	}
+
+};
+
+
 #endif
