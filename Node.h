@@ -43,6 +43,8 @@ public:
 		}
 	}
 
+	//virtual inline void forward(Graph *cg, ...) = 0
+
 };
 
 typedef  Node* PNode;
@@ -54,7 +56,6 @@ public:
 	// require definition of output nodes here, not fixed
 
 public:
-	virtual inline void traverseNodes(vector<PNode> &exec) = 0;
 	virtual inline void resize(int maxsize) = 0;
 	virtual inline void clear() = 0;
 

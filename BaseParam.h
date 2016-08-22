@@ -25,6 +25,8 @@ public:
 
 	// Choose one point randomly
 	virtual inline void randpoint(int& idx, int &idy, int seed) = 0;
+	virtual inline dtype squareGradNorm() = 0;
+	virtual inline void rescaleGrad(dtype scale) = 0;
 
 };
 

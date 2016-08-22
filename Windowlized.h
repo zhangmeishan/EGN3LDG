@@ -4,6 +4,7 @@
 #include "MyLib.h"
 #include "Node.h"
 #include "Concat.h"
+#include "Graph.h"
 
 class WindowBuilder : NodeBuilder{
 public:
@@ -48,7 +49,7 @@ public:
 
 public:	
 
-	inline void forward(const vector<PNode>& x){
+	inline void forward(Graph *cg, const vector<PNode>& x){
 		if (x.size() == 0){
 			std::cout << "empty inputs for windowlized operation" << std::endl;
 			return;
@@ -69,16 +70,10 @@ public:
 				in_nodes[offset++] = idx - j >= 0 ? x[idx - j] : &bucket;
 				in_nodes[offset++] = idx + j < _nSize ? x[idx + j] : &bucket;
 			}
-			_outputs[idx].forward(in_nodes);
+			_outputs[idx].forward(cg, in_nodes);
 		}
 	}
 
-
-	inline void traverseNodes(vector<PNode> &exec){
-		for (int idx = 0; idx < _nSize; idx++){
-			exec.push_back(&_outputs[idx]);
-		}
-	}
 };
 
 

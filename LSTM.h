@@ -6,6 +6,7 @@
 #include "TriOP.h"
 #include "BiOP.h"
 #include "AtomicOP.h"
+#include "Graph.h"
 
 struct LSTMParams {
 	TriParams input;
@@ -63,13 +64,16 @@ public:
 
 	vector<PMultNode> _hiddens;
 
+	vector<DropNode> _hiddens_drop;
+
 	Node bucket;
 
 	LSTMParams* _param;
 
-	vector<PNode> _execNodes;
 
 	bool _left2right;
+
+
 
 public:
 	LSTMBuilder(){
@@ -81,7 +85,7 @@ public:
 	}
 
 public:
-	inline void setParam(LSTMParams* paramInit, bool left2right = true) {
+	inline void setParam(LSTMParams* paramInit, dtype dropout, bool left2right = true) {
 		_param = paramInit;
 		_inDim = _param->input.W3.inDim();
 		_outDim = _param->input.W3.outDim();
@@ -95,6 +99,8 @@ public:
 			_forgetgates[idx].setFunctions(&sigmoid, &sigmoid_deri);
 			_outputgates[idx].setFunctions(&sigmoid, &sigmoid_deri);
 			_halfcells[idx].setFunctions(&tanh, &tanh_deri);
+
+			_hiddens_drop[idx].setDropValue(dropout);
 		}
 
 		_left2right = left2right;
@@ -111,6 +117,8 @@ public:
 		_outputgates.resize(maxsize);
 		_halfhiddens.resize(maxsize);
 		_hiddens.resize(maxsize);
+
+		_hiddens_drop.resize(maxsize);
 	}
 
 	//whether vectors have been allocated
@@ -130,15 +138,16 @@ public:
 		_hiddens.clear();
 		_left2right = true;
 		_param = NULL;
-		_execNodes.clear();
 		bucket.clear();
 		_nSize = 0;
 		_inDim = 0;
 		_outDim = 0;
+
+		_hiddens_drop.clear();
 	}
 
 public:
-	inline void forward(const vector<PNode>& x){
+	inline void forward(Graph *cg, const vector<PNode>& x, bool bTrain){
 		if (x.size() == 0){
 			std::cout << "empty inputs for lstm operation" << std::endl;
 			return;
@@ -149,160 +158,100 @@ public:
 			std::cout << "input dim does not match for seg operation" << std::endl;
 			return;
 		}
-		_execNodes.clear();
 
 		if (_left2right){
-			left2right_forward(x);
-			//faked_forward(x);
+			left2right_forward(cg, x, bTrain);
 		}
 		else{
-			right2left_forward(x);
-			//faked_forward(x);
+			right2left_forward(cg, x, bTrain);
 		}
+
 	}
 
-	inline void traverseNodes(vector<PNode> &exec){
-		for (int idx = 0; idx < _execNodes.size(); idx++){
-			exec.push_back(_execNodes[idx]);
-		}
-	}
 
 protected:
-
-	inline void faked_forward(const vector<PNode>& x){
-		for (int idx = 0; idx < _nSize; idx++){
-			_inputgates[idx].forward(&bucket, &bucket, x[idx]);
-			_execNodes.push_back(&_inputgates[idx]);
-
-			
-			_halfcells[idx].forward(&bucket, x[idx]);
-			_execNodes.push_back(&_halfcells[idx]);
-
-			_inputfilters[idx].forward(&_halfcells[idx], &_inputgates[idx]);
-			_execNodes.push_back(&_inputfilters[idx]);
-
-			
-			//_cells[idx].forward(&_inputfilters[idx], &bucket);
-			//_execNodes.push_back(&_cells[idx]);
-
-			_halfhiddens[idx].forward(&_inputfilters[idx]);
-			_execNodes.push_back(&_halfhiddens[idx]);
-	
-			//_outputgates[idx].forward(&bucket, &_cells[idx], x[idx]);
-			//_execNodes.push_back(&_outputgates[idx]);
-
-			//_hiddens[idx].forward(&_cells[idx], &_outputgates[idx]);
-			//_execNodes.push_back(&_hiddens[idx]);
-			
-		}
-	}
-
-	inline void left2right_forward(const vector<PNode>& x){
+	inline void left2right_forward(Graph *cg, const vector<PNode>& x, bool bTrain){
 		for (int idx = 0; idx < _nSize; idx++){
 			if (idx == 0){
-				_inputgates[idx].forward(&bucket, &bucket, x[idx]);
-				_execNodes.push_back(&_inputgates[idx]);
+				_inputgates[idx].forward(cg, &bucket, &bucket, x[idx]);
 
-				_halfcells[idx].forward(&bucket, x[idx]);
-				_execNodes.push_back(&_halfcells[idx]);
+				_halfcells[idx].forward(cg, &bucket, x[idx]);
 
-				_inputfilters[idx].forward(&_halfcells[idx], &_inputgates[idx]);
-				_execNodes.push_back(&_inputfilters[idx]);
+				_inputfilters[idx].forward(cg, &_halfcells[idx], &_inputgates[idx]);
 
-				_cells[idx].forward(&_inputfilters[idx], &bucket);
-				_execNodes.push_back(&_cells[idx]);
+				_cells[idx].forward(cg, &_inputfilters[idx], &bucket);
 
-				_halfhiddens[idx].forward(&_cells[idx]);
-				_execNodes.push_back(&_halfhiddens[idx]);
+				_halfhiddens[idx].forward(cg, &_cells[idx]);
 
-				_outputgates[idx].forward(&bucket, &_cells[idx], x[idx]);
-				_execNodes.push_back(&_outputgates[idx]);
+				_outputgates[idx].forward(cg, &bucket, &_cells[idx], x[idx]);
 
-				_hiddens[idx].forward(&_halfhiddens[idx], &_outputgates[idx]);
-				_execNodes.push_back(&_hiddens[idx]);
+				_hiddens[idx].forward(cg, &_halfhiddens[idx], &_outputgates[idx]);
+
+				_hiddens_drop[idx].forward(cg, &_hiddens[idx], bTrain);
 			}
 			else{
-				_inputgates[idx].forward(&_hiddens[idx - 1], &_cells[idx - 1], x[idx]);
-				_execNodes.push_back(&_inputgates[idx]);
+				_inputgates[idx].forward(cg, &_hiddens_drop[idx - 1], &_cells[idx - 1], x[idx]);
 
-				_forgetgates[idx].forward(&_hiddens[idx - 1], &_cells[idx - 1], x[idx]);
-				_execNodes.push_back(&_forgetgates[idx]);
+				_forgetgates[idx].forward(cg, &_hiddens_drop[idx - 1], &_cells[idx - 1], x[idx]);
 
-				_halfcells[idx].forward(&_hiddens[idx - 1], x[idx]);
-				_execNodes.push_back(&_halfcells[idx]);
+				_halfcells[idx].forward(cg, &_hiddens_drop[idx - 1], x[idx]);
 
-				_inputfilters[idx].forward(&_halfcells[idx], &_inputgates[idx]);
-				_execNodes.push_back(&_inputfilters[idx]);
+				_inputfilters[idx].forward(cg, &_halfcells[idx], &_inputgates[idx]);
 
-				_forgetfilters[idx].forward(&_cells[idx - 1], &_forgetgates[idx]);
-				_execNodes.push_back(&_forgetfilters[idx]);
+				_forgetfilters[idx].forward(cg, &_cells[idx - 1], &_forgetgates[idx]);
 
-				_cells[idx].forward(&_inputfilters[idx], &_forgetfilters[idx]);
-				_execNodes.push_back(&_cells[idx]);
+				_cells[idx].forward(cg, &_inputfilters[idx], &_forgetfilters[idx]);
 
-				_halfhiddens[idx].forward(&_cells[idx]);
-				_execNodes.push_back(&_halfhiddens[idx]);
+				_halfhiddens[idx].forward(cg, &_cells[idx]);
 
-				_outputgates[idx].forward(&_hiddens[idx - 1], &_cells[idx], x[idx]);
-				_execNodes.push_back(&_outputgates[idx]);
+				_outputgates[idx].forward(cg, &_hiddens_drop[idx - 1], &_cells[idx], x[idx]);
 
-				_hiddens[idx].forward(&_halfhiddens[idx], &_outputgates[idx]);
-				_execNodes.push_back(&_hiddens[idx]);
+				_hiddens[idx].forward(cg, &_halfhiddens[idx], &_outputgates[idx]);
+
+				_hiddens_drop[idx].forward(cg, &_hiddens[idx], bTrain);
 			}
 		}
 	}
 
-	inline void right2left_forward(const vector<PNode>& x){
+	inline void right2left_forward(Graph *cg, const vector<PNode>& x, bool bTrain){
 		for (int idx = _nSize - 1; idx >= 0; idx--){
 			if (idx == _nSize - 1){
-				_inputgates[idx].forward(&bucket, &bucket, x[idx]);
-				_execNodes.push_back(&_inputgates[idx]);
+				_inputgates[idx].forward(cg, &bucket, &bucket, x[idx]);
 
-				_halfcells[idx].forward(&bucket, x[idx]);
-				_execNodes.push_back(&_halfcells[idx]);
+				_halfcells[idx].forward(cg, &bucket, x[idx]);
 
-				_inputfilters[idx].forward(&_halfcells[idx], &_inputgates[idx]);
-				_execNodes.push_back(&_inputfilters[idx]);
+				_inputfilters[idx].forward(cg, &_halfcells[idx], &_inputgates[idx]);
 
-				_cells[idx].forward(&_inputfilters[idx], &bucket);
-				_execNodes.push_back(&_cells[idx]);
+				_cells[idx].forward(cg, &_inputfilters[idx], &bucket);
 
-				_halfhiddens[idx].forward(&_cells[idx]);
-				_execNodes.push_back(&_halfhiddens[idx]);
+				_halfhiddens[idx].forward(cg, &_cells[idx]);
 
-				_outputgates[idx].forward(&bucket, &_cells[idx], x[idx]);
-				_execNodes.push_back(&_outputgates[idx]);
+				_outputgates[idx].forward(cg, &bucket, &_cells[idx], x[idx]);
 
-				_hiddens[idx].forward(&_halfhiddens[idx], &_outputgates[idx]);
-				_execNodes.push_back(&_hiddens[idx]);
+				_hiddens[idx].forward(cg, &_halfhiddens[idx], &_outputgates[idx]);
+
+				_hiddens_drop[idx].forward(cg, &_hiddens[idx], bTrain);
 			}
 			else{
-				_inputgates[idx].forward(&_hiddens[idx + 1], &_cells[idx + 1], x[idx]);
-				_execNodes.push_back(&_inputgates[idx]);
+				_inputgates[idx].forward(cg, &_hiddens_drop[idx + 1], &_cells[idx + 1], x[idx]);
 
-				_forgetgates[idx].forward(&_hiddens[idx + 1], &_cells[idx + 1], x[idx]);
-				_execNodes.push_back(&_forgetgates[idx]);
+				_forgetgates[idx].forward(cg, &_hiddens_drop[idx + 1], &_cells[idx + 1], x[idx]);
 
-				_halfcells[idx].forward(&_hiddens[idx + 1], x[idx]);
-				_execNodes.push_back(&_halfcells[idx]);
+				_halfcells[idx].forward(cg, &_hiddens_drop[idx + 1], x[idx]);
 
-				_inputfilters[idx].forward(&_halfcells[idx], &_inputgates[idx]);
-				_execNodes.push_back(&_inputfilters[idx]);
+				_inputfilters[idx].forward(cg, &_halfcells[idx], &_inputgates[idx]);
 
-				_forgetfilters[idx].forward(&_cells[idx + 1], &_forgetgates[idx]);
-				_execNodes.push_back(&_forgetfilters[idx]);
+				_forgetfilters[idx].forward(cg, &_cells[idx + 1], &_forgetgates[idx]);
 
-				_cells[idx].forward(&_inputfilters[idx], &_forgetfilters[idx]);
-				_execNodes.push_back(&_cells[idx]);
+				_cells[idx].forward(cg, &_inputfilters[idx], &_forgetfilters[idx]);
 
-				_halfhiddens[idx].forward(&_cells[idx]);
-				_execNodes.push_back(&_halfhiddens[idx]);
+				_halfhiddens[idx].forward(cg, &_cells[idx]);
 
-				_outputgates[idx].forward(&_hiddens[idx + 1], &_cells[idx], x[idx]);
-				_execNodes.push_back(&_outputgates[idx]);
+				_outputgates[idx].forward(cg, &_hiddens_drop[idx + 1], &_cells[idx], x[idx]);
 
-				_hiddens[idx].forward(&_halfhiddens[idx], &_outputgates[idx]);
-				_execNodes.push_back(&_hiddens[idx]);
+				_hiddens[idx].forward(cg, &_halfhiddens[idx], &_outputgates[idx]);
+
+				_hiddens_drop[idx].forward(cg, &_hiddens[idx], bTrain);
 			}
 		}
 	}

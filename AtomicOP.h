@@ -4,6 +4,7 @@
 #include "Eigen/Dense"
 #include "MyLib.h"
 #include "Node.h"
+#include "Graph.h"
 
 using namespace Eigen;
 
@@ -28,10 +29,11 @@ public:
 	}
 
 public:
-	void forward(PNode x1, PNode x2) {
+	void forward(Graph *cg, PNode x1, PNode x2) {
 		in1 = x1;
 		in2 = x2;
 		val = x1->val.array() * x2->val.array();
+		cg->addNode(this);
 	}
 
 	void backward(){
@@ -68,7 +70,7 @@ public:
 
 public:
 	// please better restrict col to 1
-	void forward(const vector<PNode>& x) {
+	void forward(Graph *cg, const vector<PNode>& x) {
 		if (x.size() < 2){
 			std::cout << "at least two nodes are required" << std::endl;
 			return;
@@ -80,26 +82,29 @@ public:
 		}
 
 		forward();
+		cg->addNode(this);
 	}
 
-	void forward(PNode x1, PNode x2){
+	void forward(Graph *cg, PNode x1, PNode x2){
 		ins.clear();
 		ins.push_back(x1);
 		ins.push_back(x2);
 
 		forward();
+		cg->addNode(this);
 	}
 
-	void forward(PNode x1, PNode x2, PNode x3){
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3){
 		ins.clear();
 		ins.push_back(x1);
 		ins.push_back(x2);
 		ins.push_back(x3);
 
 		forward();
+		cg->addNode(this);
 	}
 
-	void forward(PNode x1, PNode x2, PNode x3, PNode x4){
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3, PNode x4){
 		ins.clear();
 		ins.push_back(x1);
 		ins.push_back(x2);
@@ -107,9 +112,10 @@ public:
 		ins.push_back(x4);
 
 		forward();
+		cg->addNode(this);
 	}
 
-	void forward(PNode x1, PNode x2, PNode x3, PNode x4, PNode x5){
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3, PNode x4, PNode x5){
 		ins.clear();
 		ins.push_back(x1);
 		ins.push_back(x2);
@@ -118,9 +124,10 @@ public:
 		ins.push_back(x5);
 
 		forward();
+		cg->addNode(this);
 	}
 
-	void forward(PNode x1, PNode x2, PNode x3, PNode x4, PNode x5, PNode x6){
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3, PNode x4, PNode x5, PNode x6){
 		ins.clear();
 		ins.push_back(x1);
 		ins.push_back(x2);
@@ -130,6 +137,7 @@ public:
 		ins.push_back(x6);
 
 		forward();
+		cg->addNode(this);
 	}
 
 
@@ -185,9 +193,10 @@ public:
 
 public:
 
-	inline void forward(PNode x){
+	inline void forward(Graph *cg, PNode x){
 		in = x;
 		val = activate(in->val);
+		cg->addNode(this);
 	}
 
 	inline void backward(){
@@ -222,9 +231,10 @@ public:
 
 public:
 
-	inline void forward(PNode x){
+	inline void forward(Graph *cg, PNode x){
 		in = x;
 		val = tanh(in->val);
+		cg->addNode(this);
 	}
 
 	inline void backward(){
@@ -259,9 +269,10 @@ public:
 
 public:
 
-	inline void forward(PNode x){
+	inline void forward(Graph *cg, PNode x){
 		in = x;
 		val = sigmoid(in->val);
+		cg->addNode(this);
 	}
 
 	inline void backward(){
@@ -295,9 +306,10 @@ public:
 
 public:
 
-	inline void forward(PNode x){
+	inline void forward(Graph *cg, PNode x){
 		in = x;
 		val = relu(in->val);
+		cg->addNode(this);
 	}
 
 	inline void backward(){

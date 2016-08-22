@@ -75,6 +75,27 @@ struct SparseParam : BaseParam{
 		idy = idCols[0];
 	}
 
+	inline dtype squareGradNorm(){
+		static hash_set<int>::iterator it;
+		dtype sumNorm = 0.0;
+		for (it = indexers.begin(); it != indexers.end(); ++it) {
+			int index = *it;
+			for (int idx = 0; idx < grad.cols(); idx++){
+				sumNorm += grad(index, idx) * grad(index, idx);
+			}
+		}
+
+		return sumNorm;
+	}
+
+	inline void rescaleGrad(dtype scale){
+		static hash_set<int>::iterator it;
+		for (it = indexers.begin(); it != indexers.end(); ++it) {
+			int index = *it;
+			grad.row(index) = grad.row(index) * scale;
+		}
+	}
+
 };
 
 #endif /* SPARSEPARAM_H_ */

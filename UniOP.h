@@ -11,6 +11,7 @@
 #include "Param.h"
 #include "MyLib.h"
 #include "Node.h"
+#include "Graph.h"
 
 struct UniParams {
 public:
@@ -100,7 +101,7 @@ public:
 	}
 
 public:
-	void forward(PNode x) {
+	void forward(Graph *cg, PNode x) {
 		assert(param != NULL);
 
 		in = x;
@@ -115,6 +116,8 @@ public:
 		}
 
 		val = activate(ty);
+
+		cg->addNode(this);
 	}
 
 	void backward() {
@@ -177,13 +180,15 @@ public:
 	}
 
 public:
-	void forward(PNode x) {
+	void forward(Graph *cg, PNode x) {
 		assert(param != NULL);
 
 		in = x;
 		assert(inDim == in->val.rows());
 
 		val = param->W.val * (in->val);	
+
+		cg->addNode(this);
 	}
 
 	void backward() {

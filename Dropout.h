@@ -4,10 +4,11 @@
 #include "Eigen/Dense"
 #include "MyLib.h"
 #include "Node.h"
+#include "Graph.h"
 
 using namespace Eigen;
 
-class DropNode : Node {
+struct DropNode : Node {
 public:
 	PNode in;
 	Mat mask;
@@ -21,7 +22,7 @@ public:
 	inline void clear(){
 		Node::clear();
 		mask.setOnes();
-		p = 1.0;
+		p = 0.0;
 		in = NULL;
 	}
 
@@ -38,7 +39,7 @@ public:
 	
 public:
 	//Be careful that the row is the dim of input vector, and the col is the number of input vectors
-	void forward(PNode x, bool bTrain) {
+	void forward(Graph *cg, PNode x, bool bTrain) {
 		in = x;
 
 		mask = Mat::Ones(in->val.rows(), in->val.cols());
@@ -52,15 +53,17 @@ public:
 			for (int j = 0; j < in->val.cols(); j++){
 				random_shuffle(indexes.begin(), indexes.end());
 				for (int i = 0; i < dropNum; i++){
-					mask(i, j) = 0.0;
+					mask(indexes[i], j) = 0.0;
 				}
 			}
 		}
 		else{
-			mask = mask * p;
+			mask = mask * (1.0 - p);
 		}
 		
 		val = in->val.array() * mask.array();
+
+		cg->addNode(this);
 	}
 	
 	

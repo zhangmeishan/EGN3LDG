@@ -19,7 +19,7 @@ public:
 		execs.clear();
 	}
 
-public: 
+public:
 	inline void clearValue(){
 		for (int idx = 0; idx < execs.size(); idx++){
 			execs[idx]->clearValue();
@@ -31,6 +31,10 @@ public:
 		for (int idx = execs.size() - 1; idx >= 0; idx--){
 			execs[idx]->backward();
 		}
+	}
+
+	inline void addNode(PNode x){
+		execs.push_back(x);
 	}
 
 public: // virtual functions

@@ -3,6 +3,7 @@
 
 #include "MyLib.h"
 #include "Node.h"
+#include "Graph.h"
 
 struct PoolNode : Node {
 public:
@@ -28,7 +29,7 @@ public:
 
 public:
 
-	virtual void forward(const vector<PNode>& x) = 0;
+	virtual void forward(Graph *cg, const vector<PNode>& x) = 0;
 
 	void backward(){
 		for (int i = 0; i < ins.size(); i++){
@@ -48,7 +49,7 @@ public:
 public:
 	//Be careful that the row is the dim of input vector, and the col is the number of input vectors
 	//Another point is that we change the input vectors directly.
-	void forward(const vector<PNode>& x) {
+	void forward(Graph *cg, const vector<PNode>& x) {
 		if (x.size() == 0 ){
 			std::cout << "empty inputs for max pooling" << std::endl;
 			return;
@@ -85,6 +86,8 @@ public:
 		for (int i = 0; i < ins.size(); ++i){
 			val = val.array() + masks[i].array() *ins[i]->val.array();
 		}
+
+		cg->addNode(this);
 	}
 
 };
@@ -98,7 +101,7 @@ public:
 public:
 	//Be careful that the row is the dim of input vector, and the col is the number of input vectors
 	//Another point is that we change the input vectors directly.
-	void forward(const vector<PNode>& x) {
+	void forward(Graph *cg, const vector<PNode>& x) {
 		if (x.size() == 0){
 			std::cout << "empty inputs for max pooling" << std::endl;
 			return;
@@ -124,6 +127,8 @@ public:
 		for (int i = 0; i < ins.size(); ++i){
 			val = val.array() + masks[i].array() *ins[i]->val.array();
 		}
+
+		cg->addNode(this);
 	}
 
 };
@@ -137,7 +142,7 @@ public:
 public:
 	//Be careful that the row is the dim of input vector, and the col is the number of input vectors
 	//Another point is that we change the input vectors directly.
-	void forward(const vector<PNode>& x) {
+	void forward(Graph *cg, const vector<PNode>& x) {
 		if (x.size() == 0){
 			std::cout << "empty inputs for max pooling" << std::endl;
 			return;
@@ -174,6 +179,8 @@ public:
 		for (int i = 0; i < ins.size(); ++i){
 			val = val.array() + masks[i].array() *ins[i]->val.array();
 		}
+
+		cg->addNode(this);
 	}
 
 };

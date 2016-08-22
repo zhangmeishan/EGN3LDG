@@ -59,6 +59,20 @@ struct Param : BaseParam{
 		idy = idCols[0];
 	}
 
+	inline dtype squareGradNorm(){
+		dtype sumNorm = 0.0;
+		for (int i = 0; i < grad.rows(); i++){
+			for (int j = 0; j < grad.cols(); j++){
+				sumNorm += grad(i, j) * grad(i, j);
+			}
+		}
+
+		return sumNorm;
+	}
+
+	inline void rescaleGrad(dtype scale){
+		grad = grad * scale;
+	}
 };
 
 #endif /* PARAM_H_ */

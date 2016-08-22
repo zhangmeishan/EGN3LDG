@@ -12,6 +12,7 @@
 #include "MyLib.h"
 #include "Alphabet.h"
 #include "Node.h"
+#include "Graph.h"
 
 struct SparseParams {
 public:
@@ -97,7 +98,7 @@ public:
 
 public:
 	//notice the output
-	void forward(const vector<string>& x) {
+	void forward(Graph *cg, const vector<string>& x) {
 		assert(param != NULL);
 		val = Mat::Zero(dim, 1);
 		static int featId;
@@ -108,6 +109,8 @@ public:
 				val.col(0) += param->W.val.row(featId).transpose();
 			}
 		}
+
+		cg->addNode(this);
 	}
 
 	void backward() {

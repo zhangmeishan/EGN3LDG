@@ -43,6 +43,22 @@ public:
 		}
 	}
 
+	inline void update(dtype maxScale){
+		dtype sumNorm = 0.0;
+		for (int idx = 0; idx < _params.size(); idx++){
+			sumNorm += _params[idx]->squareGradNorm();
+		}
+		dtype norm = sqrt(sumNorm);
+		if (norm > maxScale){
+			dtype scale = maxScale / norm;
+			for (int idx = 0; idx < _params.size(); idx++){
+				_params[idx]->rescaleGrad(scale);
+			}
+		}
+
+		update();
+	}
+
 	inline void clearGrad(){
 		for(int idx = 0; idx < _params.size(); idx++){
 			_params[idx]->clearGrad();

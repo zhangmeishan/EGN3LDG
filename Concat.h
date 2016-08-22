@@ -3,6 +3,7 @@
 
 #include "MyLib.h"
 #include "Node.h"
+#include "Graph.h"
 
 struct ConcatNode : Node{
 public:
@@ -27,7 +28,7 @@ public:
 
 public:
 	// please better restrict col to 1
-	void forward(const vector<PNode>& x) {
+	void forward(Graph *cg, const vector<PNode>& x) {
 		if (x.size() == 0){
 			std::cout << "empty inputs for concat" << std::endl;
 			return;
@@ -39,26 +40,32 @@ public:
 		}
 
 		forward();
+
+		cg->addNode(this);
 	}
 
-	void forward(PNode x1, PNode x2){
+	void forward(Graph *cg, PNode x1, PNode x2){
 		ins.clear();
 		ins.push_back(x1);
 		ins.push_back(x2);
 
 		forward();
+
+		cg->addNode(this);
 	}
 
-	void forward(PNode x1, PNode x2, PNode x3){
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3){
 		ins.clear();
 		ins.push_back(x1);
 		ins.push_back(x2);
 		ins.push_back(x3);
 
 		forward();
+
+		cg->addNode(this);
 	}
 
-	void forward(PNode x1, PNode x2, PNode x3, PNode x4){
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3, PNode x4){
 		ins.clear();
 		ins.push_back(x1);
 		ins.push_back(x2);
@@ -66,9 +73,11 @@ public:
 		ins.push_back(x4);
 
 		forward();
+
+		cg->addNode(this);
 	}
 
-	void forward(PNode x1, PNode x2, PNode x3, PNode x4, PNode x5){
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3, PNode x4, PNode x5){
 		ins.clear();
 		ins.push_back(x1);
 		ins.push_back(x2);
@@ -77,9 +86,11 @@ public:
 		ins.push_back(x5);
 
 		forward();
+
+		cg->addNode(this);
 	}
 
-	void forward(PNode x1, PNode x2, PNode x3, PNode x4, PNode x5, PNode x6){
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3, PNode x4, PNode x5, PNode x6){
 		ins.clear();
 		ins.push_back(x1);
 		ins.push_back(x2);
@@ -89,6 +100,8 @@ public:
 		ins.push_back(x6);
 
 		forward();
+
+		cg->addNode(this);
 	}
 
 	void backward(){

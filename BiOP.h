@@ -11,6 +11,7 @@
 #include "Param.h"
 #include "MyLib.h"
 #include "Node.h"
+#include "Graph.h"
 
 struct BiParams {
 public:
@@ -103,7 +104,7 @@ public:
 	}
 
 public:
-	void forward(PNode x1, PNode x2) {
+	void forward(Graph* cg, PNode x1, PNode x2) {
 		assert(param != NULL);
 
 		in1 = x1;
@@ -119,6 +120,8 @@ public:
 		}
 
 		val = activate(ty);
+
+		cg->addNode(this);
 	}
 
 	void backward() {

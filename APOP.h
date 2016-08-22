@@ -11,6 +11,7 @@
 #include "MyLib.h"
 #include "Alphabet.h"
 #include "Node.h"
+#include "Graph.h"
 
 // aiming for Averaged Perceptron, can not coexist with neural networks
 // thus we do not use the BaseParam class
@@ -147,7 +148,7 @@ public:
 public:
 
 	// initialize inputs at the same times
-	inline void forward(const vector<string>& x, bool bTrain = false) {
+	inline void forward(Graph* cg, const vector<string>& x, bool bTrain = false) {
 		assert(param != NULL);
 		val = Mat::Zero(dim, 1);
 		static int featId;
@@ -157,7 +158,9 @@ public:
 				tx.push_back(featId);
 				val.col(0) += param->get(featId, bTrain).transpose();
 			}
-		}		
+		}	
+
+		cg->addNode(this);
 	}
 
 	//no output losses

@@ -5,6 +5,7 @@
 #include "MyLib.h"
 #include "Alphabet.h"
 #include "Node.h"
+#include "Graph.h"
 
 #include <Eigen/Dense>
 
@@ -203,7 +204,7 @@ public:
 public:
 	//notice the output
 	//this should be leaf nodes
-	void forward(const string& strNorm) {
+	void forward(Graph *cg, const string& strNorm) {
 		assert(param != NULL);
 		xid = param->getElemId(strNorm);
 		if (xid < 0 && param->nUNKId >= 0){
@@ -216,6 +217,8 @@ public:
 			std::cout << "Caution: unknown words are not modeled !" << std::endl;
 			val = Mat::Zero(dim, 1);
 		}
+
+		cg->addNode(this);
 	}
 
 	void backward() {
