@@ -8,6 +8,7 @@
 #include "UniOP.h"
 #include "BiOP.h"
 #include "TriOP.h"
+#include "FourOP.h"
 #include "Utils.h"
 #include "MyLib.h"
 #include "LookupTable.h"
@@ -25,6 +26,7 @@
 #include "Semi0CRFMLLoss.h"
 #include "SemiCRFMLLoss.h"
 #include "LSTM.h"
+#include "LSTM1.h"
 #include "AtomicOP.h"
 
 #endif

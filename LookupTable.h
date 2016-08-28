@@ -155,11 +155,13 @@ public:
 
 		std::cout << "OOV num is " << oovWords << ", total num is " << nVSize << ", embedding oov ratio is " << oovWords * 1.0 / nVSize << std::endl;
 
-		for (int idx = 0; idx < nVSize; idx++){
-			norm2one(E.val, idx);
-		}
-
 		bFineTune = tune;
+		if (bFineTune){
+			for (int idx = 0; idx < nVSize; idx++){
+				norm2one(E.val, idx);
+			}
+		}
+	
 	}
 
 	inline void exportAdaParams(ModelUpdate& ada) {
@@ -214,7 +216,7 @@ public:
 			val = param->E.val.row(xid).transpose();
 		}
 		else{
-			std::cout << "Caution: unknown words are not modeled !" << std::endl;
+			if (param->bFineTune)std::cout << "Caution: unknown words are not modeled !" << std::endl;
 			val = Mat::Zero(dim, 1);
 		}
 

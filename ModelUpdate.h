@@ -48,6 +48,9 @@ public:
 		for (int idx = 0; idx < _params.size(); idx++){
 			sumNorm += _params[idx]->squareGradNorm();
 		}
+		if (isnan(sumNorm) || sumNorm > 1e20){ //too large
+			return;
+		}
 		dtype norm = sqrt(sumNorm);
 		if (norm > maxScale){
 			dtype scale = maxScale / norm;

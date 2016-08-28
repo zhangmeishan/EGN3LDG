@@ -444,6 +444,13 @@ inline void str2int_vec(const vector<string> &vecStr, vector<int> &vecInt) {
   }
 }
 
+template<typename A>
+inline string obj2string(const A& a){
+	ostringstream out;
+	out << a;
+	return out.str();
+}
+
 inline void int2str_vec(const vector<int> &vecInt, vector<string> &vecStr) {
   vecStr.resize(vecInt.size());
   int i = 0;
@@ -803,6 +810,14 @@ inline void assignVec(vector<vector<vector<A> > >& trivec, const A& a){
 				trivec[idx][idy][idz] = a;
 			}
 		}
+	}
+}
+
+
+template<typename A>
+inline void addAllItems(vector<A>& target, const vector<A>& sources){
+	for (int idx = 0; idx < sources.size(); idx++){
+		target.push_back(sources[idx]);
 	}
 }
 

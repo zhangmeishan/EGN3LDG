@@ -34,7 +34,7 @@ public:
 	}
 
 public:
-	inline void initial(const vector<int>& lens, int maxLength, int seed = 0){
+	inline void initial(const vector<int>& lens, int maxLength){
 		labelSize = lens.size();
 		maxLen = maxLength;
 		maxLens.resize(labelSize);
