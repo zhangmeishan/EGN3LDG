@@ -49,6 +49,7 @@ public:
 			sumNorm += _params[idx]->squareGradNorm();
 		}
 		if (isnan(sumNorm) || sumNorm > 1e20){ //too large
+			clearGrad();
 			return;
 		}
 		dtype norm = sqrt(sumNorm);
