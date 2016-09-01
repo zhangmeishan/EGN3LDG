@@ -155,10 +155,22 @@ public:
     }
   }
 
+  void initial(const hash_map<string, int>& elem_stat, int cutOff = 0){
+	  clear();
+	  static hash_map<string, int>::const_iterator elem_iter;
+	  for (elem_iter = elem_stat.begin(); elem_iter != elem_stat.end(); elem_iter++) {
+		  if (elem_iter->second > cutOff) {
+			  from_string(elem_iter->first);
+		  }
+	  }
+	  set_fixed_flag(true);
+  }
+
   
 };
 
 typedef basic_quark Alphabet;
+typedef basic_quark*  PAlphabet;
 
 #endif
 

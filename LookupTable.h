@@ -13,7 +13,7 @@ using namespace Eigen;
 
 struct LookupTable {
 public:
-	Alphabet elems;
+	PAlphabet elems;
 	SparseParam E;
 	bool bFineTune;
 	int nDim;
@@ -26,31 +26,19 @@ public:
 	}
 
 	//random initialization
-	inline void initial(const hash_map<string, int>& elem_stat, int cutOff, int dim, int seed, bool bFineTune){
-		initialAlpha(elem_stat, cutOff);
+	inline void initial(PAlphabet alpha, int dim, int seed, bool bFineTune){
+		elems = alpha;
+		nVSize = elems->size();
+		nUNKId = elems->from_string(unknownkey);
 		initialWeights(dim, seed, bFineTune);
 	}
 
 	//initialization by pre-trained embeddings
-	inline void initial(const hash_map<string, int>& elem_stat, int cutOff, const string& inFile, bool bFineTune){
-		initialAlpha(elem_stat, cutOff);
+	inline void initial(PAlphabet alpha, const string& inFile, bool bFineTune){
+		elems = alpha;
+		nVSize = elems->size();
+		nUNKId = elems->from_string(unknownkey);
 		initialWeights(inFile, bFineTune);
-	}
-
-	// for sepcial elements such as UNK and NULL, please add insert them into the elem_stat
-	// I will not implement another addAlpha function, thus please collect alpha all at once
-	inline void initialAlpha(const hash_map<string, int>& elem_stat, int cutOff = 0){
-		elems.clear();
-
-		static hash_map<string, int>::const_iterator elem_iter;
-		for (elem_iter = elem_stat.begin(); elem_iter != elem_stat.end(); elem_iter++) {
-			if (elem_iter->second > cutOff) {
-				elems.from_string(elem_iter->first);
-			}
-		}
-		elems.set_fixed_flag(true);
-		nVSize = elems.size();
-		nUNKId = elems.from_string(unknownkey);
 	}
 
 	inline void initialWeights(int dim, int seed = 0, bool tune = true) {
@@ -118,7 +106,7 @@ public:
 			}
 			curWord = vecInfo[0];
 			//we assume the keys are normalized
-			wordId = elems.from_string(curWord);
+			wordId = elems->from_string(curWord);
 			if (wordId >= 0) {
 				count++;
 				if (nUNKId == wordId){
@@ -172,7 +160,7 @@ public:
 
 
 	inline int getElemId(const string& strFeat){
-		return elems.from_string(strFeat);
+		return elems->from_string(strFeat);
 	}
 
 };
