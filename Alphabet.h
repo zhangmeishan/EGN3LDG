@@ -61,7 +61,7 @@ public:
       return it->second;
     } else if (!m_b_fixed){
       int newid = m_size;
-	  if (m_freqs[newid - 1] != max_freq){
+	  if (newid > 0 && m_freqs[newid - 1] != max_freq){
 		  std::cout << "not a descended sorted alphabet!" << std::endl;
 		  assert(0);
 	  }
@@ -108,7 +108,7 @@ public:
       return it->second;
     } else if (!m_b_fixed){
       int newid = m_size;
-	  if (m_freqs[newid - 1] < curfreq){
+	  if (newid > 0 && m_freqs[newid - 1] < curfreq){
 		  std::cout << "not a descended sorted alphabet!" << std::endl;
 		  assert(0);
 	  }
