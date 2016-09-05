@@ -31,8 +31,7 @@ public:
 		}
 	}
 
-	inline void initial(int nOSize, int nISize, bool useB = true,	int seed = 0) {
-		srand(seed);
+	inline void initial(int nOSize, int nISize, bool useB = true) {
 		W.initial(nOSize, nISize);
 		b.initial(nOSize, 1);
 

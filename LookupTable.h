@@ -23,31 +23,35 @@ public:
 public:
 
 	LookupTable() {
+		nVSize = 0;
+		nDim = 0;
+		elems = NULL;
+		nUNKId = -1;
+		bFineTune = false;
 	}
 
 	//random initialization
-	inline void initial(PAlphabet alpha, int dim, int seed, bool bFineTune){
+	inline void initial(PAlphabet alpha, int dim, bool bFineTune = true){
 		elems = alpha;
 		nVSize = elems->size();
 		nUNKId = elems->from_string(unknownkey);
-		initialWeights(dim, seed, bFineTune);
+		initialWeights(dim, bFineTune);
 	}
 
 	//initialization by pre-trained embeddings
-	inline void initial(PAlphabet alpha, const string& inFile, bool bFineTune){
+	inline void initial(PAlphabet alpha, const string& inFile, bool bFineTune = true){
 		elems = alpha;
 		nVSize = elems->size();
 		nUNKId = elems->from_string(unknownkey);
 		initialWeights(inFile, bFineTune);
 	}
 
-	inline void initialWeights(int dim, int seed = 0, bool tune = true) {
+	inline void initialWeights(int dim, bool tune) {
 		if (nVSize == 0){
 			std::cout << "please check the alphabet" << std::endl;
 			return;
 		}
 		nDim = dim;
-		srand(seed);
 		E.initial(nDim, nVSize);
 		for (int idx = 0; idx < nVSize; idx++){
 			norm2one(E.val, idx);
@@ -57,7 +61,7 @@ public:
 	}
 
 	// default should be fineTune, just for initialization
-	inline void initialWeights(const string& inFile, bool tune = true) {
+	inline void initialWeights(const string& inFile, bool tune) {
 		if (nVSize == 0){
 			std::cout << "please check the alphabet" << std::endl;
 			return;

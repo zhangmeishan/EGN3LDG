@@ -28,5 +28,7 @@
 #include "LSTM.h"
 #include "LSTM1.h"
 #include "AtomicOP.h"
-
+#include "APCOP.h"
+#include "SparseCOP.h"
+#include "COPUtils.h"
 #endif

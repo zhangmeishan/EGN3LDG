@@ -24,11 +24,11 @@ struct LSTM1Params {
 		cell.exportAdaParams(ada);
 	}
 
-	inline void initial(int nOSize, int nISize, int seed = 0) {
-		input.initial(nOSize, nOSize, nISize, true, seed);
-		output.initial(nOSize, nOSize, nISize, true, seed + 1);
-		forget.initial(nOSize, nOSize, nISize, true, seed + 2);
-		cell.initial(nOSize, nOSize, nISize, true, seed + 3);
+	inline void initial(int nOSize, int nISize) {
+		input.initial(nOSize, nOSize, nISize, true);
+		output.initial(nOSize, nOSize, nISize, true);
+		forget.initial(nOSize, nOSize, nISize, true);
+		cell.initial(nOSize, nOSize, nISize, true);
 	}
 
 	inline int inDim(){

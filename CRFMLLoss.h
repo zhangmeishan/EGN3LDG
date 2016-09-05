@@ -28,8 +28,7 @@ public:
 	}
 
 public:
-	inline void initial(int labelNum, int seed = 0){
-		srand(seed);
+	inline void initial(int labelNum){
 		labelSize = labelNum;
 		T.initial(labelSize, labelSize);
 		buffer.resize(labelSize);

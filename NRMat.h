@@ -30,7 +30,7 @@ public:
   inline int size() const;
   inline void dealloc();
   inline T * c_buf();
-  inline void randu(int seed = 0);
+  inline void randu();
 
   ~NRVec();
 };
@@ -153,8 +153,7 @@ inline T * NRVec<T>::c_buf() {
 }
 
 template<typename T>
-inline void NRVec<T>::randu(int seed) {
-  srand(seed);
+inline void NRVec<T>::randu() {
   for (int i = 0; i < nn; i++) {
     v[i] = (T) (1.0 * rand() / RAND_MAX);
   }
@@ -182,7 +181,7 @@ public:
   inline int heapsize() const;
   inline void dealloc();
   inline T * c_buf();
-  inline void randu(int seed = 0);
+  inline void randu();
 
   ~NRHeap();
 
@@ -355,8 +354,7 @@ inline T * NRHeap<T, compare>::c_buf() {
 }
 
 template<typename T, typename compare>
-inline void NRHeap<T, compare>::randu(int seed) {
-  srand(seed);
+inline void NRHeap<T, compare>::randu() {
   for (int i = 0; i < nn; i++) {
     v[i] = (T) (1.0 * rand() / RAND_MAX);
   }
@@ -388,7 +386,7 @@ public:
   inline int ncols() const;
   inline int total_size() const;
   inline T * c_buf();
-  inline void randu(int seed = 0);
+  inline void randu();
   inline void dealloc();
   ~NRMat();
 };
@@ -519,8 +517,7 @@ inline int NRMat<T>::total_size() const {
 }
 
 template<typename T>
-inline void NRMat<T>::randu(int seed) {
-  srand(seed);
+inline void NRMat<T>::randu() {
   for (int i = 0; i < nn; i++)
     for (int j = 0; j < mm; j++)
       v[i][j] = (T) (1.0 * rand() / RAND_MAX);
@@ -551,7 +548,7 @@ public:
   inline int total_size() const;
   inline void dealloc();
   inline T* c_buf();
-  inline void randu(int seed = 0);
+  inline void randu();
   ~NRMat3d();
 
 };
@@ -687,8 +684,7 @@ inline int NRMat3d<T>::total_size() const {
 }
 
 template<typename T>
-inline void NRMat3d<T>::randu(int seed) {
-  srand(seed);
+inline void NRMat3d<T>::randu() {
   for (int i = 0; i < nn; i++)
     for (int j = 0; j < mm; j++)
       for (int k = 0; k < kk; k++)
@@ -721,7 +717,7 @@ public:
 
   inline void dealloc();
   inline T * c_buf();
-  inline void randu(int seed = 0);
+  inline void randu();
   ~NRMat4d();
 
 private:
@@ -883,8 +879,7 @@ inline int NRMat4d<T>::total_size() const {
 }
 
 template<typename T>
-inline void NRMat4d<T>::randu(int seed) {
-  srand(seed);
+inline void NRMat4d<T>::randu() {
   for (int i = 0; i < nn; i++)
     for (int j = 0; j < mm; j++)
       for (int k = 0; k < kk; k++)

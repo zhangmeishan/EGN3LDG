@@ -41,8 +41,7 @@ struct Param : BaseParam{
 		val = val.array() - grad.array() * alpha / (aux.array() + eps).sqrt();
 	}
 
-	inline void randpoint(int& idx, int &idy, int seed){
-		srand(seed);
+	inline void randpoint(int& idx, int &idy){
 		//select indexes randomly		
 		std::vector<int> idRows, idCols;
 		idRows.clear();

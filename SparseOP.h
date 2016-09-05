@@ -8,71 +8,59 @@
 #ifndef SPARSEOP_H_
 #define SPARSEOP_H_
 
-#include "SparseParam.h"
 #include "MyLib.h"
 #include "Alphabet.h"
 #include "Node.h"
 #include "Graph.h"
+#include "SparseParam.h"
 
+// for sparse features
 struct SparseParams {
 public:
 	SparseParam W;
-	Alphabet elems;
+	PAlphabet elems;
 	int nVSize;
 	int nDim;
 
 public:
 	SparseParams() {
+		nVSize = 0;
+		nDim = 0;
+		elems = NULL;
 	}
 
 	inline void exportAdaParams(ModelUpdate& ada) {
 		ada.addParam(&W);
 	}
 
-	inline void initialWeights(int nOSize, int seed = 0) {
+	inline void initialWeights(int nOSize) {
 		if (nVSize == 0){
 			std::cout << "please check the alphabet" << std::endl;
 			return;
 		}
-		srand(seed);
 		nDim = nOSize;
 		W.initial(nOSize, nVSize);
 	}
 
-	// for sepcial elements such as UNK and NULL, please add insert them into the elem_stat
-	// I will not implement another addAlpha function, thus please collect alpha all at once
-	inline void initialAlpha(const hash_map<string, int>& elem_stat, int cutOff = 0){
-		elems.clear();
-
-		static hash_map<string, int>::const_iterator elem_iter;
-		for (elem_iter = elem_stat.begin(); elem_iter != elem_stat.end(); elem_iter++) {
-			if (elem_iter->second > cutOff) {
-				elems.from_string(elem_iter->first);
-			}
-		}
-		elems.set_fixed_flag(true);
-		nVSize = elems.size();
-	}
-
 	//random initialization
-	inline void initial(const hash_map<string, int>& elem_stat, int cutOff, int nOSize, int seed){
-		initialAlpha(elem_stat, cutOff);
-		initialWeights(nOSize, seed);
+	inline void initial(PAlphabet alpha, int nOSize){
+		elems = alpha;
+		nVSize = elems->size();
+		initialWeights(nOSize);
 	}
 
 	inline int getFeatureId(const string& strFeat){
-		return elems.from_string(strFeat);
+		return elems->from_string(strFeat);
 	}
 
 };
 
 //only implemented sparse linear node.
 //non-linear transformations are not support,
-//but we can use other approaches to achieve the same goal.
 struct SparseNode : Node {
 public:
-	vector<int> tx;
 	SparseParams* param;
+	vector<int> tx;
 
 public:
 	SparseNode() {
@@ -88,7 +76,6 @@ public:
 		Node::clear();
 		tx.clear();
 		param = NULL;
-
 	}
 
 	inline void clearValue(){
@@ -113,6 +100,7 @@ public:
 		cg->addNode(this);
 	}
 
+	//no output losses
 	void backward() {
 		assert(param != NULL);
 		for (int idx = 0; idx < tx.size(); idx++) {

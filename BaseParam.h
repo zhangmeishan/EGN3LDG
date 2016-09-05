@@ -24,7 +24,7 @@ public:
 	virtual inline void clearGrad() = 0;
 
 	// Choose one point randomly
-	virtual inline void randpoint(int& idx, int &idy, int seed) = 0;
+	virtual inline void randpoint(int& idx, int &idy) = 0;
 	virtual inline dtype squareGradNorm() = 0;
 	virtual inline void rescaleGrad(dtype scale) = 0;
 

@@ -35,14 +35,13 @@ public:
 	}
 
 public:
-	inline void initial(const vector<int>& lens, int maxLength, int seed = 0){
+	inline void initial(const vector<int>& lens, int maxLength){
 		labelSize = lens.size();
 		maxLen = maxLength;
 		maxLens.resize(labelSize);
 		for (int idx = 0; idx < labelSize; idx++){
 			maxLens[idx] = lens[idx];
 		}
-		srand(seed);
 		T.initial(labelSize, labelSize);
 	}
 

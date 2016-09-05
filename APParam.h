@@ -1,12 +1,12 @@
 /*
- * SparseParam.h
+ * APParam.h
  *
  *  Created on: Jul 25, 2016
  *      Author: mason
  */
 
-#ifndef SPARSEPARAM_H_
-#define SPARSEPARAM_H_
+#ifndef AVGPARAM_H_
+#define AVGPARAM_H_
 
 #include "Eigen/Dense"
 #include "Utils.h"
@@ -14,16 +14,20 @@
 
 // Notice: aux is an auxiliary variable to help parameter updating
 // The in-out dimension definiation is different with dense parameters.
-struct SparseParam : BaseParam{
+struct APParam : BaseParam{
 	Mat aux;
 	hash_set<int> indexers;
+	int max_update;
+	VectorXi last_update;
 
 	// allow sparse and dense parameters have different parameter initialization methods
 	inline void initial(int outDim, int inDim) {
-		val = Mat(inDim, outDim).unaryExpr(ptr_fun(urand));
+		val = Mat::Zero(inDim, outDim);
 		grad = Mat::Zero(inDim, outDim);
 		aux = Mat::Zero(inDim, outDim);
 		indexers.clear();
+		max_update = 0;
+		last_update = VectorXi::Zero(inDim);
 	}
 
 	inline void clearGrad() {
@@ -45,11 +49,13 @@ struct SparseParam : BaseParam{
 
 	inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) {
 		static hash_set<int>::iterator it;
+		max_update++;
+
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
-			grad.row(index) = grad.row(index) + val.row(index) * reg;
-			aux.row(index) = aux.row(index).array() + grad.row(index).array().square();
-			val.row(index) = val.row(index).array() - grad.row(index).array() * alpha / (aux.row(index).array() + eps).sqrt();
+			aux.row(index) += (max_update - last_update(index)) * val.row(index) - grad.row(index);
+			val.row(index) = val.row(index) - grad.row(index);
+			last_update(index) = max_update;
 		}
 	}
 
@@ -94,6 +100,24 @@ struct SparseParam : BaseParam{
 		}
 	}
 
+
+	inline Mat value(int featId, bool bTrain = false) {
+		if (bTrain)
+			return val.row(featId);
+		else
+			return sumWeight(featId).array() * 1.0 / max_update;
+	}
+
+	inline Mat sumWeight(int featId) {
+		if (last_update(featId) < max_update) {
+			int times = max_update - last_update(featId);
+			aux.row(featId) += val.row(featId) * times;
+			last_update(featId) = max_update;
+		}
+
+		return aux.row(featId);
+	}
+
 };
 
-#endif /* SPARSEPARAM_H_ */
+#endif /* AVGPARAM_H_ */

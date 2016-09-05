@@ -39,6 +39,7 @@ using namespace Eigen;
 typedef double dtype;
 typedef MatrixXd Mat;
 typedef MatrixXd* PMat;
+typedef long long blong;
 
 const static dtype minlogvalue = -1000;
 const static dtype d_zero = 0.0;
@@ -174,13 +175,11 @@ inline void Free(dtype** p) {
 }
 
 //(-scale,scale)
-inline void randomMatAssign(dtype* p, int length, dtype scale = 1.0, int seed = 0) {
-  srand(seed);
+inline void randomMatAssign(dtype* p, int length, dtype scale = 1.0) {
   for (int idx = 0; idx < length; idx++) {
     p[idx] = 2.0 * rand() * scale / RAND_MAX - scale;
   }
 }
-
 
 inline int mod(int v1, int v2) {
   if (v1 < 0 || v2 <= 0)
@@ -340,7 +339,7 @@ inline bool is_continue_label(const string& label, const string& startlabel, int
 
 // end some assumptions
 
-inline int cmpPairByValue(const pair<int, int> &x, const pair<int, int> &y) {
+inline int cmpIntIntPairByValue(const pair<int, int> &x, const pair<int, int> &y) {
   return x.second > y.second;
 }
 
@@ -350,7 +349,7 @@ inline void sortMapbyValue(const hash_map<int, int> &t_map, vector<pair<int, int
   for (hash_map<int, int>::const_iterator iter = t_map.begin(); iter != t_map.end(); iter++) {
     t_vec.push_back(make_pair(iter->first, iter->second));
   }
-  std::sort(t_vec.begin(), t_vec.end(), cmpPairByValue);
+  std::sort(t_vec.begin(), t_vec.end(), cmpIntIntPairByValue);
 }
 
 template<typename T>
@@ -819,6 +818,11 @@ inline void addAllItems(vector<A>& target, const vector<A>& sources){
 	for (int idx = 0; idx < sources.size(); idx++){
 		target.push_back(sources[idx]);
 	}
+}
+
+
+inline int cmpStringIntPairByValue(const pair<string, int> &x, const pair<string, int> &y) {
+	return x.second > y.second;
 }
 
 #endif

@@ -38,8 +38,7 @@ public:
 		}
 	}
 
-	inline void initial(int nOSize, int nISize1, int nISize2, int nISize3, int nISize4, bool useB = true, int seed = 0) {
-		srand(seed);
+	inline void initial(int nOSize, int nISize1, int nISize2, int nISize3, int nISize4, bool useB = true) {
 		W1.initial(nOSize, nISize1);
 		W2.initial(nOSize, nISize2);
 		W3.initial(nOSize, nISize3);

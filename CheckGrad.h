@@ -30,17 +30,11 @@ public:
 public:
 	template<typename Example, typename Classifier>
 	inline void check(Classifier* classifier, const vector<Example>& examples, const string& description){
-		int seed = description.length();
-		for (int i = 0; i < description.length(); i++)
-			seed = (int)(description[i]) * 5 + seed;
-
-		srand(seed);
-
 		static dtype orginValue, lossAdd, lossPlus;
 		static int idx, idy;
 		static dtype mockGrad, computeGrad;
 		for (int i = 0; i < _params.size(); i++){
-			_params[i]->randpoint(idx, idy, rand() + i);
+			_params[i]->randpoint(idx, idy);
 			orginValue = _params[i]->val(idx, idy);
 
 			_params[i]->val(idx, idy) = orginValue + 0.001;
