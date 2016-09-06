@@ -170,6 +170,7 @@ public:
 				std::cout << "error, please debug" << std::endl;
 			}
 
+			x[idx]->lock--;
 		}
 
 		return cost;

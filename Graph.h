@@ -13,10 +13,12 @@ struct Graph {
 
 protected:
 	vector<PNode> execs; //backward
+	vector<PNode> exports; //backward
 
 public:
 	Graph(){
 		execs.clear();
+		exports.clear();
 	}
 
 public:
@@ -25,16 +27,32 @@ public:
 			execs[idx]->clearValue();
 		}
 		execs.clear();
+		exports.clear();
 	}
 
 	inline void backward(){
 		for (int idx = execs.size() - 1; idx >= 0; idx--){
-			execs[idx]->backward();
+			if (execs[idx]->lock > 0){
+				continue;
+			}
+			else if (execs[idx]->lock == 0) {
+				execs[idx]->backward();
+			}
+			else {
+				std::cout << "bug exists, please check" << std::endl;
+			}
 		}
 	}
 
 	inline void addNode(PNode x){
 		execs.push_back(x);
+	}
+
+	//some nodes are exported for output, define them
+	//root nodes not aiming for outputs are not allowed
+	inline void exportNode(PNode x){
+		x->lock++;
+		exports.push_back(x);
 	}
 
 public: // virtual functions

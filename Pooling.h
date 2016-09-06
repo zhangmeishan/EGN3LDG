@@ -37,6 +37,7 @@ public:
 				ins[i]->loss = Mat::Zero(ins[i]->val.rows(), ins[i]->val.cols());
 			}
 			ins[i]->loss = ins[i]->loss.array() + loss.array() * masks[i].array();
+			ins[i]->lock--;
 		}
 	}
 };
@@ -87,6 +88,10 @@ public:
 			val = val.array() + masks[i].array() *ins[i]->val.array();
 		}
 
+		for (int i = 0; i < ins.size(); ++i){
+			ins[i]->lock++;
+		}
+
 		cg->addNode(this);
 	}
 
@@ -126,6 +131,10 @@ public:
 		val = Mat::Zero(dim, 1);
 		for (int i = 0; i < ins.size(); ++i){
 			val = val.array() + masks[i].array() *ins[i]->val.array();
+		}
+
+		for (int i = 0; i < ins.size(); ++i){
+			ins[i]->lock++;
 		}
 
 		cg->addNode(this);
@@ -178,6 +187,10 @@ public:
 		val = Mat::Zero(dim, 1);
 		for (int i = 0; i < ins.size(); ++i){
 			val = val.array() + masks[i].array() *ins[i]->val.array();
+		}
+
+		for (int i = 0; i < ins.size(); ++i){
+			ins[i]->lock++;
 		}
 
 		cg->addNode(this);

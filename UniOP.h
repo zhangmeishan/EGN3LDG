@@ -116,6 +116,7 @@ public:
 
 		val = activate(ty);
 
+		in->lock++;
 		cg->addNode(this);
 	}
 
@@ -137,6 +138,7 @@ public:
 		}
 
 		in->loss += param->W.val.transpose() * lty;
+		in->lock--;
 	}
 
 };
@@ -187,6 +189,7 @@ public:
 
 		val = param->W.val * (in->val);	
 
+		in->lock++;
 		cg->addNode(this);
 	}
 
@@ -198,6 +201,7 @@ public:
 		}
 
 		in->loss += param->W.val.transpose() * loss;
+		in->lock--;
 	}
 
 };

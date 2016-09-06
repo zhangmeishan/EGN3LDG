@@ -1,5 +1,5 @@
 /*
- * AP1O.h
+ * SparseCOP.h
  *
  *  Created on: Jul 20, 2016
  *      Author: mszhang
@@ -17,18 +17,22 @@
 // aiming for Averaged Perceptron, can not coexist with neural networks
 // thus we do not use the BaseParam class
 struct SparseC1Params {
-public:	
+public:
 	SparseParam HW; // for high frequency features
-	SparseParam LW; // for low frequency features
+	SparseParam LW; // for high frequency features
 	PAlphabet elems; //please first sort the actomic features according to their accuracy
 	int nHVSize, nLVSize;
 	int nDim;
+
+private:
+	int nHVSize1;
 
 public:
 	SparseC1Params() {
 		nHVSize = nLVSize = 0;
 		elems = NULL;
 		nDim = 0;
+		nHVSize1 = 0;
 	}
 
 	inline void exportAdaParams(ModelUpdate& ada) {
@@ -37,30 +41,35 @@ public:
 	}
 
 	inline void initialWeights(int nOSize) {
-		if (nHVSize == 0 || nLVSize == 0){
+		if (nHVSize <= 0 && nLVSize <= 0){
 			std::cout << "please check the alphabet" << std::endl;
 			return;
 		}
 		nDim = nOSize;
-		if (nHVSize > 0) HW.initial(nOSize, nHVSize);
-		if (nLVSize > 0) LW.initial(nOSize, nLVSize);
+		if (nHVSize > 0)HW.initial(nOSize, nHVSize);
+		if (nLVSize > 0)LW.initial(nOSize, nLVSize);
 	}
 
 	//random initialization
-	inline void initial(PAlphabet alpha, int nOSize, int cutoff, int lowCapacity = 10000){
+	inline void initial(PAlphabet alpha, int nOSize){
 		elems = alpha;
-		nHVSize = elems->aboveThreshold(cutoff);
-		nLVSize = elems->size() - nHVSize;
-		if (nLVSize > lowCapacity) nLVSize = lowCapacity;
+		nHVSize1 = elems->highfreq();
+
+		nHVSize = nHVSize1;
+		if (nHVSize < 0 || nHVSize > maxCapacity){
+			nHVSize = maxCapacity;
+		}
+		nLVSize = lowCapacity;
+
 		initialWeights(nOSize);
 	}
 
 	//important!!! if > nHVSize, using LW, otherwise, using HW
-	inline blong getFeatureId(const string& strFeat){
-		blong id = elems->from_string(strFeat);
-		if (id >= nHVSize){
+	inline int getFeatureId(const string& strFeat){
+		int id = elems->from_string(strFeat);
+		if (id >= nHVSize1){
 			if (nLVSize > 0){
-				return nHVSize + ((id - nHVSize) % nLVSize);  //very simple hash strategy
+				return nHVSize + id % nLVSize;
 			}
 			else{
 				return -1;
@@ -69,7 +78,7 @@ public:
 		if (id < 0){
 			return -1;
 		}
-		return id;
+		return id%nHVSize;
 	}
 
 };
@@ -107,11 +116,11 @@ public:
 
 public:
 	// initialize inputs at the same times
-	inline void forward(Graph* cg, const string& x) {
+	inline void forward(Graph* cg, const string& x1) {
 		assert(param != NULL);
 		static int featId;
 		val = Mat::Zero(dim, 1);
-		featId = param->getFeatureId(x);
+		featId = param->getFeatureId(x1);
 		if (featId < 0){
 			tx = -1;
 			mode = -1;
@@ -173,7 +182,7 @@ public:
 	}
 
 	inline void initialWeights(int nOSize) {
-		if (nHVSize == 0 || nLVSize == 0){
+		if (nHVSize <= 0 && nLVSize <= 0){
 			std::cout << "please check the alphabet" << std::endl;
 			return;
 		}
@@ -183,29 +192,18 @@ public:
 	}
 
 	//random initialization
-	inline void initial(PAlphabet alpha1, PAlphabet alpha2, int nOSize, int cutoff1, int cutoff2, int lowCapacity = 10000){
+	inline void initial(PAlphabet alpha1, PAlphabet alpha2, int nOSize){
 		elems1 = alpha1;
-		nHVSize1 = elems1->aboveThreshold(cutoff1);
+		nHVSize1 = elems1->highfreq();
 
 		elems2 = alpha2;
-		nHVSize2 = elems2->aboveThreshold(cutoff2);
+		nHVSize2 = elems2->highfreq();
 
 		nHVSize = multiply(nHVSize1, nHVSize2);
-		if (nHVSize < 0){
-			std::cout << "SparseC2Params: too much features, please increase the cutoff value." << std::endl;
-			return;
+		if (nHVSize < 0 || nHVSize > maxCapacity){
+			nHVSize = maxCapacity;
 		}
-
 		nLVSize = lowCapacity;
-		int nAllSize = multiply(elems1->size(), elems2->size());
-		int nRemainSize =  nAllSize - nHVSize;
-		if (nLVSize > nRemainSize && nAllSize >= 0) nLVSize = nRemainSize;
-
-		int totalSize = nHVSize + nLVSize;
-		if (totalSize < 0){
-			std::cout << "SparseC2Params: too much features, please increase the cutoff value." << std::endl;
-			return;
-		}
 
 		initialWeights(nOSize);
 	}
@@ -217,7 +215,7 @@ public:
 		int id2 = elems2->from_string(strFeat2);
 		if (id1 >= nHVSize1 || id2 >= nHVSize2){
 			if (nLVSize > 0){
-				curIndex = ((blong)(id1)* (blong)(elems2->size()) + (blong)(id2)-(blong)(nHVSize)) % (blong)(nLVSize);
+				curIndex = ((blong)(id1)* (blong)(elems2->size()) + (blong)(id2)) % (blong)(nLVSize);
 				if (curIndex < 0) curIndex = curIndex + nLVSize;
 				if (curIndex < 0 || curIndex >= nLVSize) std::cout << "SparseC2Params: impossible mod operation" << std::endl;
 				return nHVSize + curIndex;  //very simple hash strategy
@@ -229,7 +227,10 @@ public:
 		if (id1 < 0 || id2 < 0){
 			return -1;
 		}
-		return id1 * nHVSize2 + id2;
+		curIndex = (((blong)(id1)* (blong)(nHVSize2)+(blong)(id2))) % (blong)(nHVSize);
+		if (curIndex < 0) curIndex = curIndex + nHVSize;
+		if (curIndex < 0 || curIndex >= nHVSize) std::cout << "SparseC2Params: impossible mod operation" << std::endl;
+		return curIndex;
 	}
 };
 
@@ -331,7 +332,7 @@ public:
 	}
 
 	inline void initialWeights(int nOSize) {
-		if (nHVSize == 0 || nLVSize == 0){
+		if (nHVSize <= 0 && nLVSize <= 0){
 			std::cout << "please check the alphabet" << std::endl;
 			return;
 		}
@@ -341,32 +342,21 @@ public:
 	}
 
 	//random initialization
-	inline void initial(PAlphabet alpha1, PAlphabet alpha2, PAlphabet alpha3, int nOSize, int cutoff1, int cutoff2, int cutoff3, int lowCapacity = 1000){
+	inline void initial(PAlphabet alpha1, PAlphabet alpha2, PAlphabet alpha3, int nOSize){
 		elems1 = alpha1;
-		nHVSize1 = elems1->aboveThreshold(cutoff1);
+		nHVSize1 = elems1->highfreq();
 
 		elems2 = alpha2;
-		nHVSize2 = elems2->aboveThreshold(cutoff2);
+		nHVSize2 = elems2->highfreq();
 
 		elems3 = alpha3;
-		nHVSize3 = elems3->aboveThreshold(cutoff3);
+		nHVSize3 = elems3->highfreq();
 
 		nHVSize = multiply(nHVSize1, nHVSize2, nHVSize3);
-		if (nHVSize < 0){
-			std::cout << "SparseC3Params: too much features, please increase the cutoff value." << std::endl;
-			return;
+		if (nHVSize < 0 || nHVSize > maxCapacity){
+			nHVSize = maxCapacity;
 		}
-
 		nLVSize = lowCapacity;
-		int nAllSize = multiply(elems1->size(), elems2->size(), elems3->size());
-		int nRemainSize =  nAllSize - nHVSize;
-		if (nLVSize > nRemainSize && nAllSize >= 0) nLVSize = nRemainSize;
-
-		int totalSize = nHVSize + nLVSize;
-		if (totalSize < 0){
-			std::cout << "SparseC3Params: too much features, please increase the cutoff value." << std::endl;
-			return;
-		}
 
 		initialWeights(nOSize);
 	}
@@ -380,7 +370,7 @@ public:
 		if (id1 >= nHVSize1 || id2 >= nHVSize2 || id3 >= nHVSize3){
 			if (nLVSize > 0){
 				curIndex = ((blong)(id1)* (blong)(elems2->size()) + (blong)(id2)) % (blong)(nLVSize);
-				curIndex = ((blong)(curIndex)* (blong)(elems3->size()) + (blong)(id3) -(blong)(nHVSize)) % (blong)(nLVSize);
+				curIndex = ((blong)(curIndex)* (blong)(elems3->size()) + (blong)(id3)) % (blong)(nLVSize);
 				if (curIndex < 0) curIndex = curIndex + nLVSize;
 				if (curIndex < 0 || curIndex >= nLVSize) std::cout << "SparseC3Params: impossible mod operation" << std::endl;
 				return nHVSize + curIndex;  //very simple hash strategy
@@ -392,8 +382,10 @@ public:
 		if (id1 < 0 || id2 < 0 || id3 < 0){
 			return -1;
 		}
-		curIndex = id1 * nHVSize2 + id2;
-		curIndex = curIndex * nHVSize3 + id3;
+		curIndex = ((blong)(id1) * (blong)(nHVSize2)+(blong)(id2)) % (blong)(nHVSize);
+		curIndex = ((blong)(curIndex) * (blong)(nHVSize3)+(blong)(id3)) % (blong)(nHVSize);
+		if (curIndex < 0) curIndex = curIndex + nHVSize;
+		if (curIndex < 0 || curIndex >= nHVSize) std::cout << "SparseC3Params: impossible mod operation" << std::endl;
 		return curIndex;
 	}
 
@@ -497,7 +489,7 @@ public:
 	}
 
 	inline void initialWeights(int nOSize) {
-		if (nHVSize == 0 || nLVSize == 0){
+		if (nHVSize <= 0 && nLVSize <= 0){
 			std::cout << "please check the alphabet" << std::endl;
 			return;
 		}
@@ -507,35 +499,24 @@ public:
 	}
 
 	//random initialization
-	inline void initial(PAlphabet alpha1, PAlphabet alpha2, PAlphabet alpha3, PAlphabet alpha4, int nOSize, int cutoff1, int cutoff2, int cutoff3, int cutoff4, int lowCapacity = 1000){
+	inline void initial(PAlphabet alpha1, PAlphabet alpha2, PAlphabet alpha3, PAlphabet alpha4, int nOSize){
 		elems1 = alpha1;
-		nHVSize1 = elems1->aboveThreshold(cutoff1);
+		nHVSize1 = elems1->highfreq();
 
 		elems2 = alpha2;
-		nHVSize2 = elems2->aboveThreshold(cutoff2);
+		nHVSize2 = elems2->highfreq();
 
 		elems3 = alpha3;
-		nHVSize3 = elems3->aboveThreshold(cutoff3);
+		nHVSize3 = elems3->highfreq();
 
 		elems4 = alpha4;
-		nHVSize4 = elems4->aboveThreshold(cutoff4);
+		nHVSize4 = elems4->highfreq();
 
 		nHVSize = multiply(nHVSize1, nHVSize2, nHVSize3, nHVSize4);
-		if (nHVSize < 0){
-			std::cout << "SparseC4Params: too much features, please increase the cutoff value." << std::endl;
-			return;
+		if (nHVSize < 0 || nHVSize > maxCapacity){
+			nHVSize = maxCapacity;
 		}
-
 		nLVSize = lowCapacity;
-		int nAllSize = multiply(elems1->size(), elems2->size(), elems3->size(), elems4->size());
-		int nRemainSize =  nAllSize - nHVSize;
-		if (nLVSize > nRemainSize && nAllSize >= 0) nLVSize = nRemainSize;
-
-		int totalSize = nHVSize + nLVSize;
-		if (totalSize < 0){
-			std::cout << "SparseC4Params: too much features, please increase the cutoff value." << std::endl;
-			return;
-		}
 
 		initialWeights(nOSize);
 	}
@@ -551,7 +532,7 @@ public:
 			if (nLVSize > 0){
 				curIndex = ((blong)(id1)* (blong)(elems2->size()) + (blong)(id2)) % (blong)(nLVSize);
 				curIndex = ((blong)(curIndex)* (blong)(elems3->size()) + (blong)(id3)) % (blong)(nLVSize);
-				curIndex = ((blong)(curIndex)* (blong)(elems4->size()) + (blong)(id4)-(blong)(nHVSize)) % (blong)(nLVSize);
+				curIndex = ((blong)(curIndex)* (blong)(elems4->size()) + (blong)(id4)) % (blong)(nLVSize);
 				if (curIndex < 0) curIndex = curIndex + nLVSize;
 				if (curIndex < 0 || curIndex >= nLVSize) std::cout << "SparseC4Params: impossible mod operation" << std::endl;
 				return nHVSize + curIndex;  //very simple hash strategy
@@ -563,9 +544,11 @@ public:
 		if (id1 < 0 || id2 < 0 || id3 < 0 || id4 < 0){
 			return -1;
 		}
-		curIndex = id1 * nHVSize2 + id2;
-		curIndex = curIndex * nHVSize3 + id3;
-		curIndex = curIndex * nHVSize4 + id4;
+		curIndex = ((blong)(id1)* (blong)(nHVSize2)+(blong)(id2)) % (blong)(nHVSize);
+		curIndex = ((blong)(curIndex)* (blong)(nHVSize3)+(blong)(id3)) % (blong)(nHVSize);
+		curIndex = ((blong)(curIndex)* (blong)(nHVSize4)+(blong)(id4)) % (blong)(nHVSize);
+		if (curIndex < 0) curIndex = curIndex + nHVSize;
+		if (curIndex < 0 || curIndex >= nHVSize) std::cout << "SparseC4Params: impossible mod operation" << std::endl;
 		return curIndex;
 	}
 
@@ -669,7 +652,7 @@ public:
 	}
 
 	inline void initialWeights(int nOSize) {
-		if (nHVSize == 0 || nLVSize == 0){
+		if (nHVSize <= 0 && nLVSize <= 0){
 			std::cout << "please check the alphabet" << std::endl;
 			return;
 		}
@@ -679,39 +662,27 @@ public:
 	}
 
 	//random initialization
-	inline void initial(PAlphabet alpha1, PAlphabet alpha2, PAlphabet alpha3, PAlphabet alpha4, PAlphabet alpha5,
-		int nOSize, int cutoff1, int cutoff2, int cutoff3, int cutoff4, int cutoff5, int lowCapacity = 1000){
+	inline void initial(PAlphabet alpha1, PAlphabet alpha2, PAlphabet alpha3, PAlphabet alpha4, PAlphabet alpha5, int nOSize){
 		elems1 = alpha1;
-		nHVSize1 = elems1->aboveThreshold(cutoff1);
+		nHVSize1 = elems1->highfreq();
 
 		elems2 = alpha2;
-		nHVSize2 = elems2->aboveThreshold(cutoff2);
+		nHVSize2 = elems2->highfreq();
 
 		elems3 = alpha3;
-		nHVSize3 = elems3->aboveThreshold(cutoff3);
+		nHVSize3 = elems3->highfreq();
 
 		elems4 = alpha4;
-		nHVSize4 = elems4->aboveThreshold(cutoff4);
+		nHVSize4 = elems4->highfreq();
 
 		elems5 = alpha5;
-		nHVSize5 = elems5->aboveThreshold(cutoff5);
+		nHVSize5 = elems5->highfreq();
 
 		nHVSize = multiply(nHVSize1, nHVSize2, nHVSize3, nHVSize4, nHVSize5);
-		if (nHVSize < 0){
-			std::cout << "SparseC5Params: too much features, please increase the cutoff value." << std::endl;
-			return;
+		if (nHVSize < 0 || nHVSize > maxCapacity){
+			nHVSize = maxCapacity;
 		}
-
 		nLVSize = lowCapacity;
-		int nAllSize = multiply(elems1->size(), elems2->size(), elems3->size(), elems4->size(), elems5->size());
-		int nRemainSize =  nAllSize - nHVSize;
-		if (nLVSize > nRemainSize && nAllSize >= 0) nLVSize = nRemainSize;
-
-		int totalSize = nHVSize + nLVSize;
-		if (totalSize < 0){
-			std::cout << "SparseC5Params: too much features, please increase the cutoff value." << std::endl;
-			return;
-		}
 
 		initialWeights(nOSize);
 	}
@@ -729,7 +700,7 @@ public:
 				curIndex = ((blong)(id1)* (blong)(elems2->size()) + (blong)(id2)) % (blong)(nLVSize);
 				curIndex = ((blong)(curIndex)* (blong)(elems3->size()) + (blong)(id3)) % (blong)(nLVSize);
 				curIndex = ((blong)(curIndex)* (blong)(elems4->size()) + (blong)(id4)) % (blong)(nLVSize);
-				curIndex = ((blong)(curIndex)* (blong)(elems5->size()) + (blong)(id5)-(blong)(nHVSize)) % (blong)(nLVSize);
+				curIndex = ((blong)(curIndex)* (blong)(elems5->size()) + (blong)(id5)) % (blong)(nLVSize);
 				if (curIndex < 0) curIndex = curIndex + nLVSize;
 				if (curIndex < 0 || curIndex >= nLVSize) std::cout << "SparseC5Params: impossible mod operation" << std::endl;
 				return nHVSize + curIndex;  //very simple hash strategy
@@ -741,10 +712,12 @@ public:
 		if (id1 < 0 || id2 < 0 || id3 < 0 || id4 < 0 || id5 < 0){
 			return -1;
 		}
-		curIndex = id1 * nHVSize2 + id2;
-		curIndex = curIndex * nHVSize3 + id3;
-		curIndex = curIndex * nHVSize4 + id4;
-		curIndex = curIndex * nHVSize5 + id5;
+		curIndex = ((blong)(id1)* (blong)(nHVSize2)+(blong)(id2)) % (blong)(nHVSize);
+		curIndex = ((blong)(curIndex)* (blong)(nHVSize3)+(blong)(id3)) % (blong)(nHVSize);
+		curIndex = ((blong)(curIndex)* (blong)(nHVSize4)+(blong)(id4)) % (blong)(nHVSize);
+		curIndex = ((blong)(curIndex)* (blong)(nHVSize5)+(blong)(id5)) % (blong)(nHVSize);
+		if (curIndex < 0) curIndex = curIndex + nHVSize;
+		if (curIndex < 0 || curIndex >= nHVSize) std::cout << "SparseC5Params: impossible mod operation" << std::endl;
 		return curIndex;
 	}
 
@@ -848,7 +821,7 @@ public:
 	}
 
 	inline void initialWeights(int nOSize) {
-		if (nHVSize == 0 || nLVSize == 0){
+		if (nHVSize <= 0 && nLVSize <= 0){
 			std::cout << "please check the alphabet" << std::endl;
 			return;
 		}
@@ -858,42 +831,30 @@ public:
 	}
 
 	//random initialization
-	inline void initial(PAlphabet alpha1, PAlphabet alpha2, PAlphabet alpha3, PAlphabet alpha4, PAlphabet alpha5, PAlphabet alpha6,
-		int nOSize, int cutoff1, int cutoff2, int cutoff3, int cutoff4, int cutoff5, int cutoff6, int lowCapacity = 1000){
+	inline void initial(PAlphabet alpha1, PAlphabet alpha2, PAlphabet alpha3, PAlphabet alpha4, PAlphabet alpha5, PAlphabet alpha6, int nOSize){
 		elems1 = alpha1;
-		nHVSize1 = elems1->aboveThreshold(cutoff1);
+		nHVSize1 = elems1->highfreq();
 
 		elems2 = alpha2;
-		nHVSize2 = elems2->aboveThreshold(cutoff2);
+		nHVSize2 = elems2->highfreq();
 
 		elems3 = alpha3;
-		nHVSize3 = elems3->aboveThreshold(cutoff3);
+		nHVSize3 = elems3->highfreq();
 
 		elems4 = alpha4;
-		nHVSize4 = elems4->aboveThreshold(cutoff4);
+		nHVSize4 = elems4->highfreq();
 
 		elems5 = alpha5;
-		nHVSize5 = elems5->aboveThreshold(cutoff5);
+		nHVSize5 = elems5->highfreq();
 
 		elems6 = alpha6;
-		nHVSize6 = elems6->aboveThreshold(cutoff6);
+		nHVSize6 = elems6->highfreq();
 
 		nHVSize = multiply(nHVSize1, nHVSize2, nHVSize3, nHVSize4, nHVSize5, nHVSize6);
-		if (nHVSize < 0){
-			std::cout << "SparseC6Params: too much features, please increase the cutoff value." << std::endl;
-			return;
+		if (nHVSize < 0 || nHVSize > maxCapacity){
+			nHVSize = maxCapacity;
 		}
-
 		nLVSize = lowCapacity;
-		int nAllSize = multiply(elems1->size(), elems2->size(), elems3->size(), elems4->size(), elems5->size(), elems6->size());
-		int nRemainSize =  nAllSize - nHVSize;
-		if (nLVSize > nRemainSize && nAllSize >= 0) nLVSize = nRemainSize;
-
-		int totalSize = nHVSize + nLVSize;
-		if (totalSize < 0){
-			std::cout << "SparseC6Params: too much features, please increase the cutoff value." << std::endl;
-			return;
-		}
 
 		initialWeights(nOSize);
 	}
@@ -913,7 +874,7 @@ public:
 				curIndex = ((blong)(curIndex)* (blong)(elems3->size()) + (blong)(id3)) % (blong)(nLVSize);
 				curIndex = ((blong)(curIndex)* (blong)(elems4->size()) + (blong)(id4)) % (blong)(nLVSize);
 				curIndex = ((blong)(curIndex)* (blong)(elems5->size()) + (blong)(id5)) % (blong)(nLVSize);
-				curIndex = ((blong)(curIndex)* (blong)(elems6->size()) + (blong)(id6)-(blong)(nHVSize)) % (blong)(nLVSize);
+				curIndex = ((blong)(curIndex)* (blong)(elems6->size()) + (blong)(id6)) % (blong)(nLVSize);
 				if (curIndex < 0) curIndex = curIndex + nLVSize;
 				if (curIndex < 0 || curIndex >= nLVSize) std::cout << "SparseC6Params: impossible mod operation" << std::endl;
 				return nHVSize + curIndex;  //very simple hash strategy
@@ -925,11 +886,13 @@ public:
 		if (id1 < 0 || id2 < 0 || id3 < 0 || id4 < 0 || id5 < 0 || id6 < 0){
 			return -1;
 		}
-		curIndex = id1 * nHVSize2 + id2;
-		curIndex = curIndex * nHVSize3 + id3;
-		curIndex = curIndex * nHVSize4 + id4;
-		curIndex = curIndex * nHVSize5 + id5;
-		curIndex = curIndex * nHVSize6 + id6;
+		curIndex = ((blong)(id1)* (blong)(nHVSize2)+(blong)(id2)) % (blong)(nHVSize);
+		curIndex = ((blong)(curIndex)* (blong)(nHVSize3)+(blong)(id3)) % (blong)(nHVSize);
+		curIndex = ((blong)(curIndex)* (blong)(nHVSize4)+(blong)(id4)) % (blong)(nHVSize);
+		curIndex = ((blong)(curIndex)* (blong)(nHVSize5)+(blong)(id5)) % (blong)(nHVSize);
+		curIndex = ((blong)(curIndex)* (blong)(nHVSize6)+(blong)(id6)) % (blong)(nHVSize);
+		if (curIndex < 0) curIndex = curIndex + nHVSize;
+		if (curIndex < 0 || curIndex >= nHVSize) std::cout << "SparseC6Params: impossible mod operation" << std::endl;
 		return curIndex;
 	}
 
@@ -1032,7 +995,7 @@ public:
 	}
 
 	inline void initialWeights(int nOSize) {
-		if (nHVSize == 0 || nLVSize == 0){
+		if (nHVSize <= 0 && nLVSize <= 0){
 			std::cout << "please check the alphabet" << std::endl;
 			return;
 		}
@@ -1042,45 +1005,33 @@ public:
 	}
 
 	//random initialization
-	inline void initial(PAlphabet alpha1, PAlphabet alpha2, PAlphabet alpha3, PAlphabet alpha4, PAlphabet alpha5, PAlphabet alpha6, PAlphabet alpha7,
-		int nOSize, int cutoff1, int cutoff2, int cutoff3, int cutoff4, int cutoff5, int cutoff6, int cutoff7, int lowCapacity = 1000){
+	inline void initial(PAlphabet alpha1, PAlphabet alpha2, PAlphabet alpha3, PAlphabet alpha4, PAlphabet alpha5, PAlphabet alpha6, PAlphabet alpha7, int nOSize){
 		elems1 = alpha1;
-		nHVSize1 = elems1->aboveThreshold(cutoff1);
+		nHVSize1 = elems1->highfreq();
 
 		elems2 = alpha2;
-		nHVSize2 = elems2->aboveThreshold(cutoff2);
+		nHVSize2 = elems2->highfreq();
 
 		elems3 = alpha3;
-		nHVSize3 = elems3->aboveThreshold(cutoff3);
+		nHVSize3 = elems3->highfreq();
 
 		elems4 = alpha4;
-		nHVSize4 = elems4->aboveThreshold(cutoff4);
+		nHVSize4 = elems4->highfreq();
 
 		elems5 = alpha5;
-		nHVSize5 = elems5->aboveThreshold(cutoff5);
+		nHVSize5 = elems5->highfreq();
 
 		elems6 = alpha6;
-		nHVSize6 = elems6->aboveThreshold(cutoff6);
+		nHVSize6 = elems6->highfreq();
 
 		elems7 = alpha7;
-		nHVSize7 = elems7->aboveThreshold(cutoff7);
+		nHVSize7 = elems7->highfreq();
 
 		nHVSize = multiply(nHVSize1, nHVSize2, nHVSize3, nHVSize4, nHVSize5, nHVSize6, nHVSize7);
-		if (nHVSize < 0){
-			std::cout << "SparseC7Params: too much features, please increase the cutoff value." << std::endl;
-			return;
+		if (nHVSize < 0 || nHVSize > maxCapacity){
+			nHVSize = maxCapacity;
 		}
-
 		nLVSize = lowCapacity;
-		int nAllSize = multiply(elems1->size(), elems2->size(), elems3->size(), elems4->size(), elems5->size(), elems6->size(), elems7->size());
-		int nRemainSize =  nAllSize - nHVSize;
-		if (nLVSize > nRemainSize && nAllSize >= 0) nLVSize = nRemainSize;
-
-		int totalSize = nHVSize + nLVSize;
-		if (totalSize < 0){
-			std::cout << "SparseC7Params: too much features, please increase the cutoff value." << std::endl;
-			return;
-		}
 
 		initialWeights(nOSize);
 	}
@@ -1102,7 +1053,7 @@ public:
 				curIndex = ((blong)(curIndex)* (blong)(elems4->size()) + (blong)(id4)) % (blong)(nLVSize);
 				curIndex = ((blong)(curIndex)* (blong)(elems5->size()) + (blong)(id5)) % (blong)(nLVSize);
 				curIndex = ((blong)(curIndex)* (blong)(elems6->size()) + (blong)(id6)) % (blong)(nLVSize);
-				curIndex = ((blong)(curIndex)* (blong)(elems7->size()) + (blong)(id7)-(blong)(nHVSize)) % (blong)(nLVSize);
+				curIndex = ((blong)(curIndex)* (blong)(elems7->size()) + (blong)(id7)) % (blong)(nLVSize);
 				if (curIndex < 0) curIndex = curIndex + nLVSize;
 				if (curIndex < 0 || curIndex >= nLVSize) std::cout << "SparseC7Params: impossible mod operation" << std::endl;
 				return nHVSize + curIndex;  //very simple hash strategy
@@ -1114,12 +1065,14 @@ public:
 		if (id1 < 0 || id2 < 0 || id3 < 0 || id4 < 0 || id5 < 0 || id6 < 0 || id7 < 0){
 			return -1;
 		}
-		curIndex = id1 * nHVSize2 + id2;
-		curIndex = curIndex * nHVSize3 + id3;
-		curIndex = curIndex * nHVSize4 + id4;
-		curIndex = curIndex * nHVSize5 + id5;
-		curIndex = curIndex * nHVSize6 + id6;
-		curIndex = curIndex * nHVSize7 + id7;
+		curIndex = ((blong)(id1)* (blong)(nHVSize2)+(blong)(id2)) % (blong)(nHVSize);
+		curIndex = ((blong)(curIndex)* (blong)(nHVSize3)+(blong)(id3)) % (blong)(nHVSize);
+		curIndex = ((blong)(curIndex)* (blong)(nHVSize4)+(blong)(id4)) % (blong)(nHVSize);
+		curIndex = ((blong)(curIndex)* (blong)(nHVSize5)+(blong)(id5)) % (blong)(nHVSize);
+		curIndex = ((blong)(curIndex)* (blong)(nHVSize6)+(blong)(id6)) % (blong)(nHVSize);
+		curIndex = ((blong)(curIndex)* (blong)(nHVSize7)+(blong)(id7)) % (blong)(nHVSize);
+		if (curIndex < 0) curIndex = curIndex + nHVSize;
+		if (curIndex < 0 || curIndex >= nHVSize) std::cout << "SparseC7Params: impossible mod operation" << std::endl;
 		return curIndex;
 	}
 

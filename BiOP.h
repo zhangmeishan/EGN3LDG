@@ -120,6 +120,9 @@ public:
 
 		val = activate(ty);
 
+		in1->lock++;
+		in2->lock++;
+
 		cg->addNode(this);
 	}
 
@@ -146,6 +149,9 @@ public:
 			in2->loss = Mat::Zero(in2->val.rows(), in2->val.cols());
 		}		
 		in2->loss += param->W2.val.transpose() * lty;
+
+		in1->lock--;
+		in2->lock--;
 	}
 
 };

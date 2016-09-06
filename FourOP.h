@@ -134,6 +134,11 @@ public:
 
 		val = activate(ty);
 
+		in1->lock++;
+		in2->lock++;
+		in3->lock++;
+		in4->lock++;
+
 		cg->addNode(this);
 	}
 
@@ -171,7 +176,12 @@ public:
 		if (in4->loss.size() == 0) {
 			in4->loss = Mat::Zero(in4->val.rows(), in4->val.cols());
 		}
-		in4->loss += param->W4.val.transpose() * lty;		
+		in4->loss += param->W4.val.transpose() * lty;	
+
+		in1->lock--;
+		in2->lock--;
+		in3->lock--;
+		in4->lock--;
 	}
 
 };

@@ -1,5 +1,5 @@
 /*
- * UniOP.h
+ * SparseOP.h
  *
  *  Created on: Jul 20, 2016
  *      Author: mason

@@ -33,6 +33,8 @@ public:
 		in1 = x1;
 		in2 = x2;
 		val = x1->val.array() * x2->val.array();
+		in1->lock++;
+		in2->lock++;
 		cg->addNode(this);
 	}
 
@@ -46,6 +48,9 @@ public:
 			in2->loss = Mat::Zero(in2->val.rows(), in2->val.cols());
 		}
 		in2->loss = in2->loss.array() + loss.array() * in1->val.array();
+
+		in1->lock--;
+		in2->lock--;
 	}
 
 };
@@ -147,6 +152,7 @@ public:
 				ins[i]->loss = Mat::Zero(ins[i]->val.rows(), ins[i]->val.cols());
 			}
 			ins[i]->loss += loss;
+			ins[i]->lock--;
 		}
 
 	}
@@ -157,6 +163,10 @@ protected:
 		val = Mat::Zero(dim, 1);
 		for (int idx = 0; idx < ins.size(); idx++){
 			val += ins[idx]->val;
+		}
+
+		for (int idx = 0; idx < ins.size(); idx++){
+			ins[idx]->lock++;
 		}
 	}
 
@@ -196,6 +206,7 @@ public:
 	inline void forward(Graph *cg, PNode x){
 		in = x;
 		val = activate(in->val);
+		in->lock++;
 		cg->addNode(this);
 	}
 
@@ -204,6 +215,7 @@ public:
 			in->loss = Mat::Zero(in->val.rows(), in->val.cols());
 		}
 		in->loss = in->loss.array() + loss.array() * derivate(in->val, val).array();
+		in->lock--;
 	}
 
 };
@@ -234,6 +246,7 @@ public:
 	inline void forward(Graph *cg, PNode x){
 		in = x;
 		val = tanh(in->val);
+		in->lock++;
 		cg->addNode(this);
 	}
 
@@ -242,6 +255,7 @@ public:
 			in->loss = Mat::Zero(in->val.rows(), in->val.cols());
 		}
 		in->loss = in->loss.array() + loss.array() * tanh_deri(in->val, val).array();
+		in->lock--;
 	}
 
 };
@@ -272,6 +286,7 @@ public:
 	inline void forward(Graph *cg, PNode x){
 		in = x;
 		val = sigmoid(in->val);
+		in->lock++;
 		cg->addNode(this);
 	}
 
@@ -280,6 +295,7 @@ public:
 			in->loss = Mat::Zero(in->val.rows(), in->val.cols());
 		}
 		in->loss = in->loss.array() + loss.array() * sigmoid_deri(in->val, val).array();
+		in->lock--;
 	}
 
 };
@@ -309,6 +325,7 @@ public:
 	inline void forward(Graph *cg, PNode x){
 		in = x;
 		val = relu(in->val);
+		in->lock++;
 		cg->addNode(this);
 	}
 
@@ -317,6 +334,7 @@ public:
 			in->loss = Mat::Zero(in->val.rows(), in->val.cols());
 		}
 		in->loss = in->loss.array() + loss.array() * relu_deri(in->val, val).array();
+		in->lock--;
 	}
 
 };

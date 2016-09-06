@@ -9,8 +9,10 @@
 #define COPUtil_H_
 #include "MyLib.h"
 
-// all v values are larger than zero
+const static int maxCapacity = 1000000;  //max feature number
+const static int lowCapacity = 100001;  //max feature number
 
+// all v values are larger than zero
 inline int multiply(int v1, int v2){
 	int s = v1 * v2;
 	blong bs = (blong)(v1)* (blong)(v2);
@@ -72,6 +74,8 @@ inline int multiply(int v1, int v2, int v3, int v4, int v5, int v6, int v7){
 
 	return multiply(s, v7);
 }
+
+
 
 
 #endif /* COPUtil_H_ */

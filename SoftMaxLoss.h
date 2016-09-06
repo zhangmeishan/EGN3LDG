@@ -53,6 +53,7 @@ public:
 			}
 		}
 
+		x->lock--;
 		return cost;
 
 	}

@@ -11,7 +11,8 @@ struct Node {
 public:
 	Mat val;
 	Mat loss;
-	int dim;
+	int dim;	
+	int lock;  //node can backward only when lock = 0;
 
 
 public:
@@ -19,18 +20,21 @@ public:
 		val.setZero();
 		loss.setZero();
 		dim = 0;
+		lock = 0;
 	}	
 
 public: 
 	virtual inline void clearValue(){
 		val.setZero();
 		loss.setZero();
+		lock = 0;
 	}
 
 	virtual inline void clear(){
 		val.setZero();
 		loss.setZero();
 		dim = 0;
+		lock = 0;
 	}
 
 	virtual inline void backward(){

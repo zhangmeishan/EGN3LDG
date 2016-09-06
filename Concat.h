@@ -114,8 +114,9 @@ public:
 		int offset = 0;
 		for (int i = 0; i < nSize; ++i){
 			for (int idx = 0; idx < inDims[i]; idx++){
-				ins[i]->loss(idx, 0) += loss(offset + idx, 0);
+				ins[i]->loss(idx, 0) += loss(offset + idx, 0);				
 			}
+			ins[i]->lock--;
 			offset += inDims[i];
 		}
 	}
@@ -140,6 +141,10 @@ protected:
 				val(offset + idx, 0) = ins[i]->val(idx, 0);
 			}
 			offset += inDims[i];
+		}
+
+		for (int i = 0; i < nSize; ++i){
+			ins[i]->lock++;
 		}
 	}
 };

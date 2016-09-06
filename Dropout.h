@@ -63,6 +63,7 @@ public:
 		
 		val = in->val.array() * mask.array();
 
+		in->lock++;
 		cg->addNode(this);
 	}
 	
@@ -72,6 +73,7 @@ public:
 			in->loss = Mat::Zero(in->val.rows(), in->val.cols());
 		}
 		in->loss = loss.array() * mask.array();
+		in->lock--;
 	}
 	
 };
