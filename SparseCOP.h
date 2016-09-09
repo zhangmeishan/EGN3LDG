@@ -443,12 +443,6 @@ public:
 			mode = 1;
 			val.col(0) += param->LW.val.row(tx).transpose();
 		}
-
-		//if (sid == 19219){
-		//	std::cout << "debug ";
-		//}
-
-		//std::cout << "SparseC3Node ";
 		cg->addNode(this);
 		
 	}
