@@ -14,6 +14,7 @@ public:
 	int dim;	
 	int lock;  //node can backward only when lock = 0;
 
+	int sid;
 
 public:
 	Node(){
@@ -21,6 +22,7 @@ public:
 		loss.setZero();
 		dim = 0;
 		lock = 0;
+		sid = rand();
 	}	
 
 public: 

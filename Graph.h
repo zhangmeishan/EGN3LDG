@@ -32,6 +32,7 @@ public:
 
 	inline void backward(){
 		for (int idx = execs.size() - 1; idx >= 0; idx--){
+			//std::cout << execs[idx]->sid << " " << execs[idx]->lock << std::endl;
 			if (execs[idx]->lock > 0){
 				continue;
 			}
@@ -46,6 +47,7 @@ public:
 
 	inline void addNode(PNode x){
 		execs.push_back(x);
+		//std::cout << x->sid << std::endl;
 	}
 
 	//some nodes are exported for output, define them
