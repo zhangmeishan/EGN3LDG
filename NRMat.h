@@ -173,7 +173,7 @@ public:
   NRHeap & resize(const int n);
   explicit NRHeap(const int n); // zero-based array
   NRHeap(const NRHeap &rhs); // copy constructor
-  NRHeap & operator=(const NRHeap &rhs); // assignment
+  //NRHeap & operator=(const NRHeap &rhs); // assignment
   inline T & operator[](const int i); // i'th element
   inline const T & operator[](const int i) const;
   inline int size() const;
@@ -188,8 +188,6 @@ public:
   bool add_elem(const T &a) {
     if (ne == maxsize) {
       if (compare()(v[0], a) < 0) {
-        //T tmp;
-				//tmp = v[0];
         v[0] = a;
         trickleDown(0);
         return true;
@@ -218,10 +216,6 @@ public:
   void clear() {
     nn = 0;
     ne = 0;
-  }
-
-  inline int elemsize(){
-    return ne;
   }
 
 protected:
