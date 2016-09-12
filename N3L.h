@@ -14,6 +14,7 @@
 #include "SoftMaxLoss.h"
 #include "CheckGrad.h"
 #include "SparseOP.h"
+#include "APOP.h"
 #include "Pooling.h"
 #include "Dropout.h"
 #include "Metric.h"
@@ -27,7 +28,7 @@
 #include "LSTM.h"
 #include "LSTM1.h"
 #include "AtomicOP.h"
-//#include "APCOP.h"
+#include "APCOP.h"
 #include "SparseCOP.h"
 #include "COPUtils.h"
 

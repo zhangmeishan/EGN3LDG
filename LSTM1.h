@@ -147,7 +147,7 @@ public:
 	}
 
 public:
-	inline void forward(Graph *cg, const vector<PNode>& x, bool bTrain){
+	inline void forward(Graph *cg, const vector<PNode>& x){
 		if (x.size() == 0){
 			std::cout << "empty inputs for lstm operation" << std::endl;
 			return;
@@ -160,17 +160,17 @@ public:
 		}
 
 		if (_left2right){
-			left2right_forward(cg, x, bTrain);
+			left2right_forward(cg, x);
 		}
 		else{
-			right2left_forward(cg, x, bTrain);
+			right2left_forward(cg, x);
 		}
 
 	}
 
 
 protected:
-	inline void left2right_forward(Graph *cg, const vector<PNode>& x, bool bTrain){
+	inline void left2right_forward(Graph *cg, const vector<PNode>& x){
 		for (int idx = 0; idx < _nSize; idx++){
 			if (idx == 0){
 				_inputgates[idx].forward(cg, &bucket, x[idx]);
@@ -187,7 +187,7 @@ protected:
 
 				_hiddens[idx].forward(cg, &_halfhiddens[idx], &_outputgates[idx]);
 
-				_hiddens_drop[idx].forward(cg, &_hiddens[idx], bTrain);
+				_hiddens_drop[idx].forward(cg, &_hiddens[idx]);
 			}
 			else{
 				_inputgates[idx].forward(cg, &_hiddens_drop[idx - 1], x[idx]);
@@ -208,12 +208,12 @@ protected:
 
 				_hiddens[idx].forward(cg, &_halfhiddens[idx], &_outputgates[idx]);
 
-				_hiddens_drop[idx].forward(cg, &_hiddens[idx], bTrain);
+				_hiddens_drop[idx].forward(cg, &_hiddens[idx]);
 			}
 		}
 	}
 
-	inline void right2left_forward(Graph *cg, const vector<PNode>& x, bool bTrain){
+	inline void right2left_forward(Graph *cg, const vector<PNode>& x){
 		for (int idx = _nSize - 1; idx >= 0; idx--){
 			if (idx == _nSize - 1){
 				_inputgates[idx].forward(cg, &bucket, x[idx]);
@@ -230,7 +230,7 @@ protected:
 
 				_hiddens[idx].forward(cg, &_halfhiddens[idx], &_outputgates[idx]);
 
-				_hiddens_drop[idx].forward(cg, &_hiddens[idx], bTrain);
+				_hiddens_drop[idx].forward(cg, &_hiddens[idx]);
 			}
 			else{
 				_inputgates[idx].forward(cg, &_hiddens_drop[idx + 1], x[idx]);
@@ -251,7 +251,7 @@ protected:
 
 				_hiddens[idx].forward(cg, &_halfhiddens[idx], &_outputgates[idx]);
 
-				_hiddens_drop[idx].forward(cg, &_hiddens[idx], bTrain);
+				_hiddens_drop[idx].forward(cg, &_hiddens[idx]);
 			}
 		}
 	}

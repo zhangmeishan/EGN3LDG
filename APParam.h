@@ -53,9 +53,9 @@ struct APParam : BaseParam{
 
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
-			aux.row(index) += (max_update - last_update(index)) * val.row(index) - grad.row(index);
+			aux.row(index) += (max_update - last_update.coeffRef(index)) * val.row(index) - grad.row(index);
 			val.row(index) = val.row(index) - grad.row(index);
-			last_update(index) = max_update;
+			last_update.coeffRef(index) = max_update;
 		}
 	}
 
@@ -109,13 +109,30 @@ struct APParam : BaseParam{
 	}
 
 	inline Mat sumWeight(int featId) {
-		if (last_update(featId) < max_update) {
-			int times = max_update - last_update(featId);
+		if (last_update.coeffRef(featId) < max_update) {
+			int times = max_update - last_update.coeffRef(featId);
 			aux.row(featId) += val.row(featId) * times;
-			last_update(featId) = max_update;
+			last_update.coeffRef(featId) = max_update;
 		}
 
 		return aux.row(featId);
+	}
+
+	inline dtype value1d(int featId, bool bTrain = false) {
+		if (bTrain)
+			return val.coeffRef(featId);
+		else
+			return sumWeight1d(featId) / max_update;
+	}
+
+	inline dtype sumWeight1d(int featId) {
+		if (last_update.coeffRef(featId) < max_update) {
+			int times = max_update - last_update.coeffRef(featId);
+			aux.coeffRef(featId) += val.coeffRef(featId) * times;
+			last_update.coeffRef(featId) = max_update;
+		}
+
+		return aux.coeffRef(featId);
 	}
 
 };

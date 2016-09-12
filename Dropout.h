@@ -39,11 +39,10 @@ public:
 	
 public:
 	//Be careful that the row is the dim of input vector, and the col is the number of input vectors
-	void forward(Graph *cg, PNode x, bool bTrain) {
+	void forward(Graph *cg, PNode x) {
 		in = x;
-
 		mask = Mat::Ones(in->val.rows(), in->val.cols());
-		if (bTrain){
+		if (cg->train){
 			std::vector<int> indexes;
 			for (int i = 0; i < in->val.rows(); ++i)
 				indexes.push_back(i);
