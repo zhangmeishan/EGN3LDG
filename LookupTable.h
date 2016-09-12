@@ -100,7 +100,7 @@ public:
 		std::cout << "word embedding dim is " << nDim << std::endl;
 
 		bool bHasUnknown = false;
-		hash_set<int> indexers;
+		unordered_set<int> indexers;
 		VectorXd sum = VectorXd::Zero(nDim);
 		int count = 0;
 		for (int idx = 0; idx < sLines.size(); idx++){

@@ -2,7 +2,6 @@
 #define _ALPHABET_
 
 #include "MyLib.h"
-#include "Hash_map.hpp"
 
 /*
  please check to ensure that m_size not exceeds the upbound of int
@@ -23,7 +22,7 @@ class basic_quark {
 	static const  int max_freq = 100000;
 	static const  int max_capacity = 10000000;
 protected:
-	typedef hash_map<std::string, int> StringToId;
+	typedef unordered_map<std::string, int> StringToId;
 	typedef std::vector<std::string> IdToString;
 
 	StringToId m_string_to_id;
@@ -184,9 +183,9 @@ public:
 		}
 	}
 
-	void initial(const hash_map<string, int>& elem_stat, int cutOff = 0){
+	void initial(const unordered_map<string, int>& elem_stat, int cutOff = 0){
 		clear();
-		static hash_map<string, int>::const_iterator elem_iter;
+		static unordered_map<string, int>::const_iterator elem_iter;
 		static vector<pair<string, int> > t_vec;
 
 		t_vec.clear();

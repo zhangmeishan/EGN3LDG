@@ -58,6 +58,7 @@ public:
 
 struct PAddNode : Node {
 	vector<PNode> ins;
+	int nSize;
 public:
 	PAddNode(){
 		clear();
@@ -66,23 +67,26 @@ public:
 	virtual inline void clearValue(){
 		Node::clearValue();
 		ins.clear();
+		nSize = 0;
 	}
 
 	virtual inline void clear(){
 		Node::clear();
 		ins.clear();
+		nSize = 0;
 	}
 
 public:
 	// please better restrict col to 1
 	void forward(Graph *cg, const vector<PNode>& x) {
-		if (x.size() < 2){
+		nSize = x.size();
+		if (nSize < 2){
 			std::cout << "at least two nodes are required" << std::endl;
 			return;
 		}
 
 		ins.clear();
-		for (int i = 0; i < x.size(); i++){
+		for (int i = 0; i < nSize; i++){
 			ins.push_back(x[i]);
 		}
 
@@ -94,6 +98,7 @@ public:
 		ins.clear();
 		ins.push_back(x1);
 		ins.push_back(x2);
+		nSize = 2;
 
 		forward();
 		cg->addNode(this);
@@ -104,6 +109,7 @@ public:
 		ins.push_back(x1);
 		ins.push_back(x2);
 		ins.push_back(x3);
+		nSize = 3;
 
 		forward();
 		cg->addNode(this);
@@ -115,6 +121,7 @@ public:
 		ins.push_back(x2);
 		ins.push_back(x3);
 		ins.push_back(x4);
+		nSize = 4;
 
 		forward();
 		cg->addNode(this);
@@ -127,6 +134,7 @@ public:
 		ins.push_back(x3);
 		ins.push_back(x4);
 		ins.push_back(x5);
+		nSize = 5;
 
 		forward();
 		cg->addNode(this);
@@ -140,6 +148,7 @@ public:
 		ins.push_back(x4);
 		ins.push_back(x5);
 		ins.push_back(x6);
+		nSize = 6;
 
 		forward();
 		cg->addNode(this);
@@ -147,11 +156,13 @@ public:
 
 
 	void backward(){
-		for (int i = 0; i < ins.size(); i++){
+		for (int i = 0; i < nSize; i++){
 			if (ins[i]->loss.size() == 0){
-				ins[i]->loss = Mat::Zero(ins[i]->val.rows(), ins[i]->val.cols());
+				ins[i]->loss = Mat::Zero(dim, 1);
 			}
-			ins[i]->loss += loss;
+			for (int idx = 0; idx < dim; idx++){
+				ins[i]->loss.coeffRef(idx) += loss.coeffRef(idx);
+			}
 			ins[i]->lock--;
 		}
 
@@ -160,12 +171,15 @@ public:
 protected:
 	void forward() {
 		dim = ins[0]->val.rows();
-		val = Mat::Zero(dim, 1);
-		for (int idx = 0; idx < ins.size(); idx++){
-			val += ins[idx]->val;
+		if (val.size() == 0){
+			val = Mat::Zero(dim, 1);
 		}
-
-		for (int idx = 0; idx < ins.size(); idx++){
+		for (int idx = 0; idx < nSize; idx++){
+			for (int idy = 0; idy < dim; idy++){
+				val.coeffRef(idy) += ins[idx]->val.coeffRef(idy);
+			}			
+		}
+		for (int idx = 0; idx < nSize; idx++){
 			ins[idx]->lock++;
 		}
 	}

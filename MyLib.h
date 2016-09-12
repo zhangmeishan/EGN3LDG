@@ -24,9 +24,9 @@
 #include <cfloat>
 #include <cstring>
 #include <sstream>
+#include <unordered_map>
+#include <unordered_set>
 
-
-#include "Hash_map.hpp"
 #include "NRMat.h"
 #include "Utils.h"
 #include "Eigen/Dense"
@@ -51,6 +51,22 @@ const static string seperateKey = "#";
 typedef std::vector<std::string> CStringVector;
 
 typedef std::vector<std::pair<std::string, std::string> > CTwoStringVector;
+
+
+namespace std {
+	template<>
+	struct hash<std::string> {
+		size_t operator()(const std::string& s) const {
+			unsigned int _seed = 131; // 31 131 1313 13131 131313 etc..
+			unsigned int _hash = 0;
+			for (std::size_t i = 0; i < s.size(); i++)
+			{
+				_hash = (_hash * _seed) + s[i];
+			}
+			return size_t(_hash);
+		}
+	};
+};
 
 class string_less {
 public:
@@ -343,10 +359,10 @@ inline int cmpIntIntPairByValue(const pair<int, int> &x, const pair<int, int> &y
   return x.second > y.second;
 }
 
-inline void sortMapbyValue(const hash_map<int, int> &t_map, vector<pair<int, int> > &t_vec) {
+inline void sortMapbyValue(const unordered_map<int, int> &t_map, vector<pair<int, int> > &t_vec) {
   t_vec.clear();
 
-  for (hash_map<int, int>::const_iterator iter = t_map.begin(); iter != t_map.end(); iter++) {
+  for (unordered_map<int, int>::const_iterator iter = t_map.begin(); iter != t_map.end(); iter++) {
     t_vec.push_back(make_pair(iter->first, iter->second));
   }
   std::sort(t_vec.begin(), t_vec.end(), cmpIntIntPairByValue);
@@ -749,7 +765,9 @@ inline void getSegs(const vector<string>& labels, vector<segIndex>& segs){
 // vector operations
 template<typename A>
 inline void clearVec(vector<vector<A> >& bivec){
-	for (int idx = 0; idx < bivec.size(); idx++){
+	static int count;
+	count = bivec.size();
+	for (int idx = 0; idx < count; idx++){
 		bivec[idx].clear();
 	}
 	bivec.clear();
@@ -757,8 +775,11 @@ inline void clearVec(vector<vector<A> >& bivec){
 
 template<typename A>
 inline void clearVec(vector<vector<vector<A> > >& trivec){
-	for (int idx = 0; idx < trivec.size(); idx++){
-		for (int idy = 0; idy < trivec[idx].size(); idy++){
+	static int count1, count2;
+	count1 = trivec.size();
+	for (int idx = 0; idx < count1; idx++){
+		count2 = trivec[idx].size();
+		for (int idy = 0; idy < count2; idy++){
 			trivec[idx][idy].clear();
 		}
 		trivec[idx].clear();
@@ -767,19 +788,19 @@ inline void clearVec(vector<vector<vector<A> > >& trivec){
 }
 
 template<typename A>
-inline void resizeVec(vector<vector<A> >& bivec, int size1, int size2){
+inline void resizeVec(vector<vector<A> >& bivec, const int& size1, const int& size2){
 	bivec.resize(size1);
-	for (int idx = 0; idx < bivec.size(); idx++){
+	for (int idx = 0; idx < size1; idx++){
 		bivec[idx].resize(size2);
 	}
 }
 
 template<typename A>
-inline void resizeVec(vector<vector<vector<A> > >& trivec, int size1, int size2, int size3){
+inline void resizeVec(vector<vector<vector<A> > >& trivec, const int& size1, const int& size2, const int& size3){
 	trivec.resize(size1);
-	for (int idx = 0; idx < trivec.size(); idx++){
+	for (int idx = 0; idx < size1; idx++){
 		trivec[idx].resize(size2);
-		for (int idy = 0; idy < trivec[idx].size(); idy++){
+		for (int idy = 0; idy < size2; idy++){
 			trivec[idx][idy].resize(size3);
 		}
 	}
@@ -787,15 +808,20 @@ inline void resizeVec(vector<vector<vector<A> > >& trivec, int size1, int size2,
 
 template<typename A>
 inline void assignVec(vector<A>& univec, const A& a){
-	for (int idx = 0; idx < univec.size(); idx++){
+	static int count;
+	count = univec.size();
+	for (int idx = 0; idx < count; idx++){
 		univec[idx] = a;
 	}
 }
 
 template<typename A>
 inline void assignVec(vector<vector<A> >& bivec, const A& a){
+	static int count1, count2;
+	count1 = bivec.size();
 	for (int idx = 0; idx < bivec.size(); idx++){
-		for (int idy = 0; idy < bivec[idx].size(); idy++){
+		count2 = bivec[idx].size();
+		for (int idy = 0; idy < count2; idy++){
 			bivec[idx][idy] = a;
 		}
 	}
@@ -803,9 +829,13 @@ inline void assignVec(vector<vector<A> >& bivec, const A& a){
 
 template<typename A>
 inline void assignVec(vector<vector<vector<A> > >& trivec, const A& a){
-	for (int idx = 0; idx < trivec.size(); idx++){
-		for (int idy = 0; idy < trivec[idx].size(); idy++){
-			for (int idz = 0; idz < trivec[idx][idy].size(); idz++){
+	static int count1, count2, count3;
+	count1 = trivec.size();
+	for (int idx = 0; idx < count1; idx++){
+		count2 = trivec[idx].size();
+		for (int idy = 0; idy < count2; idy++){
+			count3 = trivec[idx][idy].size();
+			for (int idz = 0; idz < count3; idz++){
 				trivec[idx][idy][idz] = a;
 			}
 		}
@@ -815,7 +845,9 @@ inline void assignVec(vector<vector<vector<A> > >& trivec, const A& a){
 
 template<typename A>
 inline void addAllItems(vector<A>& target, const vector<A>& sources){
-	for (int idx = 0; idx < sources.size(); idx++){
+	static int count;
+	count = sources.size();
+	for (int idx = 0; idx < count; idx++){
 		target.push_back(sources[idx]);
 	}
 }

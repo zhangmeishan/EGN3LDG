@@ -16,7 +16,7 @@
 // The in-out dimension definiation is different with dense parameters.
 struct APParam : BaseParam{
 	Mat aux;
-	hash_set<int> indexers;
+	unordered_set<int> indexers;
 	int max_update;
 	VectorXi last_update;
 
@@ -31,7 +31,7 @@ struct APParam : BaseParam{
 	}
 
 	inline void clearGrad() {
-		static hash_set<int>::iterator it;
+		static unordered_set<int>::iterator it;
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
 			grad.row(index).setZero();
@@ -48,7 +48,7 @@ struct APParam : BaseParam{
 	}	
 
 	inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) {
-		static hash_set<int>::iterator it;
+		static unordered_set<int>::iterator it;
 		max_update++;
 
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
@@ -64,7 +64,7 @@ struct APParam : BaseParam{
 		std::vector<int> idRows, idCols;
 		idRows.clear();
 		idCols.clear();
-		static hash_set<int>::iterator it;
+		static unordered_set<int>::iterator it;
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			idRows.push_back(*it);
 		}
@@ -80,7 +80,7 @@ struct APParam : BaseParam{
 	}
 
 	inline dtype squareGradNorm(){
-		static hash_set<int>::iterator it;
+		static unordered_set<int>::iterator it;
 		dtype sumNorm = 0.0;
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
@@ -93,7 +93,7 @@ struct APParam : BaseParam{
 	}
 
 	inline void rescaleGrad(dtype scale){
-		static hash_set<int>::iterator it;
+		static unordered_set<int>::iterator it;
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
 			grad.row(index) = grad.row(index) * scale;

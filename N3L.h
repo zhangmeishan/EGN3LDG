@@ -3,7 +3,6 @@
 
 #include "ModelUpdate.h"
 #include "Alphabet.h"
-#include "APOP.h"
 #include "NRMat.h"
 #include "UniOP.h"
 #include "BiOP.h"
@@ -28,7 +27,9 @@
 #include "LSTM.h"
 #include "LSTM1.h"
 #include "AtomicOP.h"
-#include "APCOP.h"
+//#include "APCOP.h"
 #include "SparseCOP.h"
 #include "COPUtils.h"
+
+
 #endif

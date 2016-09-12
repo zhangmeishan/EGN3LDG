@@ -11,6 +11,8 @@ using namespace Eigen;
 // the col should be 1, because we aimed for NLP only
 struct Graph {
 
+public:
+	bool train;
 protected:
 	vector<PNode> execs; //backward
 	vector<PNode> exports; //backward
@@ -22,12 +24,13 @@ public:
 	}
 
 public:
-	inline void clearValue(){
+	inline void clearValue(const bool& bTrain = false){
 		for (int idx = 0; idx < execs.size(); idx++){
 			execs[idx]->clearValue();
 		}
 		execs.clear();
 		exports.clear();
+		train = bTrain;
 	}
 
 	inline void backward(){
