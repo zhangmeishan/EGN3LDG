@@ -47,26 +47,13 @@ const static dtype d_one = 1.0;
 const static string nullkey = "-null-";
 const static string unknownkey = "-unknown-";
 const static string seperateKey = "#";
+const static int max_sentence_clength = 512;
+const static int max_sentence_wlength = 256;
 
 typedef std::vector<std::string> CStringVector;
 
 typedef std::vector<std::pair<std::string, std::string> > CTwoStringVector;
 
-
-namespace std {
-	template<>
-	struct hash<std::string> {
-		size_t operator()(const std::string& s) const {
-			unsigned int _seed = 131; // 31 131 1313 13131 131313 etc..
-			unsigned int _hash = 0;
-			for (std::size_t i = 0; i < s.size(); i++)
-			{
-				_hash = (_hash * _seed) + s[i];
-			}
-			return size_t(_hash);
-		}
-	};
-};
 
 class string_less {
 public:
