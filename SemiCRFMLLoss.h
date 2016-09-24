@@ -207,12 +207,6 @@ public:
 			}
 		}
 
-		for (int idx = 0; idx < seq_size; idx++) {
-			for (int dist = 0; dist < seq_size - idx && dist < maxLen; dist++) {
-				x[idx][dist]->lock--;
-			}
-		}
-
 		return cost;
 	}
 

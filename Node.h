@@ -42,6 +42,9 @@ public:
 	virtual inline void backward(){
 	}
 
+	virtual inline void unlock(){
+	}
+
 	void check(){
 		if (val.size() > 0){
 			assert(val.cols() == 1);

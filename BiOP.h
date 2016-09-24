@@ -150,6 +150,9 @@ public:
 		}		
 		in2->loss += param->W2.val.transpose() * lty;
 
+	}
+
+	inline void unlock(){
 		in1->lock--;
 		in2->lock--;
 	}

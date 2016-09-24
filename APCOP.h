@@ -40,14 +40,14 @@ public:
 			std::cout << "please check the alphabet" << std::endl;
 			return;
 		}
-		W.initial(1, nVSize);
+		W.initial(nDim, nVSize);
 	}
 
 	//random initialization
-	inline void initial(){
+	inline void initial(int outputDim = 1){
 		hash2id.clear();
 		bound = 0;
-		nDim = 1;
+		nDim = outputDim;
 	}
 
 	inline int getFeatureId(const int& id, const bool& bTrain){
@@ -116,8 +116,8 @@ public:
 	}
 
 	inline void clearValue(){
-		val.coeffRef(0) = 0;
-		if (loss.size() != 0)loss.coeffRef(0) = 0;
+		val.setZero();
+		if (loss.size() != 0)loss.setZero();
 		lock = 0;
 		tx = -1;
 	}
@@ -135,7 +135,7 @@ public:
 		}
 		else {
 			tx = featId;
-			val.coeffRef(0) = param->W.value1d(tx, cg->train);
+			val = param->W.value(tx, cg->train).transpose();
 		}
 		cg->addNode(this);
 	}
@@ -145,7 +145,7 @@ public:
 		//assert(param != NULL);
 		if (tx >= 0){
 			param->W.indexers.insert(tx);
-			param->W.grad.coeffRef(tx) += loss.coeffRef(0);
+			param->W.grad.row(tx) += loss.col(0).transpose();
 		}
 	}
 };
@@ -179,14 +179,14 @@ public:
 			std::cout << "please check the alphabet" << std::endl;
 			return;
 		}
-		W.initial(1, nVSize);
+		W.initial(nDim, nVSize);
 	}
 
 	//random initialization
-	inline void initial(){
+	inline void initial(int outputDim = 1){
 		hash2id.clear();
 		bound = 0;
-		nDim = 1;
+		nDim = outputDim;
 	}
 
 	//important!!! if > nHVSize, using LW, otherwise, using HW
@@ -237,7 +237,6 @@ struct APC2Node : Node {
 public:
 	APC2Params* param;
 	int tx;
-	int mode;  //-1, invalid; 0, high; 1, low
 
 public:
 	APC2Node() {
@@ -252,16 +251,14 @@ public:
 	inline void clear(){
 		Node::clear();
 		tx = -1;
-		mode = -1;
 		param = NULL;
 	}
 
 	inline void clearValue(){
-		val.coeffRef(0) = 0;
-		if(loss.size() != 0)loss.coeffRef(0) = 0;
+		val.setZero();
+		if(loss.size() != 0)loss.setZero();
 		lock = 0;
 		tx = -1;
-		mode = -1;
 	}
 
 public:
@@ -277,7 +274,7 @@ public:
 		}
 		else {
 			tx = featId;
-			val.coeffRef(0) = param->W.value1d(tx, cg->train);
+			val = param->W.value(tx, cg->train).transpose();
 		}
 		cg->addNode(this);
 	}
@@ -286,7 +283,7 @@ public:
 		//assert(param != NULL);
 		if (tx >= 0){
 			param->W.indexers.insert(tx);
-			param->W.grad.coeffRef(tx) += loss.coeffRef(0);
+			param->W.grad.row(tx) += loss.col(0).transpose();
 		}
 	}
 };
@@ -319,14 +316,14 @@ public:
 			std::cout << "please check the alphabet" << std::endl;
 			return;
 		}
-		W.initial(1, nVSize);
+		W.initial(nDim, nVSize);
 	}
 
 	//random initialization
-	inline void initial(){
+	inline void initial(int outputDim = 1){
 		hash2id.clear();
 		bound = 0;
-		nDim = 1;
+		nDim = outputDim;
 	}
 
 	inline int getFeatureId(const int& id1, const int& id2, const int& id3, const bool& bTrain){
@@ -376,7 +373,6 @@ struct APC3Node : Node {
 public:
 	APC3Params* param;
 	int tx;
-	int mode;  //-1, invalid; 0, high; 1, low
 
 public:
 	APC3Node() {
@@ -391,16 +387,14 @@ public:
 	inline void clear(){
 		Node::clear();
 		tx = -1;
-		mode = -1;
 		param = NULL;
 	}
 
 	inline void clearValue(){
-		val.coeffRef(0) = 0;
-		if (loss.size() != 0)loss.coeffRef(0) = 0;
+		val.setZero();
+		if (loss.size() != 0)loss.setZero();
 		lock = 0;
 		tx = -1;
-		mode = -1;
 	}
 
 public:
@@ -416,7 +410,7 @@ public:
 		}
 		else {
 			tx = featId;
-			val.coeffRef(0) = param->W.value1d(tx, cg->train);
+			val = param->W.value(tx, cg->train).transpose();
 		}
 		cg->addNode(this);
 	}
@@ -425,7 +419,7 @@ public:
 		//assert(param != NULL);
 		if (tx >= 0){
 			param->W.indexers.insert(tx);
-			param->W.grad.coeffRef(tx) += loss.coeffRef(0);
+			param->W.grad.row(tx) += loss.col(0).transpose();
 		}
 	}
 };
@@ -458,14 +452,14 @@ public:
 			std::cout << "please check the alphabet" << std::endl;
 			return;
 		}
-		W.initial(1, nVSize);
+		W.initial(nDim, nVSize);
 	}
 
 	//random initialization
-	inline void initial(){
+	inline void initial(int outputDim = 1){
 		hash2id.clear();
 		bound = 0;
-		nDim = 1;
+		nDim = outputDim;
 	}
 
 	inline int getFeatureId(const int& id1, const int& id2, const int& id3, const int& id4, const bool& bTrain){
@@ -517,7 +511,6 @@ struct APC4Node : Node {
 public:
 	APC4Params* param;
 	int tx;
-	int mode;  //-1, invalid; 0, high; 1, low
 
 public:
 	APC4Node() {
@@ -532,16 +525,14 @@ public:
 	inline void clear(){
 		Node::clear();
 		tx = -1;
-		mode = -1;
 		param = NULL;
 	}
 
 	inline void clearValue(){
-		val.coeffRef(0) = 0;
-		if (loss.size() != 0)loss.coeffRef(0) = 0;
+		val.setZero();
+		if (loss.size() != 0)loss.setZero();
 		lock = 0;
 		tx = -1;
-		mode = -1;
 	}
 
 public:
@@ -557,7 +548,7 @@ public:
 		}
 		else {
 			tx = featId;
-			val.coeffRef(0) = param->W.value1d(tx, cg->train);
+			val = param->W.value(tx, cg->train).transpose();
 		}
 		cg->addNode(this);
 	}
@@ -566,7 +557,7 @@ public:
 		//assert(param != NULL);
 		if (tx >= 0){
 			param->W.indexers.insert(tx);
-			param->W.grad.coeffRef(tx) += loss.coeffRef(0);
+			param->W.grad.row(tx) += loss.col(0).transpose();
 		}
 	}
 };
@@ -599,14 +590,14 @@ public:
 			std::cout << "please check the alphabet" << std::endl;
 			return;
 		}
-		W.initial(1, nVSize);
+		W.initial(nDim, nVSize);
 	}
 
 	//random initialization
-	inline void initial(){
+	inline void initial(int outputDim = 1){
 		hash2id.clear();
 		bound = 0;
-		nDim = 1;
+		nDim = outputDim;
 	}
 
 	inline int getFeatureId(const int& id1, const int& id2, const int& id3, const int& id4, const int& id5, const bool& bTrain){
@@ -656,7 +647,6 @@ struct APC5Node : Node {
 public:
 	APC5Params* param;
 	int tx;
-	int mode;  //-1, invalid; 0, high; 1, low
 
 public:
 	APC5Node() {
@@ -671,16 +661,14 @@ public:
 	inline void clear(){
 		Node::clear();
 		tx = -1;
-		mode = -1;
 		param = NULL;
 	}
 
 	inline void clearValue(){
-		val.coeffRef(0) = 0;
-		if (loss.size() != 0)loss.coeffRef(0) = 0;
+		val.setZero();
+		if (loss.size() != 0)loss.setZero();
 		lock = 0;
 		tx = -1;
-		mode = -1;
 	}
 
 public:
@@ -696,7 +684,7 @@ public:
 		}
 		else {
 			tx = featId;
-			val.coeffRef(0) = param->W.value1d(tx, cg->train);
+			val = param->W.value(tx, cg->train).transpose();
 		}
 		cg->addNode(this);
 	}
@@ -705,7 +693,7 @@ public:
 		//assert(param != NULL);
 		if (tx >= 0){
 			param->W.indexers.insert(tx);
-			param->W.grad.coeffRef(tx) += loss.coeffRef(0);
+			param->W.grad.row(tx) += loss.col(0).transpose();
 		}
 	}
 };
@@ -738,14 +726,14 @@ public:
 			std::cout << "please check the alphabet" << std::endl;
 			return;
 		}
-		W.initial(1, nVSize);
+		W.initial(nDim, nVSize);
 	}
 
 	//random initialization
-	inline void initial(){
+	inline void initial(int outputDim = 1){
 		hash2id.clear();
 		bound = 0;
-		nDim = 1;
+		nDim = outputDim;
 	}
 
 	inline int getFeatureId(const int& id1, const int& id2, const int& id3, const int& id4, const int& id5, const int& id6, const bool& bTrain){
@@ -795,7 +783,6 @@ struct APC6Node : Node {
 public:
 	APC6Params* param;
 	int tx;
-	int mode;  //-1, invalid; 0, high; 1, low
 
 public:
 	APC6Node() {
@@ -810,16 +797,14 @@ public:
 	inline void clear(){
 		Node::clear();
 		tx = -1;
-		mode = -1;
 		param = NULL;
 	}
 
 	inline void clearValue(){
-		val.coeffRef(0) = 0;
-		if (loss.size() != 0)loss.coeffRef(0) = 0;
+		val.setZero();
+		if (loss.size() != 0)loss.setZero();
 		lock = 0;
 		tx = -1;
-		mode = -1;
 	}
 
 public:
@@ -835,7 +820,7 @@ public:
 		}
 		else {
 			tx = featId;
-			val.coeffRef(0) = param->W.value1d(tx, cg->train);
+			val = param->W.value(tx, cg->train).transpose();
 		}
 		cg->addNode(this);
 	}
@@ -844,7 +829,7 @@ public:
 		//assert(param != NULL);
 		if (tx >= 0){
 			param->W.indexers.insert(tx);
-			param->W.grad.coeffRef(tx) += loss.coeffRef(0);
+			param->W.grad.row(tx) += loss.col(0).transpose();
 		}
 	}
 };
@@ -876,14 +861,14 @@ public:
 			std::cout << "please check the alphabet" << std::endl;
 			return;
 		}
-		W.initial(1, nVSize);
+		W.initial(nDim, nVSize);
 	}
 
 	//random initialization
-	inline void initial(){
+	inline void initial(int outputDim = 1){
 		hash2id.clear();
 		bound = 0;
-		nDim = 1;
+		nDim = outputDim;
 	}
 
 	inline int getFeatureId(const int& id1, const int& id2, const int& id3, const int& id4, const int& id5, const int& id6, const int& id7, const bool& bTrain){
@@ -933,7 +918,6 @@ struct APC7Node : Node {
 public:
 	APC7Params* param;
 	int tx;
-	int mode;  //-1, invalid; 0, high; 1, low
 
 public:
 	APC7Node() {
@@ -948,16 +932,14 @@ public:
 	inline void clear(){
 		Node::clear();
 		tx = -1;
-		mode = -1;
 		param = NULL;
 	}
 
 	inline void clearValue(){
-		val.coeffRef(0) = 0;
-		if (loss.size() != 0)loss.coeffRef(0) = 0;
+		val.setZero();
+		if (loss.size() != 0)loss.setZero();
 		lock = 0;
 		tx = -1;
-		mode = -1;
 	}
 
 public:
@@ -973,7 +955,7 @@ public:
 		}
 		else {
 			tx = featId;
-			val.coeffRef(0) = param->W.value1d(tx, cg->train);
+			val = param->W.value(tx, cg->train).transpose();
 		}
 		cg->addNode(this);
 	}
@@ -982,7 +964,7 @@ public:
 		//assert(param != NULL);
 		if (tx >= 0){
 			param->W.indexers.insert(tx);
-			param->W.grad.coeffRef(tx) += loss.coeffRef(0);
+			param->W.grad.row(tx) += loss.col(0).transpose();
 		}
 	}
 };

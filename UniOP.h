@@ -138,6 +138,11 @@ public:
 		}
 
 		in->loss += param->W.val.transpose() * lty;
+		
+	}
+
+
+	inline void unlock(){
 		in->lock--;
 	}
 
@@ -201,6 +206,10 @@ public:
 		}
 
 		in->loss += param->W.val.transpose() * loss;
+		in->lock--;
+	}
+
+	inline void unlock(){
 		in->lock--;
 	}
 

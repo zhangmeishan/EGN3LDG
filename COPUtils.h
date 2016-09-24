@@ -8,6 +8,7 @@
 #ifndef COPUtil_H_
 #define COPUtil_H_
 #include "MyLib.h"
+#include "Node.h"
 
 const static int maxCapacity = 1<<30;
 
@@ -280,5 +281,156 @@ namespace std {
 	};
 
 };
+
+
+struct SPAddNode : Node {
+	vector<PNode> ins;
+	int nSize;
+	int dimId;
+public:
+	SPAddNode(){
+		clear();
+	}
+public:
+	virtual inline void clearValue(){
+		Node::clearValue();
+		ins.clear();
+		nSize = 0;
+		dimId = -1;
+	}
+
+	virtual inline void clear(){
+		Node::clear();
+		ins.clear();
+		nSize = 0;
+		dimId = -1;
+	}
+
+public:
+	// please better restrict col to 1
+	void forward(Graph *cg, const vector<PNode>& x, const int& dim) {
+		nSize = x.size();
+		if (nSize < 2){
+			std::cout << "at least two nodes are required" << std::endl;
+			return;
+		}
+
+		ins.clear();
+		for (int i = 0; i < nSize; i++){
+			ins.push_back(x[i]);
+		}
+
+		forward(dim);
+		cg->addNode(this);
+	}
+
+	void forward(Graph *cg, PNode x1, PNode x2, const int& dim){
+		ins.clear();
+		ins.push_back(x1);
+		ins.push_back(x2);
+		nSize = 2;
+
+		forward(dim);
+		cg->addNode(this);
+	}
+
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3, const int& dim){
+		ins.clear();
+		ins.push_back(x1);
+		ins.push_back(x2);
+		ins.push_back(x3);
+		nSize = 3;
+
+		forward(dim);
+		cg->addNode(this);
+	}
+
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3, PNode x4, const int& dim){
+		ins.clear();
+		ins.push_back(x1);
+		ins.push_back(x2);
+		ins.push_back(x3);
+		ins.push_back(x4);
+		nSize = 4;
+
+		forward(dim);
+		cg->addNode(this);
+	}
+
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3, PNode x4, PNode x5, const int& dim){
+		ins.clear();
+		ins.push_back(x1);
+		ins.push_back(x2);
+		ins.push_back(x3);
+		ins.push_back(x4);
+		ins.push_back(x5);
+		nSize = 5;
+
+		forward(dim);
+		cg->addNode(this);
+	}
+
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3, PNode x4, PNode x5, PNode x6, const int& dim){
+		ins.clear();
+		ins.push_back(x1);
+		ins.push_back(x2);
+		ins.push_back(x3);
+		ins.push_back(x4);
+		ins.push_back(x5);
+		ins.push_back(x6);
+		nSize = 6;
+
+		forward(dim);
+		cg->addNode(this);
+	}
+
+
+	void backward(){
+		static int oDim;
+		for (int i = 0; i < nSize; i++){
+			oDim = ins[i]->val.rows();
+			if (ins[i]->loss.size() == 0){
+				ins[i]->loss = Mat::Zero(oDim, 1);
+			}
+			if (oDim == 1){
+				ins[i]->loss.coeffRef(0) += loss.coeffRef(0);
+			}
+			else if (dimId < oDim){
+				ins[i]->loss.coeffRef(dimId) += loss.coeffRef(0);
+			}			
+		}
+	}
+
+	inline void unlock(){
+		for (int i = 0; i < nSize; i++){
+			ins[i]->lock--;
+		}
+	}
+
+protected:
+	void forward(const int& dim) {
+		if (val.size() == 0){
+			val = Mat::Zero(1, 1);
+		}
+		static int oDim;
+		for (int idx = 0; idx < nSize; idx++){
+			oDim = ins[idx]->val.rows();
+			if (oDim == 1){
+				val.coeffRef(0) += ins[idx]->val.coeffRef(0);
+			}
+			else if (dim < oDim){
+				val.coeffRef(0) += ins[idx]->val.coeffRef(dim);
+			}
+		}
+		for (int idx = 0; idx < nSize; idx++){
+			ins[idx]->lock++;
+		}
+
+		dimId = dim;
+	}
+
+};
+
+
 
 #endif /* COPUtil_H_ */

@@ -9,6 +9,7 @@ struct PoolNode : Node {
 public:
 	vector<Mat> masks;
 	vector<PNode> ins;
+	int nSize;
 
 public:
 	PoolNode(){
@@ -32,11 +33,16 @@ public:
 	virtual void forward(Graph *cg, const vector<PNode>& x) = 0;
 
 	void backward(){
-		for (int i = 0; i < ins.size(); i++){
+		for (int i = 0; i < nSize; i++){
 			if (ins[i]->loss.size() == 0){
 				ins[i]->loss = Mat::Zero(ins[i]->val.rows(), ins[i]->val.cols());
 			}
-			ins[i]->loss = ins[i]->loss.array() + loss.array() * masks[i].array();
+			ins[i]->loss = ins[i]->loss.array() + loss.array() * masks[i].array();			
+		}
+	}
+
+	inline void unlock(){
+		for (int i = 0; i < nSize; i++){
 			ins[i]->lock--;
 		}
 	}
@@ -55,15 +61,15 @@ public:
 			std::cout << "empty inputs for max pooling" << std::endl;
 			return;
 		}
-
+		nSize = x.size();
 		ins.clear();
-		for (int i = 0; i < x.size(); i++){
+		for (int i = 0; i < nSize; i++){
 			ins.push_back(x[i]);
 		}
 
 		dim = ins[0]->val.rows();
-		masks.resize(ins.size());
-		for (int i = 0; i < ins.size(); ++i){
+		masks.resize(nSize);
+		for (int i = 0; i < nSize; ++i){
 			if (ins[i]->val.rows() != dim){
 				std::cout << "input matrixes are not matched" << std::endl;
 				clearValue();
@@ -75,7 +81,7 @@ public:
 
 		for (int idx = 0; idx < dim; idx++){
 			int maxIndex = -1;
-			for (int i = 0; i < ins.size(); ++i){
+			for (int i = 0; i < nSize; ++i){
 				if (maxIndex == -1 || ins[i]->val(idx, 0) > ins[maxIndex]->val(idx, 0)){
 					maxIndex = i;
 				}
@@ -84,11 +90,11 @@ public:
 		}
 
 		val = Mat::Zero(dim, 1);
-		for (int i = 0; i < ins.size(); ++i){
+		for (int i = 0; i < nSize; ++i){
 			val = val.array() + masks[i].array() *ins[i]->val.array();
 		}
 
-		for (int i = 0; i < ins.size(); ++i){
+		for (int i = 0; i < nSize; ++i){
 			ins[i]->lock++;
 		}
 
@@ -112,14 +118,15 @@ public:
 			return;
 		}
 
+		nSize = x.size();
 		ins.clear();
-		for (int i = 0; i < x.size(); i++){
+		for (int i = 0; i < nSize; i++){
 			ins.push_back(x[i]);
 		}
 
 		dim = ins[0]->val.rows();
-		masks.resize(ins.size());
-		for (int i = 0; i < ins.size(); ++i){
+		masks.resize(nSize);
+		for (int i = 0; i < nSize; ++i){
 			if (ins[i]->val.rows() != dim){
 				std::cout << "input matrixes are not matched" << std::endl;
 				clearValue();
@@ -129,11 +136,11 @@ public:
 		}
 
 		val = Mat::Zero(dim, 1);
-		for (int i = 0; i < ins.size(); ++i){
+		for (int i = 0; i < nSize; ++i){
 			val = val.array() + masks[i].array() *ins[i]->val.array();
 		}
 
-		for (int i = 0; i < ins.size(); ++i){
+		for (int i = 0; i < nSize; ++i){
 			ins[i]->lock++;
 		}
 
@@ -156,15 +163,15 @@ public:
 			std::cout << "empty inputs for max pooling" << std::endl;
 			return;
 		}
-
+		nSize = x.size();
 		ins.clear();
-		for (int i = 0; i < x.size(); i++){
+		for (int i = 0; i < nSize; i++){
 			ins.push_back(x[i]);
 		}
 
 		dim = ins[0]->val.rows();
-		masks.resize(ins.size());
-		for (int i = 0; i < ins.size(); ++i){
+		masks.resize(nSize);
+		for (int i = 0; i < nSize; ++i){
 			if (ins[i]->val.rows() != dim){
 				std::cout << "input matrixes are not matched" << std::endl;
 				clearValue();
@@ -176,7 +183,7 @@ public:
 
 		for (int idx = 0; idx < dim; idx++){
 			int minIndex = -1;
-			for (int i = 0; i < ins.size(); ++i){
+			for (int i = 0; i < nSize; ++i){
 				if (minIndex == -1 || ins[i]->val(idx, 0) < ins[minIndex]->val(idx, 0)){
 					minIndex = i;
 				}
@@ -185,11 +192,11 @@ public:
 		}
 
 		val = Mat::Zero(dim, 1);
-		for (int i = 0; i < ins.size(); ++i){
+		for (int i = 0; i < nSize; ++i){
 			val = val.array() + masks[i].array() *ins[i]->val.array();
 		}
 
-		for (int i = 0; i < ins.size(); ++i){
+		for (int i = 0; i < nSize; ++i){
 			ins[i]->lock++;
 		}
 

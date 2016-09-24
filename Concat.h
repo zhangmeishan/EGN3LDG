@@ -116,8 +116,13 @@ public:
 			for (int idx = 0; idx < inDims[i]; idx++){
 				ins[i]->loss(idx, 0) += loss(offset + idx, 0);				
 			}
-			ins[i]->lock--;
 			offset += inDims[i];
+		}
+	}
+
+	inline void unlock(){
+		for (int i = 0; i < nSize; i++){
+			ins[i]->lock--;
 		}
 	}
 

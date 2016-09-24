@@ -48,7 +48,9 @@ public:
 			in2->loss = Mat::Zero(in2->val.rows(), in2->val.cols());
 		}
 		in2->loss = in2->loss.array() + loss.array() * in1->val.array();
+	}
 
+	inline void unlock(){
 		in1->lock--;
 		in2->lock--;
 	}
@@ -163,9 +165,13 @@ public:
 			for (int idx = 0; idx < dim; idx++){
 				ins[i]->loss.coeffRef(idx) += loss.coeffRef(idx);
 			}
+		}
+	}
+
+	inline void unlock(){
+		for (int i = 0; i < nSize; i++){
 			ins[i]->lock--;
 		}
-
 	}
 
 protected:
@@ -229,6 +235,9 @@ public:
 			in->loss = Mat::Zero(in->val.rows(), in->val.cols());
 		}
 		in->loss = in->loss.array() + loss.array() * derivate(in->val, val).array();
+	}
+
+	inline void unlock(){
 		in->lock--;
 	}
 
@@ -269,6 +278,9 @@ public:
 			in->loss = Mat::Zero(in->val.rows(), in->val.cols());
 		}
 		in->loss = in->loss.array() + loss.array() * tanh_deri(in->val, val).array();
+	}
+
+	inline void unlock(){
 		in->lock--;
 	}
 
@@ -309,6 +321,9 @@ public:
 			in->loss = Mat::Zero(in->val.rows(), in->val.cols());
 		}
 		in->loss = in->loss.array() + loss.array() * sigmoid_deri(in->val, val).array();
+	}
+
+	inline void unlock(){
 		in->lock--;
 	}
 
@@ -348,6 +363,9 @@ public:
 			in->loss = Mat::Zero(in->val.rows(), in->val.cols());
 		}
 		in->loss = in->loss.array() + loss.array() * relu_deri(in->val, val).array();
+	}
+
+	inline void unlock(){
 		in->lock--;
 	}
 

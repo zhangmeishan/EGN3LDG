@@ -71,7 +71,10 @@ public:
 		if (in->loss.size() == 0) {
 			in->loss = Mat::Zero(in->val.rows(), in->val.cols());
 		}
-		in->loss = loss.array() * mask.array();
+		in->loss = loss.array() * mask.array();		
+	}
+
+	inline void unlock(){
 		in->lock--;
 	}
 	

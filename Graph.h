@@ -15,35 +15,44 @@ public:
 	bool train;
 protected:
 	vector<PNode> execs; //backward
-	vector<PNode> exports; //backward
+	//vector<PNode> exports; //backward
 
 public:
 	Graph(){
 		execs.clear();
-		exports.clear();
+		//exports.clear();
 	}
 
 public:
 	inline void clearValue(const bool& bTrain = false){
-		for (int idx = 0; idx < execs.size(); idx++){
+		static int count;
+		count = execs.size();
+		for (int idx = 0; idx < count; idx++){
 			execs[idx]->clearValue();
 		}
 		execs.clear();
-		exports.clear();
+		//exports.clear();
 		train = bTrain;
 	}
 
 	inline void backward(){
-		for (int idx = execs.size() - 1; idx >= 0; idx--){
-			//std::cout << execs[idx]->sid << " " << execs[idx]->lock << std::endl;
+		static int count;
+		count = execs.size();
+		for (int idx = count - 1; idx >= 0; idx--){
+			//
 			if (execs[idx]->lock > 0){
-				continue;
+				//execs[idx]->backward();
+				std::cout << "bug exists, please check: " << execs[idx]->sid << " " << execs[idx]->lock << std::endl;
+				continue;  // impossible.....
 			}
 			else if (execs[idx]->lock == 0) {
-				execs[idx]->backward();
+				if (execs[idx]->loss.size() > 0){
+					execs[idx]->backward();
+				}
+				execs[idx]->unlock();
 			}
 			else {
-				std::cout << "bug exists, please check" << std::endl;
+				std::cout << "bug exists, please check: impossible neglative lock value" << std::endl;
 			}
 		}
 	}
@@ -55,10 +64,10 @@ public:
 
 	//some nodes are exported for output, define them
 	//root nodes not aiming for outputs are not allowed
-	inline void exportNode(PNode x){
-		x->lock++;
-		exports.push_back(x);
-	}
+	//inline void exportNode(PNode x){
+		//x->lock++;
+		//exports.push_back(x);
+	//}
 
 public: // virtual functions
 	virtual inline void clear(){
