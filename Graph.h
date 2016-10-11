@@ -52,7 +52,8 @@ public:
 				execs[idx]->unlock();
 			}
 			else {
-				std::cout << "bug exists, please check: impossible neglative lock value" << std::endl;
+				std::cout << "bug exists, please check: " << execs[idx]->sid << " " << execs[idx]->lock << std::endl;
+				//execs[idx]->backward();
 			}
 		}
 	}
