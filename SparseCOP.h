@@ -85,7 +85,7 @@ public:
 	}
 
 	inline void setFixed(const int& base = 1){
-		nVSize = bound * base;
+		nVSize = (bound + 1) * base;
 		if (nVSize > maxCapacity) nVSize = maxCapacity;
 		initialWeights();
 	}
@@ -98,6 +98,7 @@ struct SparseC1Node : Node {
 public:
 	SparseC1Params* param;
 	int tx;
+	bool executed;
 
 public:
 	SparseC1Node() {
@@ -113,6 +114,7 @@ public:
 		Node::clear();
 		tx = -1;
 		param = NULL;
+		executed = false;
 	}
 
 	inline void clearValue(){
@@ -120,24 +122,24 @@ public:
 		if(loss.size() != 0)loss.setZero();
 		lock = 0;
 		tx = -1;
+		executed = false;
 	}
 
 public:
-	inline void forward(Graph* cg, const int& x1){
+	inline bool forward(Graph* cg, const int& x1){
 		//assert(param != NULL);
 		static int featId;
-		if (val.size() == 0){
-			val = Mat::Zero(dim, 1);
-		}
 		featId = param->getFeatureId(x1, cg->train);
 		if (featId < 0){
 			tx = -1;
+			executed = false;
+			return executed;
 		}
-		else {
-			tx = featId;
-			val = param->W.val.row(tx).transpose();
-		}
+		tx = featId;
+		val = param->W.val.row(tx).transpose();
 		cg->addNode(this);
+		executed = true;
+		return executed;
 	}
 
 	//no output losses
@@ -225,7 +227,7 @@ public:
 	}
 
 	inline void setFixed(const int& base = 1){
-		nVSize = bound * base;
+		nVSize = (bound + 1) * base;
 		if (nVSize > maxCapacity) nVSize = maxCapacity;
 		initialWeights();
 	}
@@ -237,6 +239,7 @@ struct SparseC2Node : Node {
 public:
 	SparseC2Params* param;
 	int tx;
+	bool executed;
 
 public:
 	SparseC2Node() {
@@ -252,6 +255,7 @@ public:
 		Node::clear();
 		tx = -1;
 		param = NULL;
+		executed = false;
 	}
 
 	inline void clearValue(){
@@ -259,24 +263,24 @@ public:
 		if(loss.size() != 0)loss.setZero();
 		lock = 0;
 		tx = -1;
+		executed = false;
 	}
 
 public:
-	inline void forward(Graph* cg, const int& x1, const int& x2) {
+	inline bool forward(Graph* cg, const int& x1, const int& x2) {
 		//assert(param != NULL);
 		static int featId;
-		if(val.size()==0){
-			val = Mat::Zero(dim, 1);
-		}
 		featId = param->getFeatureId(x1, x2, cg->train);
 		if (featId < 0){
 			tx = -1;
+			executed = false;
+			return executed;
 		}
-		else {
-			tx = featId;
-			val = param->W.val.row(tx).transpose();
-		}
+		tx = featId;
+		val = param->W.val.row(tx).transpose();
 		cg->addNode(this);
+		executed = true;
+		return executed;
 	}
 
 	void backward() {
@@ -361,7 +365,7 @@ public:
 	}
 
 	inline void setFixed(const int& base = 1){
-		nVSize = bound * base;
+		nVSize = (bound + 1) * base;
 		if (nVSize > maxCapacity) nVSize = maxCapacity;
 		initialWeights();
 	}
@@ -373,6 +377,7 @@ struct SparseC3Node : Node {
 public:
 	SparseC3Params* param;
 	int tx;
+	bool executed;
 
 public:
 	SparseC3Node() {
@@ -388,6 +393,7 @@ public:
 		Node::clear();
 		tx = -1;
 		param = NULL;
+		executed = false;
 	}
 
 	inline void clearValue(){
@@ -395,24 +401,24 @@ public:
 		if(loss.size() != 0)loss.setZero();
 		lock = 0;
 		tx = -1;
+		executed = false;
 	}
 
 public:
-	inline void forward(Graph* cg, const int& x1, const int& x2, const int& x3) {
+	inline bool forward(Graph* cg, const int& x1, const int& x2, const int& x3) {
 		//assert(param != NULL);
 		static int featId;
-		if(val.size()==0){
-			val = Mat::Zero(dim, 1);
-		}
 		featId = param->getFeatureId(x1, x2, x3, cg->train);
 		if (featId < 0){
 			tx = -1;
+			executed = false;
+			return executed;
 		}
-		else {
-			tx = featId;
-			val = param->W.val.row(tx).transpose();
-		}
+		tx = featId;
+		val = param->W.val.row(tx).transpose();
 		cg->addNode(this);
+		executed = true;
+		return executed;
 	}
 
 	void backward() {
@@ -497,7 +503,7 @@ public:
 	}
 
 	inline void setFixed(const int& base = 1){
-		nVSize = bound * base;
+		nVSize = (bound + 1) * base;
 		if (nVSize > maxCapacity) nVSize = maxCapacity;
 		initialWeights();
 	}
@@ -511,6 +517,7 @@ struct SparseC4Node : Node {
 public:
 	SparseC4Params* param;
 	int tx;
+	bool executed;
 
 public:
 	SparseC4Node() {
@@ -526,6 +533,7 @@ public:
 		Node::clear();
 		tx = -1;
 		param = NULL;
+		executed = false;
 	}
 
 	inline void clearValue(){
@@ -533,24 +541,24 @@ public:
 		if(loss.size() != 0)loss.setZero();
 		lock = 0;
 		tx = -1;
+		executed = false;
 	}
 
 public:
-	inline void forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4) {
+	inline bool forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4) {
 		//assert(param != NULL);
 		static int featId;
-		if(val.size()==0){
-			val = Mat::Zero(dim, 1);
-		}
 		featId = param->getFeatureId(x1, x2, x3, x4, cg->train);
 		if (featId < 0){
 			tx = -1;
+			executed = false;
+			return executed;
 		}
-		else {
-			tx = featId;
-			val = param->W.val.row(tx).transpose();
-		}
+		tx = featId;
+		val = param->W.val.row(tx).transpose();
 		cg->addNode(this);
+		executed = true;
+		return executed;
 	}
 
 	void backward() {
@@ -635,7 +643,7 @@ public:
 	}
 
 	inline void setFixed(const int& base = 1){
-		nVSize = bound * base;
+		nVSize = (bound + 1) * base;
 		if (nVSize > maxCapacity) nVSize = maxCapacity;
 		initialWeights();
 	}
@@ -647,6 +655,7 @@ struct SparseC5Node : Node {
 public:
 	SparseC5Params* param;
 	int tx;
+	bool executed;
 
 public:
 	SparseC5Node() {
@@ -662,6 +671,7 @@ public:
 		Node::clear();
 		tx = -1;
 		param = NULL;
+		executed = false;
 	}
 
 	inline void clearValue(){
@@ -669,24 +679,24 @@ public:
 		if(loss.size() != 0)loss.setZero();
 		lock = 0;
 		tx = -1;
+		executed = false;
 	}
 
 public:
-	inline void forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4, const int& x5) {
+	inline bool forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4, const int& x5) {
 		//assert(param != NULL);
 		static int featId;
-		if(val.size()==0){
-			val = Mat::Zero(dim, 1);
-		}
 		featId = param->getFeatureId(x1, x2, x3, x4, x5, cg->train);
 		if (featId < 0){
 			tx = -1;
+			executed = false;
+			return executed;
 		}
-		else {
-			tx = featId;
-			val = param->W.val.row(tx).transpose();
-		}
+		tx = featId;
+		val = param->W.val.row(tx).transpose();
 		cg->addNode(this);
+		executed = true;
+		return executed;
 	}
 
 	void backward() {
@@ -771,7 +781,7 @@ public:
 	}
 
 	inline void setFixed(const int& base = 1){
-		nVSize = bound * base;
+		nVSize = (bound + 1) * base;
 		if (nVSize > maxCapacity) nVSize = maxCapacity;
 		initialWeights();
 	}
@@ -783,6 +793,7 @@ struct SparseC6Node : Node {
 public:
 	SparseC6Params* param;
 	int tx;
+	bool executed;
 
 public:
 	SparseC6Node() {
@@ -798,6 +809,7 @@ public:
 		Node::clear();
 		tx = -1;
 		param = NULL;
+		executed = false;
 	}
 
 	inline void clearValue(){
@@ -805,24 +817,24 @@ public:
 		if(loss.size() != 0)loss.setZero();
 		lock = 0;
 		tx = -1;
+		executed = false;
 	}
 
 public:
-	inline void forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4, const int& x5, const int& x6) {
+	inline bool forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4, const int& x5, const int& x6) {
 		//assert(param != NULL);
 		static int featId;
-		if(val.size()==0){
-			val = Mat::Zero(dim, 1);
-		}
 		featId = param->getFeatureId(x1, x2, x3, x4, x5, x6, cg->train);
 		if (featId < 0){
 			tx = -1;
+			executed = false;
+			return executed;
 		}
-		else {
-			tx = featId;
-			val = param->W.val.row(tx).transpose();
-		}
+		tx = featId;
+		val = param->W.val.row(tx).transpose();
 		cg->addNode(this);
+		executed = true;
+		return executed;
 	}
 
 	void backward() {
@@ -906,7 +918,7 @@ public:
 	}
 
 	inline void setFixed(const int& base = 1){
-		nVSize = bound * base;
+		nVSize = (bound + 1) * base;
 		if (nVSize > maxCapacity) nVSize = maxCapacity;
 		initialWeights();
 	}
@@ -918,6 +930,7 @@ struct SparseC7Node : Node {
 public:
 	SparseC7Params* param;
 	int tx;
+	bool executed;
 
 public:
 	SparseC7Node() {
@@ -933,6 +946,7 @@ public:
 		Node::clear();
 		tx = -1;
 		param = NULL;
+		executed = false;
 	}
 
 	inline void clearValue(){
@@ -940,24 +954,24 @@ public:
 		if(loss.size() != 0)loss.setZero();
 		lock = 0;
 		tx = -1;
+		executed = false;
 	}
 
 public:
-	inline void forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4, const int& x5, const int& x6, const int& x7) {
+	inline bool forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4, const int& x5, const int& x6, const int& x7) {
 		//assert(param != NULL);
 		static int featId;
-		if(val.size()==0){
-			val = Mat::Zero(dim, 1);
-		}
 		featId = param->getFeatureId(x1, x2, x3, x4, x5, x6, x7, cg->train);
 		if (featId < 0){
 			tx = -1;
+			executed = false;
+			return executed;
 		}
-		else {
-			tx = featId;
-			val = param->W.val.row(tx).transpose();
-		}
+		tx = featId;
+		val = param->W.val.row(tx).transpose();
 		cg->addNode(this);
+		executed = true;
+		return executed;
 	}
 
 	void backward() {
