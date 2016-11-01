@@ -46,7 +46,7 @@ public:
 				continue;  // impossible.....
 			}
 			else if (execs[idx]->lock == 0) {
-				if (execs[idx]->loss.size() > 0){
+				if (execs[idx]->lossed){
 					execs[idx]->backward();
 				}
 				execs[idx]->unlock();

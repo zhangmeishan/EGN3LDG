@@ -9,7 +9,7 @@ using namespace Eigen;
 class CheckGrad {
 
 public:
-	vector<BaseParam*> _params;
+	vector<Param*> _params;
 	vector<string> _names;
 
 public:
@@ -22,7 +22,7 @@ public:
 		_names.clear();
 	}
 
-	inline void add(BaseParam* param, const string& name){
+	inline void add(Param* param, const string& name){
 		_params.push_back(param);
 		_names.push_back(name);
 	}

@@ -69,6 +69,7 @@ public:
 				if (x[idx][dist]->loss.size() == 0){
 					x[idx][dist]->loss = Mat::Zero(labelSize, 1);
 				}
+				x[idx][dist]->lossed = true;
 			}
 		}
 

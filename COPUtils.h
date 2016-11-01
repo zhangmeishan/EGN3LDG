@@ -10,7 +10,7 @@
 #include "MyLib.h"
 #include "Node.h"
 
-const static int maxCapacity = 1<<30;
+const static int maxCapacity = 1 << 30;
 
 inline void hash_combine(size_t& seed, const int& v){
 	seed ^= v + 0x9e3779b9 + (seed << 6) + (seed >> 2);
@@ -94,7 +94,7 @@ public:
 	}
 	size_t hash_value() const{
 		return seed;
-	}	
+	}
 };
 
 struct C2Feat{
@@ -220,6 +220,159 @@ public:
 	}
 };
 
+struct CFeat{
+protected:
+	vector<int> ids;
+	size_t seed;
+	int num;
+public:
+	bool valid;
+
+	void clearValue(){
+		valid = false;
+		seed = -1;
+		num = 0;
+	}
+public:
+	bool operator == (const CFeat& a) const {
+		if (a.valid == valid && !valid){
+			return true;
+		}
+		if (a.valid != valid || a.num != num || a.seed != seed){
+			return false;
+		}
+		for (int idx = 0; idx < num; idx++){
+			if (a.ids[idx] != ids[idx]){
+				return false;
+			}
+		}
+		return true;
+	}
+
+	void setId(const int& v1){
+		if (v1 < 0){
+			valid = false;
+			seed = -1;
+			num = 0;
+			return;
+		}
+		num = 1;
+		if (ids.size() != num)ids.resize(num);
+		ids[0] = v1;
+		seed = v1;
+		valid = true;
+	}
+
+
+	void setId(const int& v1, const int& v2){
+		if (v1 < 0 || v2 < 0){
+			valid = false;
+			seed = -1;
+			num = 0;
+			return;
+		}
+		num = 2;
+		if (ids.size() != num)ids.resize(num);
+		ids[0] = v1;
+		ids[1] = v2;
+		seed = hash_func(v1, v2);
+		valid = true;
+	}
+
+	void setId(const int& v1, const int& v2, const int& v3){
+		if (v1 < 0 || v2 < 0 || v3 < 0){
+			valid = false;
+			seed = -1;
+			num = 0;
+			return;
+		}
+		num = 3;
+		if (ids.size() != num)ids.resize(num);
+		ids[0] = v1;
+		ids[1] = v2;
+		ids[2] = v3;
+		seed = hash_func(v1, v2, v3);
+		valid = true;
+	}
+
+	void setId(const int& v1, const int& v2, const int& v3, const int& v4){
+		if (v1 < 0 || v2 < 0 || v3 < 0 || v4 < 0){
+			valid = false;
+			seed = -1;
+			num = 0;
+			return;
+		}
+		num = 4;
+		if (ids.size() != num)ids.resize(num);
+		ids[0] = v1;
+		ids[1] = v2;
+		ids[2] = v3;
+		ids[3] = v4;
+		seed = hash_func(v1, v2, v3, v4);
+		valid = true;
+	}
+
+	void setId(const int& v1, const int& v2, const int& v3, const int& v4, const int& v5){
+		if (v1 < 0 || v2 < 0 || v3 < 0 || v4 < 0 || v5 < 0){
+			valid = false;
+			seed = -1;
+			num = 0;
+			return;
+		}
+		num = 5;
+		if (ids.size() != num)ids.resize(num);
+		ids[0] = v1;
+		ids[1] = v2;
+		ids[2] = v3;
+		ids[3] = v4;
+		ids[4] = v5;
+		seed = hash_func(v1, v2, v3, v4, v5);
+		valid = true;
+	}
+
+	void setId(const int& v1, const int& v2, const int& v3, const int& v4, const int& v5, const int& v6){
+		if (v1 < 0 || v2 < 0 || v3 < 0 || v4 < 0 || v5 < 0 || v6 < 0){
+			valid = false;
+			seed = -1;
+			num = 0;
+			return;
+		}
+		num = 6;
+		if (ids.size() != num)ids.resize(num);
+		ids[0] = v1;
+		ids[1] = v2;
+		ids[2] = v3;
+		ids[3] = v4;
+		ids[4] = v5;
+		ids[5] = v6;
+		seed = hash_func(v1, v2, v3, v4, v5, v6);
+		valid = true;
+	}
+	//at most 7
+	void setId(const int& v1, const int& v2, const int& v3, const int& v4, const int& v5, const int& v6, const int& v7){
+		if (v1 < 0 || v2 < 0 || v3 < 0 || v4 < 0 || v5 < 0 || v6 < 0 || v7 < 0){
+			valid = false;
+			seed = -1;
+			num = 0;
+			return;
+		}
+		num = 7;
+		if (ids.size() != num)ids.resize(num);
+		ids[0] = v1;
+		ids[1] = v2;
+		ids[2] = v3;
+		ids[3] = v4;
+		ids[4] = v5;
+		ids[5] = v6;
+		ids[6] = v7;
+		seed = hash_func(v1, v2, v3, v4, v5, v6, v7);
+		valid = true;
+	}
+	std::size_t hash_value() const {
+		return seed;
+	}
+};
+
 
 namespace std {
 	template<>
@@ -280,6 +433,14 @@ namespace std {
 		}
 	};
 
+	template<>
+	struct hash < CFeat > {
+	public:
+		size_t operator()(const CFeat& s)const{
+			return s.hash_value();
+		}
+	};
+
 };
 
 
@@ -310,15 +471,19 @@ public:
 	// please better restrict col to 1
 	void forward(Graph *cg, const vector<PNode>& x, const int& dim) {
 		nSize = x.size();
-		if (nSize < 2){
-			std::cout << "at least two nodes are required" << std::endl;
-			return;
-		}
-
 		ins.clear();
 		for (int i = 0; i < nSize; i++){
 			ins.push_back(x[i]);
 		}
+
+		forward(dim);
+		cg->addNode(this);
+	}
+
+	void forward(Graph *cg, PNode x1, const int& dim){
+		ins.clear();
+		ins.push_back(x1);
+		nSize = 1;
 
 		forward(dim);
 		cg->addNode(this);
@@ -388,16 +553,31 @@ public:
 	void backward(){
 		static int oDim;
 		for (int i = 0; i < nSize; i++){
-			oDim = ins[i]->val.rows();
-			if (ins[i]->loss.size() == 0){
-				ins[i]->loss = Mat::Zero(oDim, 1);
+			if (ins[i]->smode){
+				oDim = ins[i]->sval.size();
+				if (ins[i]->sloss.size() == 0){
+					ins[i]->sloss.resize(oDim);
+					ins[i]->sloss = 0;
+				}
+				if (oDim == 1){
+					ins[i]->sloss[0] += loss.coeffRef(0);
+				}
+				else if (dimId < oDim){
+					ins[i]->sloss[dimId] += loss.coeffRef(0);
+				}
 			}
-			if (oDim == 1){
-				ins[i]->loss.coeffRef(0) += loss.coeffRef(0);
+			else{
+				oDim = ins[i]->val.size();
+				if (ins[i]->loss.size() == 0){
+					ins[i]->loss = Mat::Zero(oDim, 1);
+				}
+				if (oDim == 1){
+					ins[i]->loss.coeffRef(0) += loss.coeffRef(0);
+				}
+				else if (dimId < oDim){
+					ins[i]->loss.coeffRef(dimId) += loss.coeffRef(0);
+				}
 			}
-			else if (dimId < oDim){
-				ins[i]->loss.coeffRef(dimId) += loss.coeffRef(0);
-			}			
 		}
 	}
 
@@ -405,28 +585,193 @@ public:
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lock--;
 		}
+		if (!validLoss(loss))return;
+		for (int i = 0; i < nSize; i++){
+			ins[i]->lossed = true;
+			if (ins[i]->smode && ins[i]->sloss.size() == 0){
+				std::cout << "debug" << std::endl;
+			}
+		}
 	}
 
 protected:
 	void forward(const int& dim) {
-		if (val.size() == 0){
-			val = Mat::Zero(1, 1);
-		}
 		static int oDim;
+		dtype sum = 0;
 		for (int idx = 0; idx < nSize; idx++){
-			oDim = ins[idx]->val.rows();
-			if (oDim == 1){
-				val.coeffRef(0) += ins[idx]->val.coeffRef(0);
+			if (ins[idx]->smode){
+				oDim = ins[idx]->sval.size();
+				if (oDim == 1){
+					sum += ins[idx]->sval[0];
+				}
+				else if (dim < oDim){
+					sum += ins[idx]->sval[dim];
+				}
 			}
-			else if (dim < oDim){
-				val.coeffRef(0) += ins[idx]->val.coeffRef(dim);
+			else{
+				oDim = ins[idx]->val.size();
+				if (oDim == 1){
+					sum += ins[idx]->val.coeffRef(0);
+				}
+				else if (dim < oDim){
+					sum += ins[idx]->val.coeffRef(dim);
+				}
 			}
 		}
 		for (int idx = 0; idx < nSize; idx++){
 			ins[idx]->lock++;
 		}
-
+		if (val.size() == 0){
+			val = Mat::Zero(1, 1);
+		}
+		val.coeffRef(0) += sum;
 		dimId = dim;
+	}
+
+};
+
+
+struct SPAddAllDimNode : Node {
+	vector<PNode> ins;
+	int nSize;
+public:
+	SPAddAllDimNode(){
+		clear();
+		smode = true;
+	}
+
+public:
+	inline void setParam(int oDim) {
+		dim = oDim;
+	}
+public:
+	virtual inline void clearValue(){
+		Node::clearValue();
+		ins.clear();
+		nSize = 0;
+	}
+
+	virtual inline void clear(){
+		Node::clear();
+		ins.clear();
+		nSize = 0;
+	}
+
+public:
+	// please better restrict col to 1
+	void forward(Graph *cg, const vector<PNode>& x) {
+		nSize = x.size();
+		ins.clear();
+		for (int i = 0; i < nSize; i++){
+			ins.push_back(x[i]);
+		}
+
+		forward();
+		cg->addNode(this);
+	}
+
+	void forward(Graph *cg, PNode x1, PNode x2){
+		ins.clear();
+		ins.push_back(x1);
+		ins.push_back(x2);
+		nSize = 2;
+
+		forward();
+		cg->addNode(this);
+	}
+
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3){
+		ins.clear();
+		ins.push_back(x1);
+		ins.push_back(x2);
+		ins.push_back(x3);
+		nSize = 3;
+
+		forward();
+		cg->addNode(this);
+	}
+
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3, PNode x4){
+		ins.clear();
+		ins.push_back(x1);
+		ins.push_back(x2);
+		ins.push_back(x3);
+		ins.push_back(x4);
+		nSize = 4;
+
+		forward();
+		cg->addNode(this);
+	}
+
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3, PNode x4, PNode x5){
+		ins.clear();
+		ins.push_back(x1);
+		ins.push_back(x2);
+		ins.push_back(x3);
+		ins.push_back(x4);
+		ins.push_back(x5);
+		nSize = 5;
+
+		forward();
+		cg->addNode(this);
+	}
+
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3, PNode x4, PNode x5, PNode x6){
+		ins.clear();
+		ins.push_back(x1);
+		ins.push_back(x2);
+		ins.push_back(x3);
+		ins.push_back(x4);
+		ins.push_back(x5);
+		ins.push_back(x6);
+		nSize = 6;
+
+		forward();
+		cg->addNode(this);
+	}
+
+
+	void backward(){
+		for (int i = 0; i < nSize; i++){
+			if (ins[i]->sloss.size() == 0){
+				ins[i]->sloss.resize(dim);
+				ins[i]->sloss = 0;
+			}
+			for (int idy = 0; idy < dim; idy++){
+				ins[i]->sloss[idy] += sloss[idy];
+			}
+		}
+	}
+
+	inline void unlock(){
+		for (int i = 0; i < nSize; i++){
+			ins[i]->lock--;
+		}
+		if (!validLoss(sloss))return;
+		for (int i = 0; i < nSize; i++){
+			ins[i]->lossed = true;
+		}
+	}
+
+protected:
+	void forward() {
+		if (sval.size() != dim){
+			sval.resize(dim);
+			sval = 0;
+		}
+		for (int idx = 0; idx < nSize; idx++){
+			if (ins[idx]->smode){
+				for (int idy = 0; idy < dim; idy++){
+					sval[idy] += ins[idx]->sval[idy];
+				}
+			}
+			else{
+				std::cout << "input must be in sparse mode" << std::endl;
+			}
+		}
+		for (int idx = 0; idx < nSize; idx++){
+			ins[idx]->lock++;
+		}
 	}
 
 };

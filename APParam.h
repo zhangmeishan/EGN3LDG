@@ -8,54 +8,61 @@
 #ifndef AVGPARAM_H_
 #define AVGPARAM_H_
 
-#include "Eigen/Dense"
-#include "Utils.h"
 #include "BaseParam.h"
+using namespace nr;
 
 // Notice: aux is an auxiliary variable to help parameter updating
 // The in-out dimension definiation is different with dense parameters.
 struct APParam : BaseParam{
-	Mat aux;
+	NRMat<dtype> val;
+	NRMat<dtype> grad;
+	NRMat<dtype> aux;
 	unordered_set<int> indexers;
 	int max_update;
-	VectorXi last_update;
+	NRVec<int> last_update;
 
 	// allow sparse and dense parameters have different parameter initialization methods
 	inline void initial(int outDim, int inDim) {
-		val = Mat::Zero(inDim, outDim);
-		grad = Mat::Zero(inDim, outDim);
-		aux = Mat::Zero(inDim, outDim);
+		val.resize(inDim, outDim); val = 0; 
+		grad.resize(inDim, outDim); grad = 0;
+		aux.resize(inDim, outDim); aux = 0;
 		indexers.clear();
 		max_update = 0;
-		last_update = VectorXi::Zero(inDim);
+		last_update.resize(inDim); last_update = 0;
 	}
 
 	inline void clearGrad() {
 		static unordered_set<int>::iterator it;
+		int outDim = grad.ncols();
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
-			grad.row(index).setZero();
+			for (int idx = 0; idx < outDim; idx++){
+				grad[index][idx] = 0;
+			}
+		
 		}
 		indexers.clear();
 	}
 	
 	inline int outDim() {
-		return val.cols();
+		return val.ncols();
 	}
 
 	inline int inDim() {
-		return val.rows();
+		return val.nrows();
 	}	
 
 	inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) {
 		static unordered_set<int>::iterator it;
 		max_update++;
-
+		int outDim = grad.ncols();
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
-			aux.row(index) += (max_update - last_update.coeffRef(index)) * val.row(index) - grad.row(index);
-			val.row(index) = val.row(index) - grad.row(index);
-			last_update.coeffRef(index) = max_update;
+			for (int idx = 0; idx < outDim; idx++){
+				aux[index][idx] += (max_update - last_update[index]) * val[index][idx] - grad[index][idx];
+				val[index][idx] = val[index][idx] - grad[index][idx];				
+			}
+			last_update[index] = max_update;
 		}
 	}
 
@@ -68,7 +75,8 @@ struct APParam : BaseParam{
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			idRows.push_back(*it);
 		}
-		for (int i = 0; i < val.cols(); i++){
+		int outDim = val.ncols();
+		for (int i = 0; i < outDim; i++){
 			idCols.push_back(i);
 		}
 
@@ -81,11 +89,12 @@ struct APParam : BaseParam{
 
 	inline dtype squareGradNorm(){
 		static unordered_set<int>::iterator it;
+		int outDim = val.ncols();
 		dtype sumNorm = 0.0;
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
-			for (int idx = 0; idx < grad.cols(); idx++){
-				sumNorm += grad(index, idx) * grad(index, idx);
+			for (int idx = 0; idx < outDim; idx++){
+				sumNorm += grad[index][idx] * grad[index][idx];
 			}
 		}
 
@@ -94,47 +103,156 @@ struct APParam : BaseParam{
 
 	inline void rescaleGrad(dtype scale){
 		static unordered_set<int>::iterator it;
+		int outDim = val.ncols();
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
-			grad.row(index) = grad.row(index) * scale;
+			for (int idx = 0; idx < outDim; idx++){
+				grad[index][idx] = grad[index][idx] * scale;
+			}
 		}
 	}
 
-
-	inline Mat value(int featId, bool bTrain = false) {
-		if (bTrain)
-			return val.row(featId);
-		else
-			return sumWeight(featId).array() * 1.0 / max_update;
-	}
-
-	inline Mat sumWeight(int featId) {
-		if (last_update.coeffRef(featId) < max_update) {
-			int times = max_update - last_update.coeffRef(featId);
-			aux.row(featId) += val.row(featId) * times;
-			last_update.coeffRef(featId) = max_update;
+	inline void sumWeight(int featId) {
+		int outDim = val.ncols();
+		if (last_update[featId] < max_update) {
+			int times = max_update - last_update[featId];
+			for (int idx = 0; idx < outDim; idx++){
+				aux[featId][idx] += val[featId][idx] * times;
+				last_update[featId] = max_update;
+			}
 		}
-
-		return aux.row(featId);
 	}
 
-	inline dtype value1d(int featId, bool bTrain = false) {
-		if (bTrain)
-			return val.coeffRef(featId);
-		else
-			return sumWeight1d(featId) / max_update;
-	}
-
-	inline dtype sumWeight1d(int featId) {
-		if (last_update.coeffRef(featId) < max_update) {
-			int times = max_update - last_update.coeffRef(featId);
-			aux.coeffRef(featId) += val.coeffRef(featId) * times;
-			last_update.coeffRef(featId) = max_update;
+	inline void value(const int& featId, Mat& out, const bool& bTrain){
+		int outDim = val.ncols();
+		if (out.size() != outDim){
+			out = Mat::Zero(outDim, 1);
 		}
-
-		return aux.coeffRef(featId);
+		if (bTrain){
+			for (int idx = 0; idx < outDim; idx++){
+				out.coeffRef(idx) = val[featId][idx];
+			}
+		}
+		else{
+			sumWeight(featId);
+			for (int idx = 0; idx < outDim; idx++){
+				out.coeffRef(idx) = aux[featId][idx];
+			}
+		}
 	}
 
+	inline void value(const vector<int>& featIds, Mat& out, const bool& bTrain){
+		int outDim = val.ncols();
+		if (out.size() != outDim){
+			out = Mat::Zero(outDim, 1);
+		}
+		int featNum = featIds.size();
+		int featId;
+		if (bTrain){
+			for (int i = 0; i < featNum; i++){
+				featId = featIds[i];
+				for (int idx = 0; idx < outDim; idx++){
+					out.coeffRef(idx) += val[featId][idx];
+				}
+			}
+		}
+		else{
+			for (int i = 0; i < featNum; i++){
+				featId = featIds[i];
+				sumWeight(featId);
+				for (int idx = 0; idx < outDim; idx++){
+					out.coeffRef(idx) += aux[featId][idx];
+				}
+			}
+		}
+	}
+
+	inline void loss(const int& featId, const Mat&loss){
+		int outDim = val.ncols();
+		indexers.insert(featId);
+		for (int idx = 0; idx < outDim; idx++){
+			grad[featId][idx] += loss.coeffRef(idx);
+		}
+	}
+
+	inline void loss(const vector<int>& featIds, const Mat&loss){
+		int outDim = val.ncols();
+		int featNum = featIds.size();
+		int featId;
+		for (int i = 0; i < featNum; i++){
+			featId = featIds[i];
+			indexers.insert(featId);
+			for (int idx = 0; idx < outDim; idx++){
+				grad[featId][idx] += loss.coeffRef(idx);
+			}
+		}
+	}
+
+	inline void value(const int& featId, NRVec<dtype>& out, const bool& bTrain){
+		int outDim = val.ncols();
+		if (out.size() != outDim){
+			out.resize(outDim);
+		}
+		if (bTrain){
+			for (int idx = 0; idx < outDim; idx++){
+				out[idx] = val[featId][idx];
+			}
+		}
+		else{
+			sumWeight(featId);
+			for (int idx = 0; idx < outDim; idx++){
+				out[idx] = aux[featId][idx];
+			}
+		}
+	}
+
+	inline void value(const vector<int>& featIds, NRVec<dtype>& out, const bool& bTrain){
+		int outDim = val.ncols();
+		if (out.size() != outDim){
+			out.resize(outDim);
+			out = 0;
+		}
+		int featNum = featIds.size();
+		int featId;
+		if (bTrain){
+			for (int i = 0; i < featNum; i++){
+				featId = featIds[i];
+				for (int idx = 0; idx < outDim; idx++){
+					out[idx] += val[featId][idx];
+				}
+			}
+		}
+		else{
+			for (int i = 0; i < featNum; i++){
+				featId = featIds[i];
+				sumWeight(featId);
+				for (int idx = 0; idx < outDim; idx++){
+					out[idx] += aux[featId][idx];
+				}
+			}
+		}
+	}
+
+	inline void loss(const int& featId, const NRVec<dtype>&loss){
+		int outDim = val.ncols();
+		indexers.insert(featId);
+		for (int idx = 0; idx < outDim; idx++){
+			grad[featId][idx] += loss[idx];
+		}
+	}
+
+	inline void loss(const vector<int>& featIds, const NRVec<dtype>&loss){
+		int outDim = val.ncols();
+		int featNum = featIds.size();
+		int featId;
+		for (int i = 0; i < featNum; i++){
+			featId = featIds[i];
+			indexers.insert(featId);
+			for (int idx = 0; idx < outDim; idx++){
+				grad[featId][idx] += loss[idx];
+			}
+		}
+	}
 };
 
 #endif /* AVGPARAM_H_ */

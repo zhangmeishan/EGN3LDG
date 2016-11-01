@@ -16,7 +16,7 @@
 
 struct SparseC1Params {
 public:
-	SparseParam W; 
+	SparseParam W;
 	int nDim;
 	unordered_map<C1Feat, int> hash2id;
 	int nVSize;
@@ -103,6 +103,7 @@ public:
 public:
 	SparseC1Node() {
 		clear();
+		smode = true;
 	}
 
 	inline void setParam(SparseC1Params* paramInit) {
@@ -118,9 +119,7 @@ public:
 	}
 
 	inline void clearValue(){
-		val.setZero();
-		if(loss.size() != 0)loss.setZero();
-		lock = 0;
+		Node::clearValue();
 		tx = -1;
 		executed = false;
 	}
@@ -136,7 +135,7 @@ public:
 			return executed;
 		}
 		tx = featId;
-		val = param->W.val.row(tx).transpose();
+		param->W.value(tx, sval);
 		cg->addNode(this);
 		executed = true;
 		return executed;
@@ -146,8 +145,7 @@ public:
 	void backward() {
 		//assert(param != NULL);
 		if (tx >= 0){
-			param->W.indexers.insert(tx);
-			param->W.grad.row(tx) += loss.col(0).transpose();
+			param->W.loss(tx, sloss);
 		}
 	}
 };
@@ -244,6 +242,7 @@ public:
 public:
 	SparseC2Node() {
 		clear();
+		smode = true;
 	}
 
 	inline void setParam(SparseC2Params* paramInit) {
@@ -259,9 +258,7 @@ public:
 	}
 
 	inline void clearValue(){
-		val.setZero();
-		if(loss.size() != 0)loss.setZero();
-		lock = 0;
+		Node::clearValue();
 		tx = -1;
 		executed = false;
 	}
@@ -277,7 +274,7 @@ public:
 			return executed;
 		}
 		tx = featId;
-		val = param->W.val.row(tx).transpose();
+		param->W.value(tx, sval);
 		cg->addNode(this);
 		executed = true;
 		return executed;
@@ -286,8 +283,7 @@ public:
 	void backward() {
 		//assert(param != NULL);
 		if (tx >= 0){
-			param->W.indexers.insert(tx);
-			param->W.grad.row(tx) += loss.col(0).transpose();
+			param->W.loss(tx, sloss);
 		}
 	}
 };
@@ -382,11 +378,12 @@ public:
 public:
 	SparseC3Node() {
 		clear();
+		smode = true;
 	}
 
 	inline void setParam(SparseC3Params* paramInit) {
 		param = paramInit;
-		dim = param->nDim;			
+		dim = param->nDim;
 	}
 
 	inline void clear(){
@@ -397,9 +394,7 @@ public:
 	}
 
 	inline void clearValue(){
-		val.setZero();
-		if(loss.size() != 0)loss.setZero();
-		lock = 0;
+		Node::clearValue();
 		tx = -1;
 		executed = false;
 	}
@@ -415,7 +410,7 @@ public:
 			return executed;
 		}
 		tx = featId;
-		val = param->W.val.row(tx).transpose();
+		param->W.value(tx, sval);
 		cg->addNode(this);
 		executed = true;
 		return executed;
@@ -424,8 +419,7 @@ public:
 	void backward() {
 		//assert(param != NULL);
 		if (tx >= 0){
-			param->W.indexers.insert(tx);
-			param->W.grad.row(tx) += loss.col(0).transpose();
+			param->W.loss(tx, sloss);
 		}
 	}
 };
@@ -522,11 +516,12 @@ public:
 public:
 	SparseC4Node() {
 		clear();
+		smode = true;
 	}
 
 	inline void setParam(SparseC4Params* paramInit) {
 		param = paramInit;
-		dim = param->nDim;		
+		dim = param->nDim;
 	}
 
 	inline void clear(){
@@ -537,9 +532,7 @@ public:
 	}
 
 	inline void clearValue(){
-		val.setZero();
-		if(loss.size() != 0)loss.setZero();
-		lock = 0;
+		Node::clearValue();
 		tx = -1;
 		executed = false;
 	}
@@ -555,7 +548,7 @@ public:
 			return executed;
 		}
 		tx = featId;
-		val = param->W.val.row(tx).transpose();
+		param->W.value(tx, sval);
 		cg->addNode(this);
 		executed = true;
 		return executed;
@@ -564,8 +557,7 @@ public:
 	void backward() {
 		//assert(param != NULL);
 		if (tx >= 0){
-			param->W.indexers.insert(tx);
-			param->W.grad.row(tx) += loss.col(0).transpose();
+			param->W.loss(tx, sloss);
 		}
 	}
 };
@@ -660,11 +652,12 @@ public:
 public:
 	SparseC5Node() {
 		clear();
+		smode = true;
 	}
 
 	inline void setParam(SparseC5Params* paramInit) {
 		param = paramInit;
-		dim = param->nDim;		
+		dim = param->nDim;
 	}
 
 	inline void clear(){
@@ -675,9 +668,7 @@ public:
 	}
 
 	inline void clearValue(){
-		val.setZero();
-		if(loss.size() != 0)loss.setZero();
-		lock = 0;
+		Node::clearValue();
 		tx = -1;
 		executed = false;
 	}
@@ -693,7 +684,7 @@ public:
 			return executed;
 		}
 		tx = featId;
-		val = param->W.val.row(tx).transpose();
+		param->W.value(tx, sval);
 		cg->addNode(this);
 		executed = true;
 		return executed;
@@ -702,8 +693,7 @@ public:
 	void backward() {
 		//assert(param != NULL);
 		if (tx >= 0){
-			param->W.indexers.insert(tx);
-			param->W.grad.row(tx) += loss.col(0).transpose();
+			param->W.loss(tx, sloss);
 		}
 	}
 };
@@ -798,11 +788,12 @@ public:
 public:
 	SparseC6Node() {
 		clear();
+		smode = true;
 	}
 
 	inline void setParam(SparseC6Params* paramInit) {
 		param = paramInit;
-		dim = param->nDim;		
+		dim = param->nDim;
 	}
 
 	inline void clear(){
@@ -813,9 +804,7 @@ public:
 	}
 
 	inline void clearValue(){
-		val.setZero();
-		if(loss.size() != 0)loss.setZero();
-		lock = 0;
+		Node::clearValue();
 		tx = -1;
 		executed = false;
 	}
@@ -831,7 +820,7 @@ public:
 			return executed;
 		}
 		tx = featId;
-		val = param->W.val.row(tx).transpose();
+		param->W.value(tx, sval);
 		cg->addNode(this);
 		executed = true;
 		return executed;
@@ -840,8 +829,7 @@ public:
 	void backward() {
 		//assert(param != NULL);
 		if (tx >= 0){
-			param->W.indexers.insert(tx);
-			param->W.grad.row(tx) += loss.col(0).transpose();
+			param->W.loss(tx, sloss);
 		}
 	}
 };
@@ -935,11 +923,12 @@ public:
 public:
 	SparseC7Node() {
 		clear();
+		smode = true;
 	}
 
 	inline void setParam(SparseC7Params* paramInit) {
 		param = paramInit;
-		dim = param->nDim;		
+		dim = param->nDim;
 	}
 
 	inline void clear(){
@@ -950,9 +939,7 @@ public:
 	}
 
 	inline void clearValue(){
-		val.setZero();
-		if(loss.size() != 0)loss.setZero();
-		lock = 0;
+		Node::clearValue();
 		tx = -1;
 		executed = false;
 	}
@@ -968,7 +955,7 @@ public:
 			return executed;
 		}
 		tx = featId;
-		val = param->W.val.row(tx).transpose();
+		param->W.value(tx, sval);
 		cg->addNode(this);
 		executed = true;
 		return executed;
@@ -977,9 +964,137 @@ public:
 	void backward() {
 		//assert(param != NULL);
 		if (tx >= 0){
-			param->W.indexers.insert(tx);
-			param->W.grad.row(tx) += loss.col(0).transpose();
+			param->W.loss(tx, sloss);
 		}
+	}
+};
+
+struct SparseCParams {
+public:
+	SparseParam W;
+	int nDim;
+	unordered_map<CFeat, int> hash2id;
+	int nVSize;
+	int bound;
+protected:
+	CFeat feat;
+public:
+	SparseCParams() {
+		nDim = 0;
+		nVSize = 0;
+		bound = 0;
+		hash2id.clear();
+	}
+
+	inline void exportAdaParams(ModelUpdate& ada) {
+		if (nVSize > 0)ada.addParam(&W);
+	}
+
+	inline void initialWeights() {
+		if (nVSize <= 0){
+			std::cout << "please check the alphabet" << std::endl;
+			return;
+		}
+		W.initial(nDim, nVSize);
+	}
+
+	//random initialization
+	inline void initial(int outputDim = 1){
+		hash2id.clear();
+		bound = 0;
+		nDim = outputDim;
+	}
+
+	inline int getFeatureId(const CFeat& f, const bool& bTrain){
+		if (!f.valid){
+			return -1;
+		}
+		if (hash2id.find(f) != hash2id.end()){
+			return hash2id[f];
+		}
+		if (bTrain && bound < nVSize){
+			hash2id[f] = bound;
+			bound++;
+			return bound - 1;
+		}
+		else{
+			return -1;
+		}
+	}
+
+	inline void collectFeature(const CFeat& f){
+		if (!f.valid){
+			return;
+		}
+		if (hash2id.find(f) == hash2id.end() && bound < maxCapacity){
+			hash2id[f] = bound;
+			bound++;
+		}
+	}
+
+	inline void setFixed(const int& base = 1){
+		nVSize = (bound <= 0) ? 1 : bound * base;
+		if (nVSize > maxCapacity){
+			nVSize = maxCapacity;
+			std::cout << "reach max size" << std::endl;
+		}
+		initialWeights();
+	}
+
+};
+
+// a single node;
+// input variables are not allocated by current node(s)
+struct SparseCNode : Node {
+public:
+	SparseCParams* param;
+	vector<int> ins;
+	int nSize;
+
+public:
+	SparseCNode() {
+		clear();
+		smode = true;
+	}
+
+	inline void setParam(SparseCParams* paramInit) {
+		param = paramInit;
+		dim = param->nDim;
+	}
+
+	inline void clear(){
+		Node::clear();
+		ins.clear();
+		param = NULL;
+		nSize = 0;
+	}
+
+	inline void clearValue(){
+		Node::clearValue();
+		ins.clear();
+		nSize = 0;
+	}
+
+public:
+	inline void forward(Graph* cg, const vector<CFeat*>& xs){
+		//assert(param != NULL);
+		static int featId, count;
+		count = xs.size();
+		for (int idx = 0; idx < count; idx++){
+			featId = param->getFeatureId(*(xs[idx]), cg->train);
+			if (featId >= 0){
+				ins.push_back(featId);
+				nSize++;
+			}
+		}
+		param->W.value(ins, sval);
+		cg->addNode(this);
+	}
+
+	//no output losses
+	void backward() {
+		//assert(param != NULL);
+		param->W.loss(ins, sloss);
 	}
 };
 

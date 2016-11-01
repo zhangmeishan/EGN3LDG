@@ -45,6 +45,10 @@ public:
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lock--;
 		}
+		if(!validLoss(loss))return;
+		for (int i = 0; i < nSize; i++){
+			ins[i]->lossed = true;
+		}			
 	}
 };
 

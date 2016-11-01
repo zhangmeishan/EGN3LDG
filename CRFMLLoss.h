@@ -51,6 +51,7 @@ public:
 			if (x[idx]->loss.size() == 0){
 				x[idx]->loss = Mat::Zero(labelSize, 1);
 			}
+			x[idx]->lossed = true;
 		}
 
 		// comute alpha values

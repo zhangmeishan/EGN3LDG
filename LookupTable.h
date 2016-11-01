@@ -95,7 +95,7 @@ public:
 		nDim = vecInfo.size() - 1;
 
 		E.initial(nDim, nVSize);
-		E.val.setZero();
+		E.val = 0;
 
 		std::cout << "word embedding dim is " << nDim << std::endl;
 
@@ -121,14 +121,14 @@ public:
 				for (int idy = 0; idy < nDim; idy++) {
 					dtype curValue = atof(vecInfo[idy + 1].c_str());
 					sum(idy) += curValue;
-					E.val(wordId, idy) += curValue;
+					E.val[wordId][idy] += curValue;
 				}
 			}
 		}
 
 		if (nUNKId >= 0 && !bHasUnknown){
 			for (int idx = 0; idx < nDim; idx++) {
-				E.val(nUNKId, idx) = sum(idx) / count;
+				E.val[nUNKId][idx] = sum(idx) / count;
 			}
 			indexers.insert(nUNKId);
 			count++;
@@ -140,7 +140,7 @@ public:
 			if (indexers.find(id) == indexers.end()) {
 				oovWords++;
 				for (int idy = 0; idy < nDim; idy++){
-					E.val(id, idy) = nUNKId >= 0 ? E.val(nUNKId, idy) : sum(idy) / count;
+					E.val[id][idy] = nUNKId >= 0 ? E.val[nUNKId][idy] : sum(idy) / count;
 				}
 			}
 		}
@@ -205,7 +205,7 @@ public:
 			xid = param->nUNKId;
 		}
 		if (xid >= 0){
-			val = param->E.val.row(xid).transpose();
+			param->E.value(xid, val);
 		}
 		else{
 			if (param->bFineTune)std::cout << "Caution: unknown words are not modeled !" << std::endl;
@@ -218,8 +218,7 @@ public:
 	void backward() {
 		assert(param != NULL);
 		if (xid >= 0 && param->bFineTune){
-			param->E.grad.row(xid) += loss.col(0).transpose();
-			param->E.indexers.insert(xid);
+			param->E.loss(xid, loss);
 		}
 	}
 

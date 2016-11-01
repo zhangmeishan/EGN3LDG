@@ -14,6 +14,8 @@
 
 // Notice: aux is an auxiliary variable to help parameter updating
 struct Param : BaseParam{
+	Mat val;
+	Mat grad;
 	Mat aux;
 
 	// allow sparse and dense parameters have different parameter initialization methods

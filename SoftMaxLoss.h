@@ -17,8 +17,9 @@ public:
 			return -1.0;
 		}
 		if(x->loss.size() == 0){
-			x->loss = Mat::Zero(nDim, 1);
+			x->loss = Mat::Zero(nDim, 1);			
 		}
+		x->lossed = true;
 
 		Mat scores = Mat::Zero(nDim, 1);
 
@@ -52,7 +53,7 @@ public:
 				x->loss(i, 0) = (scores(i, 0) / sum2 - answer[i]) / batchsize;
 			}
 		}
-
+		
 		return cost;
 
 	}

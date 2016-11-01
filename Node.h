@@ -11,10 +11,19 @@ struct Node {
 public:
 	Mat val;
 	Mat loss;
-	int dim;	
+
+public:
+	NRVec<dtype> sval;  //only in APCNodes, SparseCNodes;
+	NRVec<dtype> sloss; //only in APCNodes, SparseCNodes;
+	bool smode;
+
+public:
+	int dim;
 	int lock;  //node can backward only when lock = 0;
 
 	int sid;
+	bool lossed;
+
 
 public:
 	Node(){
@@ -23,13 +32,26 @@ public:
 		dim = 0;
 		lock = 0;
 		sid = rand();
-	}	
 
-public: 
+		smode = false;
+		sval.dealloc();
+		sloss.dealloc();
+		lossed = false;
+	}
+
+public:
 	virtual inline void clearValue(){
-		val.setZero();
-		loss.setZero();
+		if (!smode){
+			val.setZero();
+			loss.setZero();
+		}
+		else{
+			sval = 0;
+			sloss = 0;
+		}
 		lock = 0;
+		lossed = false;
+
 	}
 
 	virtual inline void clear(){
@@ -37,6 +59,10 @@ public:
 		loss.setZero();
 		dim = 0;
 		lock = 0;
+		lossed = false;
+
+		sval.dealloc();
+		sloss.dealloc();
 	}
 
 	virtual inline void backward(){

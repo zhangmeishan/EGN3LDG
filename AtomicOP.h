@@ -53,6 +53,9 @@ public:
 	inline void unlock(){
 		in1->lock--;
 		in2->lock--;
+		if(!validLoss(loss))return;
+		in1->lossed = true;
+		in2->lossed = true;
 	}
 
 };
@@ -172,6 +175,10 @@ public:
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lock--;
 		}
+		if(!validLoss(loss))return;
+		for (int i = 0; i < nSize; i++){
+			ins[i]->lossed = true;
+		}		
 	}
 
 protected:
@@ -239,6 +246,8 @@ public:
 
 	inline void unlock(){
 		in->lock--;
+		if(!validLoss(loss))return;
+		in->lossed = true;
 	}
 
 };
@@ -282,6 +291,8 @@ public:
 
 	inline void unlock(){
 		in->lock--;
+		if(!validLoss(loss))return;
+		in->lossed = true;
 	}
 
 };
@@ -325,6 +336,8 @@ public:
 
 	inline void unlock(){
 		in->lock--;
+		if(!validLoss(loss))return;
+		in->lossed = true;
 	}
 
 };
@@ -367,6 +380,8 @@ public:
 
 	inline void unlock(){
 		in->lock--;
+		if(!validLoss(loss))return;
+		in->lossed = true;
 	}
 
 };

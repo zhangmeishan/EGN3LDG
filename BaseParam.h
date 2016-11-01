@@ -8,13 +8,11 @@
 #ifndef BasePARAM_H_
 #define BasePARAM_H_
 
-#include "Eigen/Dense"
+
 #include "Utils.h"
 using namespace Eigen;
 
 struct BaseParam {
-	Mat val;
-	Mat grad;
 
 public:
 	virtual inline void initial(int outDim, int inDim) = 0;

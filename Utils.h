@@ -8,8 +8,8 @@
  *     https://github.com/oir/deep-recurrent
  */
 
-#ifndef _UTILS_H_
-#define _UTILS_H_
+#ifndef _LIBN3L_UTILS_H_
+#define _LIBN3L_UTILS_H_
 
 #include <iostream>
 #include <fstream>
@@ -68,12 +68,6 @@ inline dtype frelu_deri(dtype x) {
 	return 1;
 }
 
-inline Mat softmax(const Mat &x) {
-	RowVectorXd m = x.colwise().maxCoeff();
-	Mat t = (x.rowwise() - m).array().exp();
-	return t.array().rowwise() / t.colwise().sum().array();
-}
-
 inline Mat smaxentp(const Mat &y, const Mat &r) {
 	return y - r;
 }
@@ -111,6 +105,39 @@ inline Mat equal_deri(const Mat &x, const Mat &y) {
 	return Mat::Ones(y.rows(), y.cols());
 }
 
+inline void random(NRMat<dtype>& nr){
+	int rows = nr.nrows(),cols = nr.ncols();
+	for(int idx = 0; idx < rows; idx++){
+		for(int idy = 0; idy < cols; idy++){
+			nr[idx][idy] = urand(0.0);
+		}
+	}
+}
+
+inline bool validLoss(const NRVec<dtype>& loss){
+	int dim = loss.size();
+	dtype t;
+	for(int idx = 0; idx < dim; idx++){
+		t = loss[idx];
+		if(t >= 1e-8 || t <= -1e-8){
+			return true;
+		}
+	}
+	return false;
+}
+
+inline bool validLoss(const Mat& loss){
+	int dim = loss.size();
+	dtype t;
+	for(int idx = 0; idx < dim; idx++){
+		t = loss(idx);
+		if(t >= 1e-8 || t <= -1e-8){
+			return true;
+		}
+	}
+	return false;
+}
+
 /*write by yunan*/
 inline void assign(Mat &m, const NRMat<dtype>& wnr)
 {
@@ -131,6 +158,16 @@ inline void norm2one(Mat &w, int idx) {
 	dtype scale = sqrt(sum);
 	for (int idy = 0; idy < w.cols(); idy++)
 		w(idx,idy) /= scale;
+}
+
+inline void norm2one(NRMat<dtype> &w, int idx) {
+	dtype sum = 0.000001;
+	for (int idy = 0; idy < w.ncols(); idy++) {
+		sum += w[idx][idy] * w[idx][idy];
+	}
+	dtype scale = sqrt(sum);
+	for (int idy = 0; idy < w.ncols(); idy++)
+		w[idx][idy] = w[idx][idy] / scale;
 }
 
 inline dtype str2double(const string& s) {

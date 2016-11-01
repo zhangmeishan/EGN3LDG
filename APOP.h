@@ -92,21 +92,17 @@ public:
 		for (int idx = 0; idx < x.size(); idx++) {
 			featId = param->getFeatureId(x[idx]);
 			if (featId >= 0){
-				tx.push_back(featId);
-				val.col(0) += param->W.value(featId, cg->train).transpose();
+				tx.push_back(featId);				
 			}
 		}
-
+		param->W.value(featId, val, cg->train);
 		cg->addNode(this);
 	}
 
 	//no output losses
 	void backward() {
-		assert(param != NULL);
-		for (int idx = 0; idx < tx.size(); idx++) {
-			param->W.indexers.insert(tx[idx]);
-			param->W.grad.row(tx[idx]) += loss.col(0).transpose();
-		}
+		//assert(param != NULL);
+		param->W.loss(tx, loss);
 	}
 
 };

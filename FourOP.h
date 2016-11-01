@@ -185,6 +185,11 @@ public:
 		in2->lock--;
 		in3->lock--;
 		in4->lock--;
+		if(!validLoss(loss))return;
+		in1->lossed = true;
+		in2->lossed = true;
+		in3->lossed = true;
+		in3->lossed = true;
 	}
 
 };
