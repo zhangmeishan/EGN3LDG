@@ -108,4 +108,35 @@ inline vector<PNode> getPNodes(DerivedNode inputs[], int size){
 	return pnodes;
 }
 
+template<typename DerivedNode>
+inline vector<PNode> getPNodes(vector<DerivedNode>& inputs, int start, int length){
+	int end, tmp_end = start + length;
+	if (tmp_end > inputs.size())
+		end = inputs.size();
+	else
+		end = tmp_end;
+	//if (size >= 0 && size < usedSize) usedSize = size;
+	vector<PNode> pnodes;
+	for (int idx = start; idx < end; idx++){
+		pnodes.push_back(&(inputs[idx]));
+	}
+
+	return pnodes;
+}
+
+template<typename DerivedNode>
+inline vector<PNode> getPNodes(DerivedNode inputs[], int size, int start, int length){
+	int end, tmp_end = start + length;
+	if (tmp_end > size)
+		end = size;
+	else
+		end = tmp_end;
+	//if (size >= 0 && size < usedSize) usedSize = size;
+	vector<PNode> pnodes;
+	for (int idx = start; idx < end; idx++){
+		pnodes.push_back(&(inputs[idx]));
+	}
+
+	return pnodes;
+}
 #endif
