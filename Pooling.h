@@ -209,5 +209,99 @@ public:
 
 };
 
+struct StdPoolNode : PoolNode {
+public:
+	StdPoolNode(){
+	}
+
+public:
+	//Be careful that the row is the dim of input vector, and the col is the number of input vectors
+	//Another point is that we change the input vectors directly.
+	void forward(Graph *cg, const vector<PNode>& x) {
+		if (x.size() == 0){
+			std::cout << "empty inputs for std pooling" << std::endl;
+			return;
+		}
+
+		nSize = x.size();
+		ins.clear();
+		for (int i = 0; i < nSize; i++){
+			ins.push_back(x[i]);
+		}
+
+		dim = ins[0]->val.rows();
+		masks.resize(nSize);
+		for (int i = 0; i < nSize; ++i){
+			if (ins[i]->val.rows() != dim){
+				std::cout << "input matrixes are not matched" << std::endl;
+				clearValue();
+				return;
+			}
+			//masks[i] = Mat::Ones(dim, 1);
+		}
+
+		val = Mat::Zero(dim, 1);
+		for (int i = 0; i < nSize; ++i){
+			val = val.array() + ins[i]->val.array() * ins[i]->val.array();
+		}
+		val = val.array().sqrt();
+
+		for (int i = 0; i < nSize; ++i){
+			masks[i] = ins[i]->val.array() / val.array();
+		}
+
+		for (int i = 0; i < nSize; ++i){
+			ins[i]->lock++;
+		}
+
+		cg->addNode(this);
+	}
+
+};
+
+
+struct AvgPoolNode : PoolNode {
+public:
+	AvgPoolNode(){
+	}
+
+public:
+	//Be careful that the row is the dim of input vector, and the col is the number of input vectors
+	//Another point is that we change the input vectors directly.
+	void forward(Graph *cg, const vector<PNode>& x) {
+		if (x.size() == 0){
+			std::cout << "empty inputs for avg pooling" << std::endl;
+			return;
+		}
+
+		nSize = x.size();
+		ins.clear();
+		for (int i = 0; i < nSize; i++){
+			ins.push_back(x[i]);
+		}
+
+		dim = ins[0]->val.rows();
+		masks.resize(nSize);
+		for (int i = 0; i < nSize; ++i){
+			if (ins[i]->val.rows() != dim){
+				std::cout << "input matrixes are not matched" << std::endl;
+				clearValue();
+				return;
+			}
+			masks[i] = Mat::Ones(dim, 1) / nSize;
+		}
+
+		val = Mat::Zero(dim, 1);
+		for (int i = 0; i < nSize; ++i){
+			val = val.array() + masks[i].array() *ins[i]->val.array();
+		}
+
+		for (int i = 0; i < nSize; ++i){
+			ins[i]->lock++;
+		}
+
+		cg->addNode(this);
+	}
+};
 
 #endif
