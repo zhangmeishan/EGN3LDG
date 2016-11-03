@@ -7,7 +7,7 @@
 
 struct ConcatNode : Node{
 public:
-	int nSize;
+	int nSize, distance;
 	vector<int> inDims;
 	vector<PNode> ins;
 
@@ -19,6 +19,7 @@ public:
 	inline void clear(){
 		Node::clear();
 		nSize = 0;
+		distance = 0;
 		inDims.clear();
 	}
 
@@ -40,6 +41,24 @@ public:
 		}
 
 		forward();
+
+		cg->addNode(this);
+	}
+
+	void forward(Graph *cg, const vector<PNode>& x, int distance) {
+		// distance denotes right shift position, if less than zero,
+		// denotes right (-distance) values are filled with zeors
+		if (x.size() == 0){
+			std::cout << "empty inputs for concat" << std::endl;
+			return;
+		}
+
+		ins.clear();
+		for (int i = 0; i < x.size(); i++){
+			ins.push_back(x[i]);
+		}
+
+		forward(distance);
 
 		cg->addNode(this);
 	}
@@ -111,7 +130,7 @@ public:
 			}
 		}
 
-		int offset = 0;
+		int offset = distance > 0 ? distance : 0;
 		for (int i = 0; i < nSize; ++i){
 			for (int idx = 0; idx < inDims[i]; idx++){
 				ins[i]->loss(idx, 0) += loss(offset + idx, 0);				
@@ -124,21 +143,13 @@ public:
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lock--;
 		}
-		if (!lossed)return;
-		for (int i = 0; i < nSize; i++){
-			ins[i]->lossed = true;
-			/*
-			if (ins[i]->sid == 16913){
-				std::cout << "debug" << std::endl;
-			}
-			*/
-		}			
 	}
 
 protected:
 	inline void forward(){
 		assert(ins.size() > 0);
 
+		distance = 0;
 		nSize = ins.size();
 		inDims.clear();
 		dim = 0;
@@ -149,6 +160,33 @@ protected:
 
 		val = Mat::Zero(dim, 1);
 		int offset = 0;
+		for (int i = 0; i < nSize; ++i){
+			assert(ins[i]->val.rows() == inDims[i]);
+			for (int idx = 0; idx < inDims[i]; idx++){
+				val(offset + idx, 0) = ins[i]->val(idx, 0);
+			}
+			offset += inDims[i];
+		}
+
+		for (int i = 0; i < nSize; ++i){
+			ins[i]->lock++;
+		}
+	}
+
+	inline void forward(int distance){
+		assert(ins.size() > 0);
+
+		this->distance = distance;
+		nSize = ins.size();
+		inDims.clear();
+		dim = 0;
+		for (int i = 0; i < nSize; ++i){
+			inDims.push_back(ins[i]->val.rows());
+			dim += inDims[i];
+		}
+		dim += distance;
+		val = Mat::Zero(dim, 1);
+		int offset = distance > 0 ? distance : 0;
 		for (int i = 0; i < nSize; ++i){
 			assert(ins[i]->val.rows() == inDims[i]);
 			for (int idx = 0; idx < inDims[i]; idx++){
