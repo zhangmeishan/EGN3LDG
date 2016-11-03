@@ -585,7 +585,7 @@ public:
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lock--;
 		}
-		if (!nonzeroloss(loss))return;
+		if (!lossed || !nonzeroloss(loss))return;
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lossed = true;
 		}
@@ -744,7 +744,7 @@ public:
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lock--;
 		}
-		if (!nonzeroloss(sloss))return;
+		if (!lossed || !nonzeroloss(loss))return;
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lossed = true;
 		}
@@ -891,7 +891,7 @@ public:
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lock--;
 		}
-		if (!nonzeroloss(sloss))return;
+		if (!lossed || !nonzeroloss(loss))return;
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lossed = true;
 		}
