@@ -585,12 +585,9 @@ public:
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lock--;
 		}
-		if (!validLoss(loss))return;
+		if (!nonzeroloss(loss))return;
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lossed = true;
-			if (ins[i]->smode && ins[i]->sloss.size() == 0){
-				std::cout << "debug" << std::endl;
-			}
 		}
 	}
 
@@ -747,7 +744,7 @@ public:
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lock--;
 		}
-		if (!validLoss(sloss))return;
+		if (!nonzeroloss(sloss))return;
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lossed = true;
 		}
@@ -776,6 +773,151 @@ protected:
 
 };
 
+struct SPAddAllDimScaleNode : Node {
+	vector<PNode> ins;
+	int nSize;
+	dtype scale;
+public:
+	SPAddAllDimScaleNode(){
+		clear();
+		smode = true;
+	}
 
+public:
+	inline void setParam(int oDim, dtype oScale = 1.0) {
+		dim = oDim;
+		scale = oScale;
+	}
+public:
+	virtual inline void clearValue(){
+		Node::clearValue();
+		ins.clear();
+		nSize = 0;
+	}
+
+	virtual inline void clear(){
+		Node::clear();
+		ins.clear();
+		nSize = 0;
+	}
+
+public:
+	// please better restrict col to 1
+	void forward(Graph *cg, const vector<PNode>& x) {
+		nSize = x.size();
+		ins.clear();
+		for (int i = 0; i < nSize; i++){
+			ins.push_back(x[i]);
+		}
+
+		forward();
+		cg->addNode(this);
+	}
+
+	void forward(Graph *cg, PNode x1, PNode x2){
+		ins.clear();
+		ins.push_back(x1);
+		ins.push_back(x2);
+		nSize = 2;
+
+		forward();
+		cg->addNode(this);
+	}
+
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3){
+		ins.clear();
+		ins.push_back(x1);
+		ins.push_back(x2);
+		ins.push_back(x3);
+		nSize = 3;
+
+		forward();
+		cg->addNode(this);
+	}
+
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3, PNode x4){
+		ins.clear();
+		ins.push_back(x1);
+		ins.push_back(x2);
+		ins.push_back(x3);
+		ins.push_back(x4);
+		nSize = 4;
+
+		forward();
+		cg->addNode(this);
+	}
+
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3, PNode x4, PNode x5){
+		ins.clear();
+		ins.push_back(x1);
+		ins.push_back(x2);
+		ins.push_back(x3);
+		ins.push_back(x4);
+		ins.push_back(x5);
+		nSize = 5;
+
+		forward();
+		cg->addNode(this);
+	}
+
+	void forward(Graph *cg, PNode x1, PNode x2, PNode x3, PNode x4, PNode x5, PNode x6){
+		ins.clear();
+		ins.push_back(x1);
+		ins.push_back(x2);
+		ins.push_back(x3);
+		ins.push_back(x4);
+		ins.push_back(x5);
+		ins.push_back(x6);
+		nSize = 6;
+
+		forward();
+		cg->addNode(this);
+	}
+
+
+	void backward(){
+		for (int i = 0; i < nSize; i++){
+			if (ins[i]->sloss.size() == 0){
+				ins[i]->sloss.resize(dim);
+				ins[i]->sloss = 0;
+			}
+			for (int idy = 0; idy < dim; idy++){
+				ins[i]->sloss[idy] += scale * sloss[idy];
+			}
+		}
+	}
+
+	inline void unlock(){
+		for (int i = 0; i < nSize; i++){
+			ins[i]->lock--;
+		}
+		if (!nonzeroloss(sloss))return;
+		for (int i = 0; i < nSize; i++){
+			ins[i]->lossed = true;
+		}
+	}
+
+protected:
+	void forward() {
+		if (sval.size() != dim){
+			sval.resize(dim);
+			sval = 0;
+		}
+		for (int idx = 0; idx < nSize; idx++){
+			if (ins[idx]->smode){
+				for (int idy = 0; idy < dim; idy++){
+					sval[idy] += scale * ins[idx]->sval[idy];
+				}
+			}
+			else{
+				std::cout << "input must be in sparse mode" << std::endl;
+			}
+		}
+		for (int idx = 0; idx < nSize; idx++){
+			ins[idx]->lock++;
+		}
+	}
+
+};
 
 #endif /* COPUtil_H_ */

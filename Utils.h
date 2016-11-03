@@ -114,7 +114,7 @@ inline void random(NRMat<dtype>& nr){
 	}
 }
 
-inline bool validLoss(const NRVec<dtype>& loss){
+inline bool nonzeroloss(const NRVec<dtype>& loss){
 	int dim = loss.size();
 	dtype t;
 	for(int idx = 0; idx < dim; idx++){
@@ -126,7 +126,7 @@ inline bool validLoss(const NRVec<dtype>& loss){
 	return false;
 }
 
-inline bool validLoss(const Mat& loss){
+inline bool nonzeroloss(const Mat& loss){
 	int dim = loss.size();
 	dtype t;
 	for(int idx = 0; idx < dim; idx++){
