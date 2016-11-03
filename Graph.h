@@ -47,6 +47,7 @@ public:
 			}
 			else if (execs[idx]->lock == 0) {
 				if (execs[idx]->lossed){
+					//std::cout << "checking: " << execs[idx]->sid << " " << execs[idx]->lock << std::endl;
 					execs[idx]->backward();
 				}
 				execs[idx]->unlock();
@@ -60,7 +61,8 @@ public:
 
 	inline void addNode(PNode x){
 		execs.push_back(x);
-		//std::cout << x->sid << std::endl;
+		//std::cout << "for" << x->sid << std::endl;
+			
 	}
 
 	//some nodes are exported for output, define them
@@ -106,4 +108,35 @@ inline vector<PNode> getPNodes(DerivedNode inputs[], int size){
 	return pnodes;
 }
 
+template<typename DerivedNode>
+inline vector<PNode> getPNodes(vector<DerivedNode>& inputs, int start, int length){
+	int end, tmp_end = start + length;
+	if (tmp_end > inputs.size())
+		end = inputs.size();
+	else
+		end = tmp_end;
+	//if (size >= 0 && size < usedSize) usedSize = size;
+	vector<PNode> pnodes;
+	for (int idx = start; idx < end; idx++){
+		pnodes.push_back(&(inputs[idx]));
+	}
+
+	return pnodes;
+}
+
+template<typename DerivedNode>
+inline vector<PNode> getPNodes(DerivedNode inputs[], int size, int start, int length){
+	int end, tmp_end = start + length;
+	if (tmp_end > size)
+		end = size;
+	else
+		end = tmp_end;
+	//if (size >= 0 && size < usedSize) usedSize = size;
+	vector<PNode> pnodes;
+	for (int idx = start; idx < end; idx++){
+		pnodes.push_back(&(inputs[idx]));
+	}
+
+	return pnodes;
+}
 #endif

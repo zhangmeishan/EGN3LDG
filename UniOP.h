@@ -144,7 +144,7 @@ public:
 
 	inline void unlock(){
 		in->lock--;
-		if(!validLoss(loss))return;
+		if(!lossed)return;
 		in->lossed = true;
 	}
 
@@ -212,7 +212,7 @@ public:
 
 	inline void unlock(){
 		in->lock--;
-		if(!validLoss(loss))return;
+		if(!lossed)return;
 		in->lossed = true;
 	}
 
