@@ -124,9 +124,14 @@ public:
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lock--;
 		}
-		if(!validLoss(loss))return;
+		if (!lossed)return;
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lossed = true;
+			/*
+			if (ins[i]->sid == 16913){
+				std::cout << "debug" << std::endl;
+			}
+			*/
 		}			
 	}
 

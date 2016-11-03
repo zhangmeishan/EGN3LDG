@@ -47,6 +47,7 @@ public:
 			}
 			else if (execs[idx]->lock == 0) {
 				if (execs[idx]->lossed){
+					//std::cout << "checking: " << execs[idx]->sid << " " << execs[idx]->lock << std::endl;
 					execs[idx]->backward();
 				}
 				execs[idx]->unlock();
@@ -60,7 +61,8 @@ public:
 
 	inline void addNode(PNode x){
 		execs.push_back(x);
-		//std::cout << x->sid << std::endl;
+		//std::cout << "for" << x->sid << std::endl;
+			
 	}
 
 	//some nodes are exported for output, define them

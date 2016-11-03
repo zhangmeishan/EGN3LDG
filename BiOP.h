@@ -155,7 +155,7 @@ public:
 	inline void unlock(){
 		in1->lock--;
 		in2->lock--;
-		if(!validLoss(loss))return;
+		if(!lossed)return;
 		in1->lossed = true;
 		in2->lossed = true;
 	}
