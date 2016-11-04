@@ -164,7 +164,7 @@ protected:
 
 	inline void right2left_forward(Graph *cg, const vector<PNode>& x) {
 		for (int idx = _nSize - 1; idx >= 0; idx--) {
-			if (idx == 0) {
+			if (idx == _nSize - 1) {
 				_rnn_update_nodes[idx].forward(cg, &_bucket_zero, x[idx]);
 				_rnn_nodes[idx].forward(cg, &_bucket_zero, x[idx]);
 				_mult_nodes_2[idx].forward(cg, &_rnn_update_nodes[idx], &_rnn_nodes[idx]);
