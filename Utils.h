@@ -45,8 +45,8 @@ inline istream& operator>>(istream& s, VectorXd& m) {
 }
 
 // this is used for randomly initializing an Eigen matrix
-inline dtype urand(dtype dummy) {
-	dtype min = -0.01, max = 0.01;
+inline dtype urand(dtype bound) {
+	dtype min = -bound, max = bound;
 	return (dtype(rand()) / RAND_MAX) * (max - min) + min;
 }
 
@@ -105,11 +105,20 @@ inline Mat equal_deri(const Mat &x, const Mat &y) {
 	return Mat::Ones(y.rows(), y.cols());
 }
 
-inline void random(NRMat<dtype>& nr){
+inline void random(NRMat<dtype>& nr, dtype bound = 0.01){
 	int rows = nr.nrows(),cols = nr.ncols();
 	for(int idx = 0; idx < rows; idx++){
 		for(int idy = 0; idy < cols; idy++){
-			nr[idx][idy] = urand(0.0);
+			nr[idx][idy] = urand(0.01);
+		}
+	}
+}
+
+inline void random(Mat& m, dtype bound = 0.01){
+	int rows = m.rows(),cols = m.cols();
+	for(int idx = 0; idx < rows; idx++){
+		for(int idy = 0; idy < cols; idy++){
+			m.coeffRef(idx, idy) = urand(0.01);
 		}
 	}
 }

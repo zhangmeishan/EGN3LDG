@@ -20,9 +20,10 @@ struct Param : BaseParam{
 
 	// allow sparse and dense parameters have different parameter initialization methods
 	inline void initial(int outDim, int inDim) {
-		val = Mat(outDim, inDim).unaryExpr(ptr_fun(urand));
+		val = Mat::Zero(outDim, inDim);
+		random(val);
 		grad = Mat::Zero(outDim, inDim);
-		aux = Mat::Zero(outDim, inDim);
+		aux = Mat::Zero(outDim, inDim);		
 	}
 	
 	inline int outDim() {
