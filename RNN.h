@@ -103,8 +103,9 @@ protected:
 				_rnn_nodes[idx].forward(cg, &_bucket, x[idx]);
 			else
 				_rnn_nodes[idx].forward(cg, &_rnn_nodes[idx - 1], x[idx]);
-			_rnn_drop[idx].forward(cg, &_rnn_nodes[idx]);
 		}
+		for (int idx = 0; idx < _nSize; idx++) 
+			_rnn_drop[idx].forward(cg, &_rnn_nodes[idx]);
 	}
 	inline void right2left_forward(Graph *cg, const vector<PNode>& x) {
 		for (int idx = _nSize - 1; idx >= 0; idx--) {
@@ -112,8 +113,9 @@ protected:
 				_rnn_nodes[idx].forward(cg, &_bucket, x[idx]);
 			else
 				_rnn_nodes[idx].forward(cg, &_rnn_nodes[idx + 1], x[idx]);
-			_rnn_drop[idx].forward(cg, &_rnn_nodes[idx]);
 		}
+		for (int idx = 0; idx < _nSize; idx++) 
+			_rnn_drop[idx].forward(cg, &_rnn_nodes[idx]);
 	}
 	
 };
