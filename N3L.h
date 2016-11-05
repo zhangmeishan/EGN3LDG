@@ -31,6 +31,8 @@
 #include "APCOP.h"
 #include "SparseCOP.h"
 #include "COPUtils.h"
+#include "RNN.h"
+#include "GRNN.h"
 
 
 #endif
