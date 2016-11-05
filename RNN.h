@@ -83,8 +83,7 @@ public:
 			return;
 		}
 		_nSize = x.size();
-		if (x[0]->val.rows() != _inDim)
-		{
+		if (x[0]->val.rows() != _inDim) {
 			std::cout << "input dim dose not match for seg operation" << std::endl;
 			return;
 		}

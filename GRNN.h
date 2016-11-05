@@ -97,8 +97,7 @@ public:
 		_params = paramInit;
 		_inDim = _params->_rnn.W2.inDim();
 		_outDim = _params->_rnn.W2.outDim();
-		for (int idx = 0; idx < _rnn_nodes.size(); idx++)
-		{
+		for (int idx = 0; idx < _rnn_nodes.size(); idx++) {
 			_rnn_update_nodes[idx].setParam(&_params->_rnn_update);
 			_rnn_update_nodes[idx].setFunctions(&sigmoid, &sigmoid_deri);
 			_rnn_reset_nodes[idx].setParam(&_params->_rnn_reset);
@@ -162,8 +161,7 @@ protected:
 				_rnn_nodes[idx].forward(cg, &_bucket_zero, x[idx]);
 				_mult_nodes_2[idx].forward(cg, &_rnn_update_nodes[idx], &_rnn_nodes[idx]);
 				_output[idx].forward(cg, &_bucket_zero, &_mult_nodes_2[idx]);
-			}
-			else {
+			} else {
 				_rnn_reset_nodes[idx].forward(cg, &_output[idx + 1], x[idx]);
 				_rnn_update_nodes[idx].forward(cg, &_output[idx + 1], x[idx]);
 				_y_temp_nodes[idx].forward(cg, &_rnn_reset_nodes[idx], &_output[idx + 1]);
