@@ -71,8 +71,11 @@ public:
 		lossed = false;
 		executed = false;
 
+		smode = false;
 		sval.dealloc();
 		sloss.dealloc();
+		
+		usedrop = false;
 	}
 
 	virtual inline void backward(){
