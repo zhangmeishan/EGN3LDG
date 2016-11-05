@@ -48,6 +48,7 @@ public:
 	int _nSize;
 	int _inDim;
 	int _outDim;
+	int _maxsize;
 
 	vector<BiNode> _inputgates;
 	vector<BiNode> _forgetgates;
@@ -119,6 +120,8 @@ public:
 		_hiddens.resize(maxsize);
 
 		_hiddens_drop.resize(maxsize);
+		
+		_maxsize = maxsize;
 	}
 
 	//whether vectors have been allocated
@@ -142,6 +145,7 @@ public:
 		_nSize = 0;
 		_inDim = 0;
 		_outDim = 0;
+		_maxsize = 0;
 
 		_hiddens_drop.clear();
 	}
@@ -165,8 +169,60 @@ public:
 		else{
 			right2left_forward(cg, x);
 		}
-
 	}
+	
+  //incremental, must be left2right, or we can use the whole computation version
+	inline void forward(Graph *cg, PNode x){
+		//int idx = _nSize;
+		if(!_left2right) return;
+		int idx = 0;
+		while(_hiddens_drop[idx].executed){
+			idx++;
+			if(idx >= _maxsize){
+				return;
+			}
+		}
+		_nSize = idx;
+		if (idx == 0){
+			_inputgates[idx].forward(cg, &bucket, x);
+
+			_halfcells[idx].forward(cg, &bucket, x);
+
+			_inputfilters[idx].forward(cg, &_halfcells[idx], &_inputgates[idx]);
+
+			_cells[idx].forward(cg, &_inputfilters[idx], &bucket);
+
+			_halfhiddens[idx].forward(cg, &_cells[idx]);
+
+			_outputgates[idx].forward(cg, &bucket, x);
+
+			_hiddens[idx].forward(cg, &_halfhiddens[idx], &_outputgates[idx]);
+
+			_hiddens_drop[idx].forward(cg, &_hiddens[idx]);
+		}
+		else{
+			_inputgates[idx].forward(cg, &_hiddens_drop[idx - 1], x);
+
+			_forgetgates[idx].forward(cg, &_hiddens_drop[idx - 1], x);
+
+			_halfcells[idx].forward(cg, &_hiddens_drop[idx - 1], x);
+
+			_inputfilters[idx].forward(cg, &_halfcells[idx], &_inputgates[idx]);
+
+			_forgetfilters[idx].forward(cg, &_cells[idx - 1], &_forgetgates[idx]);
+
+			_cells[idx].forward(cg, &_inputfilters[idx], &_forgetfilters[idx]);
+
+			_halfhiddens[idx].forward(cg, &_cells[idx]);
+
+			_outputgates[idx].forward(cg, &_hiddens_drop[idx - 1], x);
+
+			_hiddens[idx].forward(cg, &_halfhiddens[idx], &_outputgates[idx]);
+
+			_hiddens_drop[idx].forward(cg, &_hiddens[idx]);
+		}
+		_nSize++;
+	}	
 
 
 protected:

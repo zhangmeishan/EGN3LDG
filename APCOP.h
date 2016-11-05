@@ -98,7 +98,6 @@ struct APC1Node : Node {
 public:
 	APC1Params* param;
 	int tx;
-	bool executed;
 
 public:
 	APC1Node() {
@@ -115,30 +114,25 @@ public:
 		Node::clear();
 		tx = -1;
 		param = NULL;
-		executed = false;
 	}
 
 	inline void clearValue(){
 		Node::clearValue();
 		tx = -1;
-		executed = false;
 	}
 
 public:
-	inline bool forward(Graph* cg, const int& x1){
+	inline void forward(Graph* cg, const int& x1){
 		//assert(param != NULL);
 		static int featId;
 		featId = param->getFeatureId(x1, cg->train);
 		if (featId < 0){
 			tx = -1;
-			executed = false;
-			return executed;
+			return;
 		}
 		tx = featId;
 		param->W.value(tx, sval, cg->train);
 		cg->addNode(this);
-		executed = true;
-		return executed;
 	}
 
 	//no output losses
@@ -237,7 +231,6 @@ struct APC2Node : Node {
 public:
 	APC2Params* param;
 	int tx;
-	bool executed;
 
 public:
 	APC2Node() {
@@ -254,30 +247,25 @@ public:
 		Node::clear();
 		tx = -1;
 		param = NULL;
-		executed = false;
 	}
 
 	inline void clearValue(){
 		Node::clearValue();
 		tx = -1;
-		executed = false;
 	}
 
 public:
-	inline bool forward(Graph* cg, const int& x1, const int& x2) {
+	inline void forward(Graph* cg, const int& x1, const int& x2) {
 		//assert(param != NULL);
 		static int featId;
 		featId = param->getFeatureId(x1, x2, cg->train);
 		if (featId < 0){
 			tx = -1;
-			executed = false;
-			return executed;
+			return;
 		}
 		tx = featId;
 		param->W.value(tx, sval, cg->train);
 		cg->addNode(this);
-		executed = true;
-		return executed;
 	}
 
 	void backward() {
@@ -373,7 +361,6 @@ struct APC3Node : Node {
 public:
 	APC3Params* param;
 	int tx;
-	bool executed;
 
 public:
 	APC3Node() {
@@ -390,30 +377,25 @@ public:
 		Node::clear();
 		tx = -1;
 		param = NULL;
-		executed = false;
 	}
 
 	inline void clearValue(){
 		Node::clearValue();
 		tx = -1;
-		executed = false;
 	}
 
 public:
-	inline bool forward(Graph* cg, const int& x1, const int& x2, const int& x3) {
+	inline void forward(Graph* cg, const int& x1, const int& x2, const int& x3) {
 		//assert(param != NULL);
 		static int featId;
 		featId = param->getFeatureId(x1, x2, x3, cg->train);
 		if (featId < 0){
 			tx = -1;
-			executed = false;
-			return executed;
+			return;
 		}
 		tx = featId;
 		param->W.value(tx, sval, cg->train);
 		cg->addNode(this);
-		executed = true;
-		return executed;
 	}
 
 	void backward() {
@@ -511,7 +493,6 @@ struct APC4Node : Node {
 public:
 	APC4Params* param;
 	int tx;
-	bool executed;
 
 public:
 	APC4Node() {
@@ -528,30 +509,25 @@ public:
 		Node::clear();
 		tx = -1;
 		param = NULL;
-		executed = false;
 	}
 
 	inline void clearValue(){
 		Node::clearValue();
 		tx = -1;
-		executed = false;
 	}
 
 public:
-	inline bool forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4) {
+	inline void forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4) {
 		//assert(param != NULL);
 		static int featId;
 		featId = param->getFeatureId(x1, x2, x3, x4, cg->train);
 		if (featId < 0){
 			tx = -1;
-			executed = false;
-			return executed;
+			return;
 		}
 		tx = featId;
 		param->W.value(tx, sval, cg->train);
 		cg->addNode(this);
-		executed = true;
-		return executed;
 	}
 
 	void backward() {
@@ -647,7 +623,6 @@ struct APC5Node : Node {
 public:
 	APC5Params* param;
 	int tx;
-	bool executed;
 
 public:
 	APC5Node() {
@@ -664,30 +639,25 @@ public:
 		Node::clear();
 		tx = -1;
 		param = NULL;
-		executed = false;
 	}
 
 	inline void clearValue(){
 		Node::clearValue();
 		tx = -1;
-		executed = false;
 	}
 
 public:
-	inline bool forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4, const int& x5) {
+	inline void forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4, const int& x5) {
 		//assert(param != NULL);
 		static int featId;
 		featId = param->getFeatureId(x1, x2, x3, x4, x5, cg->train);
 		if (featId < 0){
 			tx = -1;
-			executed = false;
-			return executed;
+			return;
 		}
 		tx = featId;
 		param->W.value(tx, sval, cg->train);
 		cg->addNode(this);
-		executed = true;
-		return executed;
 	}
 
 	void backward() {
@@ -783,7 +753,6 @@ struct APC6Node : Node {
 public:
 	APC6Params* param;
 	int tx;
-	bool executed;
 
 public:
 	APC6Node() {
@@ -800,30 +769,25 @@ public:
 		Node::clear();
 		tx = -1;
 		param = NULL;
-		executed = false;
 	}
 
 	inline void clearValue(){
 		Node::clearValue();
 		tx = -1;
-		executed = false;
 	}
 
 public:
-	inline bool forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4, const int& x5, const int& x6) {
+	inline void forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4, const int& x5, const int& x6) {
 		//assert(param != NULL);
 		static int featId;
 		featId = param->getFeatureId(x1, x2, x3, x4, x5, x6, cg->train);
 		if (featId < 0){
 			tx = -1;
-			executed = false;
-			return executed;
+			return;
 		}
 		tx = featId;
 		param->W.value(tx, sval, cg->train);
 		cg->addNode(this);
-		executed = true;
-		return executed;
 	}
 
 	void backward() {
@@ -918,7 +882,6 @@ struct APC7Node : Node {
 public:
 	APC7Params* param;
 	int tx;
-	bool executed;
 
 public:
 	APC7Node() {
@@ -935,30 +898,25 @@ public:
 		Node::clear();
 		tx = -1;
 		param = NULL;
-		executed = false;
 	}
 
 	inline void clearValue(){
 		Node::clearValue();
 		tx = -1;
-		executed = false;
 	}
 
 public:
-	inline bool forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4, const int& x5, const int& x6, const int& x7) {
+	inline void forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4, const int& x5, const int& x6, const int& x7) {
 		//assert(param != NULL);
 		static int featId;
 		featId = param->getFeatureId(x1, x2, x3, x4, x5, x6, x7, cg->train);
 		if (featId < 0){
 			tx = -1;
-			executed = false;
-			return executed;
+			return;
 		}
 		tx = featId;
 		param->W.value(tx, sval, cg->train);
 		cg->addNode(this);
-		executed = true;
-		return executed;
 	}
 
 	void backward() {

@@ -23,6 +23,7 @@ public:
 
 	int sid;
 	bool lossed;
+	bool executed;
 
 //for dropout only
 public:
@@ -41,6 +42,7 @@ public:
 		sval.dealloc();
 		sloss.dealloc();
 		lossed = false;
+		executed = false;
 
 		usedrop = false;
 	}
@@ -57,6 +59,7 @@ public:
 		}
 		lock = 0;
 		lossed = false;
+		executed = false;
 
 	}
 
@@ -66,6 +69,7 @@ public:
 		dim = 0;
 		lock = 0;
 		lossed = false;
+		executed = false;
 
 		sval.dealloc();
 		sloss.dealloc();
@@ -85,7 +89,7 @@ public:
 	}
 
 	inline void setDropout(const dtype& dropOut){
-		if (dropOut > 0 && dropOut < 1){
+		if (dropOut >= 0 && dropOut <= 1){
 			dropvalue = dropOut;
 			usedrop = true;
 		}
@@ -120,7 +124,7 @@ public:
 		}
 	}
 
-	inline void applydrop_backward(bool train){
+	inline void applydrop_backward(){
 		if (usedrop)
 		{
 			if (loss.size() == 0) {
