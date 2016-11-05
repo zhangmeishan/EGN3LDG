@@ -35,8 +35,7 @@ public:
 	int _outDim;
 
 	Node _bucket;
-	vector<BiNode> _rnn_nodes;
-	vector<DropNode> _rnn_drop;
+	vector<BiNode> _output;
 	RNNParams* _params;
 	bool _left2right;
 
@@ -54,27 +53,25 @@ public:
 		_outDim = 0;
 		_left2right = true;
 		_bucket.clear();
-		_rnn_nodes.clear();
-		_rnn_drop.clear();
+		_output.clear();
 		_params = NULL;
 	}
 
 	inline void resize(int maxsize){
-		_rnn_nodes.resize(maxsize);
-		_rnn_drop.resize(maxsize);
+		_output.resize(maxsize);
 	}
 
 	inline bool empty() {
-		return _rnn_drop.empty();
+		return _output.empty();
 	}
 
 	inline void setParam(RNNParams* paramInit, dtype dropout, bool left2right = true) {
 		_params = paramInit;
 		_inDim = _params->_rnn.W2.inDim();
 		_outDim = _params->_rnn.W2.outDim();
-		for (int idx = 0; idx < _rnn_nodes.size(); idx++){
-			_rnn_nodes[idx].setParam(&_params->_rnn);
-			_rnn_drop[idx].setDropValue(dropout);
+		for (int idx = 0; idx < _output.size(); idx++){
+			_output[idx].setParam(&_params->_rnn);
+			_output[idx].setDropout(dropout);
 		}
 		_left2right = left2right;
 		_bucket.val = Mat::Zero(_outDim, 1);
@@ -100,24 +97,19 @@ protected:
 	inline void left2right_forward(Graph *cg, const vector<PNode>& x) {
 		for (int idx = 0; idx < _nSize; idx++) {
 			if (idx == 0)
-				_rnn_nodes[idx].forward(cg, &_bucket, x[idx]);
+				_output[idx].forward(cg, &_bucket, x[idx]);
 			else
-				_rnn_nodes[idx].forward(cg, &_rnn_nodes[idx - 1], x[idx]);
+				_output[idx].forward(cg, &_output[idx - 1], x[idx]);
 		}
-		for (int idx = 0; idx < _nSize; idx++) 
-			_rnn_drop[idx].forward(cg, &_rnn_nodes[idx]);
 	}
 	inline void right2left_forward(Graph *cg, const vector<PNode>& x) {
 		for (int idx = _nSize - 1; idx >= 0; idx--) {
 			if (idx == _nSize - 1)
-				_rnn_nodes[idx].forward(cg, &_bucket, x[idx]);
+				_output[idx].forward(cg, &_bucket, x[idx]);
 			else
-				_rnn_nodes[idx].forward(cg, &_rnn_nodes[idx + 1], x[idx]);
+				_output[idx].forward(cg, &_output[idx + 1], x[idx]);
 		}
-		for (int idx = 0; idx < _nSize; idx++) 
-			_rnn_drop[idx].forward(cg, &_rnn_nodes[idx]);
 	}
-	
 };
 
 #endif

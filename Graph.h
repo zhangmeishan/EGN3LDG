@@ -48,6 +48,7 @@ public:
 			else if (execs[idx]->lock == 0) {
 				if (execs[idx]->lossed){
 					//std::cout << "checking: " << execs[idx]->sid << " " << execs[idx]->lock << std::endl;
+					execs[idx]->applydrop_backward(train);
 					execs[idx]->backward();
 				}
 				execs[idx]->unlock();
@@ -60,6 +61,7 @@ public:
 	}
 
 	inline void addNode(PNode x){
+		x->applydrop_forward(train);
 		execs.push_back(x);
 		//std::cout << "for" << x->sid << std::endl;
 			

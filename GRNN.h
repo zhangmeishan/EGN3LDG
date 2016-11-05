@@ -47,14 +47,13 @@ private:
 	vector<BiNode> _rnn_update_nodes;
 	vector<BiNode> _rnn_reset_nodes;
 	vector<PMultNode> _y_temp_nodes;
+	vector<PSubNode> _sub_nodes;
 	vector<PMultNode> _mult_nodes_1;
 	vector<PMultNode> _mult_nodes_2;
-	vector<PMultNode> _mult_neg_one;
 	vector<PAddNode> _add_node;
 	vector<BiNode> _rnn_nodes;
 public:
 	vector<PAddNode> _output;
-	vector<DropNode> _grnn_drop;
 
 	GRNNParams* _params;
 	bool _left2right;
@@ -72,12 +71,11 @@ public:
 		_rnn_reset_nodes.resize(maxsize);
 		_rnn_nodes.resize(maxsize);
 		_y_temp_nodes.resize(maxsize);
+		_sub_nodes.resize(maxsize);
 		_mult_nodes_1.resize(maxsize);
 		_mult_nodes_2.resize(maxsize);
-		_mult_neg_one.resize(maxsize);
 		_add_node.resize(maxsize);
 		_output.resize(maxsize);
-		_grnn_drop.resize(maxsize);
 	}
 
 	inline void clear(){
@@ -89,10 +87,10 @@ public:
 		_rnn_update_nodes.clear();
 		_rnn_reset_nodes.clear();
 		_y_temp_nodes.clear();
+		_sub_nodes.clear();
 		_mult_nodes_1.clear();
 		_mult_nodes_2.clear();
 		_rnn_nodes.clear();
-		_grnn_drop.clear();
 	}
 
 	inline void setParam(GRNNParams* paramInit, dtype dropout, bool left2right = true) {
@@ -107,12 +105,11 @@ public:
 			_rnn_reset_nodes[idx].setFunctions(&sigmoid, &sigmoid_deri);
 			_rnn_nodes[idx].setParam(&_params->_rnn);
 			_rnn_nodes[idx].setFunctions(&tanh, &tanh_deri);
-			_grnn_drop[idx].setDropValue(dropout);
+			_output[idx].setDropout(dropout);
 		}
 		_left2right = left2right;
 		_bucket_zero.val = Mat::Zero(_outDim, 1);
 		_bucket_one.val = Mat::Ones(_outDim, 1);
-		_bucket_neg_one.val = Mat::Ones(_outDim, 1) * -1;
 	}
 
 	inline void forward(Graph* cg, const vector<PNode>& x) {
@@ -150,16 +147,12 @@ protected:
 				_rnn_update_nodes[idx].forward(cg, &_output[idx - 1], x[idx]);
 				_y_temp_nodes[idx].forward(cg, &_rnn_reset_nodes[idx], &_output[idx - 1]);
 				_rnn_nodes[idx].forward(cg, &_y_temp_nodes[idx], x[idx]);
-				_mult_neg_one[idx].forward(cg, &_bucket_neg_one, &_rnn_update_nodes[idx]);
-				_add_node[idx].forward(cg, &_bucket_one, &_mult_neg_one[idx]);
-				_mult_nodes_1[idx].forward(cg, &_add_node[idx], &_output[idx - 1]);
+				_sub_nodes[idx].forward(cg, &_bucket_one, &_rnn_update_nodes[idx]);
+				_mult_nodes_1[idx].forward(cg, &_sub_nodes[idx], &_output[idx - 1]);
 				_mult_nodes_2[idx].forward(cg, &_rnn_update_nodes[idx], &_rnn_nodes[idx]);
 				_output[idx].forward(cg, &_mult_nodes_1[idx], &_mult_nodes_2[idx]);
 			}
-			//_grnn_drop[idx].forward(cg, &_output[idx]);
 		}
-		for (int idx = 0; idx < _nSize; idx++)
-			_grnn_drop[idx].forward(cg, &_output[idx]);
 	}
 
 	inline void right2left_forward(Graph *cg, const vector<PNode>& x) {
@@ -175,17 +168,12 @@ protected:
 				_rnn_update_nodes[idx].forward(cg, &_output[idx + 1], x[idx]);
 				_y_temp_nodes[idx].forward(cg, &_rnn_reset_nodes[idx], &_output[idx + 1]);
 				_rnn_nodes[idx].forward(cg, &_y_temp_nodes[idx], x[idx]);
-				_mult_neg_one[idx].forward(cg, &_bucket_neg_one, &_rnn_update_nodes[idx]);
-				_add_node[idx].forward(cg, &_bucket_one, &_mult_neg_one[idx]);
-				_mult_nodes_1[idx].forward(cg, &_add_node[idx], &_output[idx + 1]);
+				_sub_nodes[idx].forward(cg, &_bucket_one, &_rnn_update_nodes[idx]);
+				_mult_nodes_1[idx].forward(cg, &_sub_nodes[idx], &_output[idx + 1]);
 				_mult_nodes_2[idx].forward(cg, &_rnn_update_nodes[idx], &_rnn_nodes[idx]);
 				_output[idx].forward(cg, &_mult_nodes_1[idx], &_mult_nodes_2[idx]);
-
 			}
-			//_grnn_drop[idx].forward(cg, &_output[idx]);
 		}
-		for (int idx = 0; idx < _nSize; idx++)
-			_grnn_drop[idx].forward(cg, &_output[idx]);
 	}
 
 };

@@ -61,6 +61,56 @@ public:
 };
 
 
+struct PSubNode : Node {
+	PNode in1, in2;
+public:
+	PSubNode(){
+		clear();
+	}
+public:
+	virtual inline void clearValue(){
+		Node::clearValue();
+		in1 = NULL;
+		in2 = NULL;
+	}
+
+	virtual inline void clear(){
+		Node::clear();
+		in1 = NULL;
+		in2 = NULL;
+	}
+public:
+	void forward(Graph *cg, PNode x1, PNode x2) {
+		in1 = x1;
+		in2 = x2;
+		val = x1->val - x2->val;
+		in1->lock++;
+		in2->lock++;
+		cg->addNode(this);
+	}
+
+	void backward(){
+		if (in1->loss.size() == 0) {
+			in1->loss = Mat::Zero(in1->val.rows(), in1->val.cols());
+		}
+		in1->loss += loss;
+		if (in2->loss.size() == 0) {
+			in2->loss = Mat::Zero(in2->val.rows(), in2->val.cols());
+		}
+		in2->loss -= loss;
+	}
+
+	inline void unlock(){
+		in1->lock--;
+		in2->lock--;
+		if(!lossed)return;
+		in1->lossed = true;
+		in2->lossed = true;
+	}
+};
+
+
+
 struct PAddNode : Node {
 	vector<PNode> ins;
 	int nSize;

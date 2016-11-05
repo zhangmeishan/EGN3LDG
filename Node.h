@@ -24,7 +24,11 @@ public:
 	int sid;
 	bool lossed;
 
-
+//for dropout only
+public:
+	Mat mask;
+	bool usedrop;
+	dtype dropvalue;
 public:
 	Node(){
 		val.setZero();
@@ -37,6 +41,8 @@ public:
 		sval.dealloc();
 		sloss.dealloc();
 		lossed = false;
+
+		usedrop = false;
 	}
 
 public:
@@ -75,6 +81,52 @@ public:
 		if (val.size() > 0){
 			assert(val.cols() == 1);
 			assert(val.rows() == dim);
+		}
+	}
+
+	inline void setDropout(const dtype& dropOut){
+		if (dropOut > 0 && dropOut < 1){
+			dropvalue = dropOut;
+			usedrop = true;
+		}
+		else{
+			dropvalue = -1;
+			usedrop = false;
+		}
+	}
+	inline void applydrop_forward(bool train){
+		if (usedrop)
+		{
+			mask = Mat::Ones(val.rows(), val.cols());
+			if (train){
+				std::vector<int> indexes;
+				for (int i = 0; i < val.rows(); ++i)
+					indexes.push_back(i);
+
+				int dropNum = (int)(val.rows() * dropvalue);
+
+				for (int j = 0; j < val.cols(); j++){
+					random_shuffle(indexes.begin(), indexes.end());
+					for (int i = 0; i < dropNum; i++){
+						mask(indexes[i], j) = 0.0;
+					}
+				}
+			}
+			else{
+				mask = mask * (1.0 - dropvalue);
+			}
+
+			val = val.array() * mask.array();
+		}
+	}
+
+	inline void applydrop_backward(bool train){
+		if (usedrop)
+		{
+			if (loss.size() == 0) {
+				loss = Mat::Zero(val.rows(), val.cols());
+			}
+			loss = loss.array() * mask.array();
 		}
 	}
 
