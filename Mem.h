@@ -19,7 +19,7 @@
 class AlignedMemoryPool {
 private:
 	const static int align = 32;
-	const static size_t unit_size = 1 << 20;
+	const static size_t unit_size = 1 << 30;
 private:
 	char** mem;
 public:
