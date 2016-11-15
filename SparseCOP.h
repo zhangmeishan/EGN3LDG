@@ -84,7 +84,7 @@ public:
 		}
 	}
 
-	inline void setFixed(const int& base = 1){
+	inline void setFixed(int base){
 		nVSize = (bound + 1) * base;
 		if (nVSize > maxCapacity) nVSize = maxCapacity;
 		initialWeights();
@@ -100,20 +100,13 @@ public:
 	int tx;
 
 public:
-	SparseC1Node() {
-		clear();
-		smode = true;
+	SparseC1Node() : Node() {
+		param = NULL;
+		tx = -1;
 	}
 
 	inline void setParam(SparseC1Params* paramInit) {
 		param = paramInit;
-		dim = param->nDim;
-	}
-
-	inline void clear(){
-		Node::clear();
-		tx = -1;
-		param = NULL;
 	}
 
 	inline void clearValue(){
@@ -131,7 +124,7 @@ public:
 			return;
 		}
 		tx = featId;
-		param->W.value(tx, sval);
+		param->W.value(tx, val);
 		cg->addNode(this);
 	}
 
@@ -139,7 +132,7 @@ public:
 	void backward() {
 		//assert(param != NULL);
 		if (tx >= 0){
-			param->W.loss(tx, sloss);
+			param->W.loss(tx, loss);
 		}
 	}
 };
@@ -218,7 +211,7 @@ public:
 		}
 	}
 
-	inline void setFixed(const int& base = 1){
+	inline void setFixed(int base){
 		nVSize = (bound + 1) * base;
 		if (nVSize > maxCapacity) nVSize = maxCapacity;
 		initialWeights();
@@ -233,20 +226,13 @@ public:
 	int tx;
 
 public:
-	SparseC2Node() {
-		clear();
-		smode = true;
+	SparseC2Node() : Node() {
+		param = NULL;
+		tx = -1;
 	}
 
 	inline void setParam(SparseC2Params* paramInit) {
 		param = paramInit;
-		dim = param->nDim;
-	}
-
-	inline void clear(){
-		Node::clear();
-		tx = -1;
-		param = NULL;
 	}
 
 	inline void clearValue(){
@@ -264,14 +250,14 @@ public:
 			return;
 		}
 		tx = featId;
-		param->W.value(tx, sval);
+		param->W.value(tx, val);
 		cg->addNode(this);
 	}
 
 	void backward() {
 		//assert(param != NULL);
 		if (tx >= 0){
-			param->W.loss(tx, sloss);
+			param->W.loss(tx, loss);
 		}
 	}
 };
@@ -348,7 +334,7 @@ public:
 		}
 	}
 
-	inline void setFixed(const int& base = 1){
+	inline void setFixed(int base){
 		nVSize = (bound + 1) * base;
 		if (nVSize > maxCapacity) nVSize = maxCapacity;
 		initialWeights();
@@ -363,20 +349,13 @@ public:
 	int tx;
 
 public:
-	SparseC3Node() {
-		clear();
-		smode = true;
+	SparseC3Node() : Node() {
+		param = NULL;
+		tx = -1;
 	}
 
 	inline void setParam(SparseC3Params* paramInit) {
 		param = paramInit;
-		dim = param->nDim;
-	}
-
-	inline void clear(){
-		Node::clear();
-		tx = -1;
-		param = NULL;
 	}
 
 	inline void clearValue(){
@@ -394,14 +373,14 @@ public:
 			return;
 		}
 		tx = featId;
-		param->W.value(tx, sval);
+		param->W.value(tx, val);
 		cg->addNode(this);
 	}
 
 	void backward() {
 		//assert(param != NULL);
 		if (tx >= 0){
-			param->W.loss(tx, sloss);
+			param->W.loss(tx, loss);
 		}
 	}
 };
@@ -478,7 +457,7 @@ public:
 		}
 	}
 
-	inline void setFixed(const int& base = 1){
+	inline void setFixed(int base){
 		nVSize = (bound + 1) * base;
 		if (nVSize > maxCapacity) nVSize = maxCapacity;
 		initialWeights();
@@ -495,20 +474,13 @@ public:
 	int tx;
 
 public:
-	SparseC4Node() {
-		clear();
-		smode = true;
+	SparseC4Node() : Node() {
+		param = NULL;
+		tx = -1;
 	}
 
 	inline void setParam(SparseC4Params* paramInit) {
 		param = paramInit;
-		dim = param->nDim;
-	}
-
-	inline void clear(){
-		Node::clear();
-		tx = -1;
-		param = NULL;
 	}
 
 	inline void clearValue(){
@@ -526,14 +498,14 @@ public:
 			return;
 		}
 		tx = featId;
-		param->W.value(tx, sval);
+		param->W.value(tx, val);
 		cg->addNode(this);
 	}
 
 	void backward() {
 		//assert(param != NULL);
 		if (tx >= 0){
-			param->W.loss(tx, sloss);
+			param->W.loss(tx, loss);
 		}
 	}
 };
@@ -610,7 +582,7 @@ public:
 		}
 	}
 
-	inline void setFixed(const int& base = 1){
+	inline void setFixed(int base){
 		nVSize = (bound + 1) * base;
 		if (nVSize > maxCapacity) nVSize = maxCapacity;
 		initialWeights();
@@ -625,20 +597,13 @@ public:
 	int tx;
 
 public:
-	SparseC5Node() {
-		clear();
-		smode = true;
+	SparseC5Node() : Node() {
+		param = NULL;
+		tx = -1;
 	}
 
 	inline void setParam(SparseC5Params* paramInit) {
 		param = paramInit;
-		dim = param->nDim;
-	}
-
-	inline void clear(){
-		Node::clear();
-		tx = -1;
-		param = NULL;
 	}
 
 	inline void clearValue(){
@@ -656,14 +621,14 @@ public:
 			return;
 		}
 		tx = featId;
-		param->W.value(tx, sval);
+		param->W.value(tx, val);
 		cg->addNode(this);
 	}
 
 	void backward() {
 		//assert(param != NULL);
 		if (tx >= 0){
-			param->W.loss(tx, sloss);
+			param->W.loss(tx, loss);
 		}
 	}
 };
@@ -740,7 +705,7 @@ public:
 		}
 	}
 
-	inline void setFixed(const int& base = 1){
+	inline void setFixed(int base){
 		nVSize = (bound + 1) * base;
 		if (nVSize > maxCapacity) nVSize = maxCapacity;
 		initialWeights();
@@ -755,20 +720,13 @@ public:
 	int tx;
 
 public:
-	SparseC6Node() {
-		clear();
-		smode = true;
+	SparseC6Node() : Node() {
+		param = NULL;
+		tx = -1;
 	}
 
 	inline void setParam(SparseC6Params* paramInit) {
 		param = paramInit;
-		dim = param->nDim;
-	}
-
-	inline void clear(){
-		Node::clear();
-		tx = -1;
-		param = NULL;
 	}
 
 	inline void clearValue(){
@@ -786,14 +744,14 @@ public:
 			return;
 		}
 		tx = featId;
-		param->W.value(tx, sval);
+		param->W.value(tx, val);
 		cg->addNode(this);
 	}
 
 	void backward() {
 		//assert(param != NULL);
 		if (tx >= 0){
-			param->W.loss(tx, sloss);
+			param->W.loss(tx, loss);
 		}
 	}
 };
@@ -869,7 +827,7 @@ public:
 		}
 	}
 
-	inline void setFixed(const int& base = 1){
+	inline void setFixed(int base){
 		nVSize = (bound + 1) * base;
 		if (nVSize > maxCapacity) nVSize = maxCapacity;
 		initialWeights();
@@ -884,20 +842,13 @@ public:
 	int tx;
 
 public:
-	SparseC7Node() {
-		clear();
-		smode = true;
+	SparseC7Node() : Node() {
+		param = NULL;
+		tx = -1;
 	}
 
 	inline void setParam(SparseC7Params* paramInit) {
 		param = paramInit;
-		dim = param->nDim;
-	}
-
-	inline void clear(){
-		Node::clear();
-		tx = -1;
-		param = NULL;
 	}
 
 	inline void clearValue(){
@@ -915,14 +866,14 @@ public:
 			return;
 		}
 		tx = featId;
-		param->W.value(tx, sval);
+		param->W.value(tx, val);
 		cg->addNode(this);
 	}
 
 	void backward() {
 		//assert(param != NULL);
 		if (tx >= 0){
-			param->W.loss(tx, sloss);
+			param->W.loss(tx, loss);
 		}
 	}
 };
@@ -990,7 +941,7 @@ public:
 		}
 	}
 
-	inline void setFixed(const int& base = 1){
+	inline void setFixed(int base){
 		nVSize = (bound <= 0) ? 1 : bound * base;
 		if (nVSize > maxCapacity){
 			nVSize = maxCapacity;
@@ -1010,21 +961,14 @@ public:
 	int nSize;
 
 public:
-	SparseCNode() {
-		clear();
-		smode = true;
+	SparseCNode() : Node() {
+		param = NULL;
+		ins.clear();
+		nSize = 0;
 	}
 
 	inline void setParam(SparseCParams* paramInit) {
 		param = paramInit;
-		dim = param->nDim;
-	}
-
-	inline void clear(){
-		Node::clear();
-		ins.clear();
-		param = NULL;
-		nSize = 0;
 	}
 
 	inline void clearValue(){
@@ -1045,14 +989,14 @@ public:
 				nSize++;
 			}
 		}
-		param->W.value(ins, sval);
+		param->W.value(ins, val);
 		cg->addNode(this);
 	}
 
 	//no output losses
 	void backward() {
 		//assert(param != NULL);
-		param->W.loss(ins, sloss);
+		param->W.loss(ins, loss);
 	}
 };
 

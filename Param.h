@@ -9,71 +9,68 @@
 #define PARAM_H_
 
 #include "Eigen/Dense"
-#include "Utils.h"
 #include "BaseParam.h"
 
-// Notice: aux is an auxiliary variable to help parameter updating
-struct Param : BaseParam{
-	Mat val;
-	Mat grad;
-	Mat aux;
+ // Notice: aux is an auxiliary variable to help parameter updating
+struct Param : BaseParam {
+	Tensor2D aux;
 
 	// allow sparse and dense parameters have different parameter initialization methods
-	inline void initial(int outDim, int inDim) {
-		val = Mat::Zero(outDim, inDim);
-		random(val);
-		grad = Mat::Zero(outDim, inDim);
-		aux = Mat::Zero(outDim, inDim);		
+	inline void initial(int outDim, int inDim, AlignedMemoryPool* mem = NULL) {
+		val.init(outDim, inDim, mem);
+		grad.init(outDim, inDim, mem);
+		aux.init(outDim, inDim, mem);
+
+		dtype bound = sqrt(6.0 / (outDim + inDim + 1));
+		val.random(bound);
+
 	}
-	
+
 	inline int outDim() {
-		return val.rows();
+		return val.row;
 	}
 
 	inline int inDim() {
-		return val.cols();
-	}	
+		return val.col;
+	}
 
 	inline void clearGrad() {
-		grad.setZero();
+		grad.zero();
 	}
 
 	inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) {
-		grad = grad + val * reg;
-		aux = aux.array() + grad.array().square();
-		val = val.array() - grad.array() * alpha / (aux.array() + eps).sqrt();
+		grad.vec() = grad.vec() + val.vec() * reg;
+		aux.vec() = aux.vec() + grad.vec().square();
+		val.vec() = val.vec() - grad.vec() * alpha / (aux.vec() + eps).sqrt();
 	}
 
-	inline void randpoint(int& idx, int &idy){
+	inline void randpoint(int& idx, int &idy) {
 		//select indexes randomly		
 		std::vector<int> idRows, idCols;
 		idRows.clear();
 		idCols.clear();
-		for (int i = 0; i < val.rows(); i++)
+		for (int i = 0; i < val.row; i++)
 			idRows.push_back(i);
-		for (int i = 0; i < val.cols(); i++)
+		for (int i = 0; i < val.col; i++)
 			idCols.push_back(i);
 
 		random_shuffle(idRows.begin(), idRows.end());
 		random_shuffle(idCols.begin(), idCols.end());
 
-		idx = idRows[0];
-		idy = idCols[0];
+		idy = idRows[0];
+		idx = idCols[0];
 	}
 
-	inline dtype squareGradNorm(){
+	inline dtype squareGradNorm() {
 		dtype sumNorm = 0.0;
-		for (int i = 0; i < grad.rows(); i++){
-			for (int j = 0; j < grad.cols(); j++){
-				sumNorm += grad(i, j) * grad(i, j);
-			}
+		for (int i = 0; i < grad.size; i++) {
+			sumNorm += grad.v[i] * grad.v[i];
 		}
-
 		return sumNorm;
 	}
 
-	inline void rescaleGrad(dtype scale){
-		grad = grad * scale;
+	inline void rescaleGrad(dtype scale) {
+		grad.vec() = grad.vec() * scale;
 	}
 };
 

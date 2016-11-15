@@ -8,7 +8,6 @@
 #include "BiOP.h"
 #include "TriOP.h"
 #include "FourOP.h"
-#include "Utils.h"
 #include "MyLib.h"
 #include "LookupTable.h"
 #include "SoftMaxLoss.h"
@@ -16,7 +15,6 @@
 #include "SparseOP.h"
 #include "APOP.h"
 #include "Pooling.h"
-#include "Dropout.h"
 #include "Metric.h"
 #include "Windowlized.h"
 #include "Concat.h"
@@ -33,6 +31,7 @@
 #include "COPUtils.h"
 #include "RNN.h"
 #include "GRNN.h"
+#include "MyTensor.h"
 
 
 #endif

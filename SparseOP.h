@@ -63,19 +63,13 @@ public:
 	vector<int> tx;
 
 public:
-	SparseNode() {
-		clear();
+	SparseNode() : Node(){
+		tx.clear();
+		param = NULL;
 	}
 
 	inline void setParam(SparseParams* paramInit) {
 		param = paramInit;
-		dim = param->nDim;
-	}
-
-	inline void clear(){
-		Node::clear();
-		tx.clear();
-		param = NULL;
 	}
 
 	inline void clearValue(){
@@ -86,9 +80,9 @@ public:
 public:
 	//notice the output
 	void forward(Graph *cg, const vector<string>& x) {
-		assert(param != NULL);
 		static int featId;
-		for (int idx = 0; idx < x.size(); idx++) {
+		int featSize = x.size();
+		for (int idx = 0; idx < featSize; idx++) {
 			featId = param->getFeatureId(x[idx]);
 			if (featId >= 0){
 				tx.push_back(featId);

@@ -3,7 +3,7 @@
 
 #include "MyLib.h"
 #include "Metric.h"
-#include <Eigen/Dense>
+#include "Node.h"
 #include "Param.h"
 
 using namespace Eigen;
@@ -60,9 +60,6 @@ public:
 
 		for (int idx = 0; idx < seq_size; idx++) {
 			for (int dist = 0; dist < seq_size - idx && dist < maxLen; dist++) {
-				if (x[idx][dist]->loss.size() == 0){
-					x[idx][dist]->loss = Mat::Zero(labelSize, 1);
-				}
 				x[idx][dist]->lossed = true;
 			}
 		}
@@ -77,14 +74,14 @@ public:
 				for (int dist = 0; dist < seq_size - idx && dist < maxLens[i]; dist++) {
 					// can be changed with probabilities in future work
 					if (idx == 0) {
-						alpha[idx][dist][i] = x[idx][dist]->val(i, 0);
-						alpha_answer[idx][dist][i] = x[idx][dist]->val(i, 0) + log(answer[idx][dist][i] + eps);
+						alpha[idx][dist][i] = x[idx][dist]->val[i];
+						alpha_answer[idx][dist][i] = x[idx][dist]->val[i] + log(answer[idx][dist][i] + eps);
 					}
 					else {
 						buffer.clear();
 						for (int j = 0; j < labelSize; ++j) {
 							for (int prevdist = 1; prevdist <= idx && prevdist <= maxLens[j]; prevdist++) {
-								buffer.push_back(x[idx][dist]->val(i, 0) + alpha[idx - prevdist][prevdist - 1][j]);
+								buffer.push_back(x[idx][dist]->val[i] + alpha[idx - prevdist][prevdist - 1][j]);
 							}
 						}
 						alpha[idx][dist][i] = logsumexp(buffer);
@@ -92,7 +89,7 @@ public:
 						buffer.clear();
 						for (int j = 0; j < labelSize; ++j) {
 							for (int prevdist = 1; prevdist <= idx && prevdist <= maxLens[j]; prevdist++) {
-								buffer.push_back(x[idx][dist]->val(i, 0) + alpha_answer[idx - prevdist][prevdist - 1][j]);
+								buffer.push_back(x[idx][dist]->val[i] + alpha_answer[idx - prevdist][prevdist - 1][j]);
 							}
 						}
 						alpha_answer[idx][dist][i] = logsumexp(buffer) + log(answer[idx][dist][i] + eps);
@@ -136,7 +133,7 @@ public:
 						buffer.clear();
 						for (int j = 0; j < labelSize; ++j) {
 							for (int nextdist = 0; nextdist < seq_size - idx && nextdist < maxLens[j]; nextdist++) {
-								buffer.push_back(x[idx][nextdist]->val(j, 0) + belta[idx][nextdist][j]);
+								buffer.push_back(x[idx][nextdist]->val[j] + belta[idx][nextdist][j]);
 							}
 						}
 						belta[idx - dist][dist - 1][i] = logsumexp(buffer);
@@ -144,7 +141,7 @@ public:
 						buffer.clear();
 						for (int j = 0; j < labelSize; ++j) {
 							for (int nextdist = 0; nextdist < seq_size - idx && nextdist < maxLens[j]; nextdist++) {
-								buffer.push_back(x[idx][nextdist]->val(j, 0) + belta_answer[idx][nextdist][j]);
+								buffer.push_back(x[idx][nextdist]->val[j] + belta_answer[idx][nextdist][j]);
 							}
 						}
 						belta_answer[idx - dist][dist - 1][i] = logsumexp(buffer) + log(answer[idx - dist][dist - 1][i] + eps);
@@ -176,7 +173,7 @@ public:
 							eval.correct_label_count++;
 						}
 					}
-					x[idx][dist]->loss(i, 0) = (margin[idx][dist][i] - margin_answer[idx][dist][i]) / batchsize;
+					x[idx][dist]->loss[i] = (margin[idx][dist][i] - margin_answer[idx][dist][i]) / batchsize;
 				}
 			}
 		}
@@ -208,7 +205,7 @@ public:
 				for (int dist = 0; dist < seq_size - idx && dist < maxLens[i]; dist++) {
 					// can be changed with probabilities in future work
 					if (idx == 0) {
-						maxScores[idx][dist][i] = x[idx][dist]->val(i, 0);
+						maxScores[idx][dist][i] = x[idx][dist]->val[i];
 						maxLastLabels[idx][dist][i] = -1;
 						maxLastStarts[idx][dist][i] = -1;
 						maxLastDists[idx][dist][i] = -1;
@@ -229,7 +226,7 @@ public:
 								}
 							}
 						}
-						maxScores[idx][dist][i] = x[idx][dist]->val(i, 0) + maxscore;
+						maxScores[idx][dist][i] = x[idx][dist]->val[i] + maxscore;
 						maxLastLabels[idx][dist][i] = maxLastLabel;
 						maxLastStarts[idx][dist][i] = maxLastStart;
 						maxLastDists[idx][dist][i] = LastDist;
@@ -297,14 +294,14 @@ public:
 				for (int dist = 0; dist < seq_size - idx && dist < maxLens[i]; dist++) {
 					// can be changed with probabilities in future work
 					if (idx == 0) {
-						alpha[idx][dist][i] = x[idx][dist]->val(i, 0);
-						alpha_answer[idx][dist][i] = x[idx][dist]->val(i, 0) + log(answer[idx][dist][i] + eps);
+						alpha[idx][dist][i] = x[idx][dist]->val[i];
+						alpha_answer[idx][dist][i] = x[idx][dist]->val[i] + log(answer[idx][dist][i] + eps);
 					}
 					else {
 						buffer.clear();
 						for (int j = 0; j < labelSize; ++j) {
 							for (int prevdist = 1; prevdist <= idx && prevdist <= maxLens[j]; prevdist++) {
-								buffer.push_back(x[idx][dist]->val(i, 0) + alpha[idx - prevdist][prevdist - 1][j]);
+								buffer.push_back(x[idx][dist]->val[i] + alpha[idx - prevdist][prevdist - 1][j]);
 							}
 						}
 						alpha[idx][dist][i] = logsumexp(buffer);
@@ -312,7 +309,7 @@ public:
 						buffer.clear();
 						for (int j = 0; j < labelSize; ++j) {
 							for (int prevdist = 1; prevdist <= idx && prevdist <= maxLens[j]; prevdist++) {
-								buffer.push_back(x[idx][dist]->val(i, 0) + alpha_answer[idx - prevdist][prevdist - 1][j]);
+								buffer.push_back(x[idx][dist]->val[i] + alpha_answer[idx - prevdist][prevdist - 1][j]);
 							}
 						}
 						alpha_answer[idx][dist][i] = logsumexp(buffer) + log(answer[idx][dist][i] + eps);

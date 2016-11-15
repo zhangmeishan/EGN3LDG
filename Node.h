@@ -1,22 +1,15 @@
 #ifndef BasicNode
 #define BasicNode
 
-#include "Eigen/Dense"
+#include "MyTensor.h"
 
-using namespace Eigen;
 
 // one Node means a vector
 // the col should be 1, because we aimed for NLP only
 struct Node {
 public:
-	Mat val;
-	Mat loss;
-
-public:
-	NRVec<dtype> sval;  //only in APCNodes, SparseCNodes;
-	NRVec<dtype> sloss; //only in APCNodes, SparseCNodes;
-	bool smode;
-
+	Tensor1D val;
+	Tensor1D loss;
 public:
 	int dim;
 	int lock;  //node can backward only when lock = 0;
@@ -27,55 +20,45 @@ public:
 
 //for dropout only
 public:
-	Mat mask;
+	Tensor1D mask;
 	bool usedrop;
 	dtype dropvalue;
+	
 public:
 	Node(){
-		val.setZero();
-		loss.setZero();
 		dim = 0;
 		lock = 0;
 		sid = rand();
 
-		smode = false;
-		sval.dealloc();
-		sloss.dealloc();
 		lossed = false;
 		executed = false;
-
 		usedrop = false;
+		dropvalue = -1.0;
 	}
 
 public:
 	virtual inline void clearValue(){
-		if (!smode){
-			val.setZero();
-			loss.setZero();
+		val = 0;
+		loss = 0;
+		lock = 0;
+		lossed = false;
+		executed = false;
+	}
+	
+	virtual inline void init(int dim, dtype dropOut, AlignedMemoryPool* mem = NULL){
+		this->dim = dim;
+		val.init(dim, mem);
+		loss.init(dim, mem);
+		if (dropOut >= 0 && dropOut <= 1){
+			dropvalue = dropOut;
+			usedrop = true;
+			mask.init(dim, mem);
 		}
 		else{
-			sval = 0;
-			sloss = 0;
+			dropvalue = -1;
+			usedrop = false;
 		}
-		lock = 0;
-		lossed = false;
-		executed = false;
-
-	}
-
-	virtual inline void clear(){
-		val.setZero();
-		loss.setZero();
-		dim = 0;
-		lock = 0;
-		lossed = false;
-		executed = false;
-
-		smode = false;
-		sval.dealloc();
-		sloss.dealloc();
 		
-		usedrop = false;
 	}
 
 	virtual inline void backward(){
@@ -84,56 +67,33 @@ public:
 	virtual inline void unlock(){
 	}
 
-	void check(){
-		if (val.size() > 0){
-			assert(val.cols() == 1);
-			assert(val.rows() == dim);
-		}
-	}
-
-	inline void setDropout(const dtype& dropOut){
-		if (dropOut >= 0 && dropOut <= 1){
-			dropvalue = dropOut;
-			usedrop = true;
-		}
-		else{
-			dropvalue = -1;
-			usedrop = false;
-		}
-	}
 	inline void applydrop_forward(bool train){
 		if (usedrop)
-		{
-			mask = Mat::Ones(val.rows(), val.cols());
+		{			
 			if (train){
+				mask = 1;
 				std::vector<int> indexes;
-				for (int i = 0; i < val.rows(); ++i)
+				for (int i = 0; i < val.dim; ++i)
 					indexes.push_back(i);
 
-				int dropNum = (int)(val.rows() * dropvalue);
-
-				for (int j = 0; j < val.cols(); j++){
-					random_shuffle(indexes.begin(), indexes.end());
-					for (int i = 0; i < dropNum; i++){
-						mask(indexes[i], j) = 0.0;
-					}
+				int dropNum = (int)(val.dim * dropvalue);
+				
+				for (int i = 0; i < dropNum; i++){
+					mask[indexes[i]] = 0.0;
 				}
 			}
 			else{
-				mask = mask * (1.0 - dropvalue);
+				mask = 1.0 - dropvalue;
 			}
 
-			val = val.array() * mask.array();
+			val.vec() = val.vec() * mask.vec();
 		}
 	}
 
 	inline void applydrop_backward(){
 		if (usedrop)
 		{
-			if (loss.size() == 0) {
-				loss = Mat::Zero(val.rows(), val.cols());
-			}
-			loss = loss.array() * mask.array();
+			loss.vec() = loss.vec() * mask.vec();
 		}
 	}
 
@@ -144,19 +104,6 @@ public:
 typedef  Node* PNode;
 
 
-// The nodes created by 
-class NodeBuilder{
-public:
-	// require definition of output nodes here, not fixed
-
-public:
-	virtual inline void resize(int maxsize) = 0;
-	virtual inline void clear() = 0;
-
-	//Require forward to build node connections as well, but the parameter is not fixed.
-	//virtual inline void forward(...) = 0;
-
-};
 
 
 #endif

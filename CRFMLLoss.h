@@ -3,8 +3,8 @@
 
 #include "MyLib.h"
 #include "Metric.h"
-#include <Eigen/Dense>
 #include "Param.h"
+#include "Node.h"
 
 using namespace Eigen;
 
@@ -30,7 +30,7 @@ public:
 public:
 	inline void initial(int labelNum){
 		labelSize = labelNum;
-		T.initial(labelSize, labelSize);
+		T.initial(labelSize, labelSize); //not in the aligned memory pool
 		buffer.resize(labelSize);
 	}
 
@@ -48,9 +48,6 @@ public:
 		}
 		int seq_size = x.size();
 		for (int idx = 0; idx < seq_size; idx++){
-			if (x[idx]->loss.size() == 0){
-				x[idx]->loss = Mat::Zero(labelSize, 1);
-			}
 			x[idx]->lossed = true;
 		}
 
@@ -62,17 +59,17 @@ public:
 			for (int i = 0; i < labelSize; ++i) {
 				// can be changed with probabilities in future work
 				if (idx == 0) {
-					alpha[idx][i] = x[idx]->val(i, 0);
-					alpha_answer[idx][i] = x[idx]->val(i, 0) + log(answer[idx][i] + eps);
+					alpha[idx][i] = x[idx]->val[i];
+					alpha_answer[idx][i] = x[idx]->val[i] + log(answer[idx][i] + eps);
 				}
 				else {
 					for (int j = 0; j < labelSize; ++j) {
-						buffer[j] = T.val(j, i) + x[idx]->val(i, 0) + alpha[idx - 1][j];
+						buffer[j] = T.val[j][i] + x[idx]->val[i] + alpha[idx - 1][j];
 					}
 					alpha[idx][i] = logsumexp(buffer);
 
 					for (int j = 0; j < labelSize; ++j) {
-						buffer[j] = T.val(j, i) + x[idx]->val(i, 0) + alpha_answer[idx - 1][j];
+						buffer[j] = T.val[j][i] + x[idx]->val[i] + alpha_answer[idx - 1][j];
 					}
 					alpha_answer[idx][i] = logsumexp(buffer) + log(answer[idx][i] + eps);
 				}
@@ -103,12 +100,12 @@ public:
 				}
 				else {
 					for (int j = 0; j < labelSize; ++j) {
-						buffer[j] = T.val(i, j) + x[idx + 1]->val(j, 0) + belta[idx + 1][j];
+						buffer[j] = T.val[i][j] + x[idx + 1]->val[j] + belta[idx + 1][j];
 					}
 					belta[idx][i] = logsumexp(buffer);
 
 					for (int j = 0; j < labelSize; ++j) {
-						buffer[j] = T.val(i, j) + x[idx + 1]->val(j, 0) + belta_answer[idx + 1][j];
+						buffer[j] = T.val[i][j] + x[idx + 1]->val[j] + belta_answer[idx + 1][j];
 					}
 					belta_answer[idx][i] = logsumexp(buffer) + log(answer[idx][i] + eps);
 				}
@@ -127,9 +124,9 @@ public:
 				margin_answer[idx][i] = exp(alpha_answer[idx][i] + belta_answer[idx][i] - logZ_answer);
 				if (idx > 0) {
 					for (int j = 0; j < labelSize; ++j) {
-						dtype logvalue = alpha[idx - 1][j] + x[idx]->val(i, 0) + T.val(j, i) + belta[idx][i] - logZ;
+						dtype logvalue = alpha[idx - 1][j] + x[idx]->val[i] + T.val[j][i] + belta[idx][i] - logZ;
 						trans[j][i] += exp(logvalue);
-						logvalue = alpha_answer[idx - 1][j] + x[idx]->val(i, 0) + T.val(j, i) + belta_answer[idx][i] - logZ_answer;
+						logvalue = alpha_answer[idx - 1][j] + x[idx]->val[i] + T.val[j][i] + belta_answer[idx][i] - logZ_answer;
 						trans_answer[j][i] += exp(logvalue);
 					}
 				}
@@ -137,15 +134,15 @@ public:
 				sum += margin[idx][i];
 				sum_answer += margin_answer[idx][i];
 			}
-			if (abs(sum - 1) > 1e-6 || abs(sum_answer - 1) > 1e-6){
-				std::cout << "prob sum:  free = " << sum << ", answer = " << sum_answer << std::endl;
-			}
+			//if (abs(sum - 1) > 1e-6 || abs(sum_answer - 1) > 1e-6){
+				//std::cout << "prob sum:  free = " << sum << ", answer = " << sum_answer << std::endl;
+			//}
 		}
 
 		//compute transition matrix losses
 		for (int i = 0; i < labelSize; ++i) {
 			for (int j = 0; j < labelSize; ++j) {
-				T.grad(i, j) += trans[i][j] - trans_answer[i][j];
+				T.grad[i][j] += trans[i][j] - trans_answer[i][j];
 			}
 		}
 
@@ -155,7 +152,7 @@ public:
 		for (int idx = 0; idx < seq_size; idx++) {
 			int bestid = -1, bestid_answer = -1;
 			for (int i = 0; i < labelSize; ++i) {
-				x[idx]->loss(i, 0) = (margin[idx][i] - margin_answer[idx][i]) / batchsize;
+				x[idx]->loss[i] = (margin[idx][i] - margin_answer[idx][i]) / batchsize;
 				if (bestid == -1 || margin[idx][i] > margin[idx][bestid]) {
 					bestid = i;
 				}
@@ -194,14 +191,14 @@ public:
 			for (int i = 0; i < labelSize; ++i) {
 				// can be changed with probabilities in future work
 				if (idx == 0) {
-					maxScores[idx][i] = x[idx]->val(i, 0);
+					maxScores[idx][i] = x[idx]->val[i];
 					maxLastLabels[idx][i] = -1;
 				}
 				else {
 					int maxLastLabel = -1;
 					dtype maxscore = 0.0;
 					for (int j = 0; j < labelSize; ++j) {
-						dtype curscore = T.val(j, i) + x[idx]->val(i, 0) + maxScores[idx - 1][j];
+						dtype curscore = T.val[j][i] + x[idx]->val[i] + maxScores[idx - 1][j];
 						if (maxLastLabel == -1 || curscore > maxscore) {
 							maxLastLabel = j;
 							maxscore = curscore;
@@ -246,17 +243,17 @@ public:
 			for (int i = 0; i < labelSize; ++i) {
 				// can be changed with probabilities in future work
 				if (idx == 0) {
-					alpha[idx][i] = x[idx]->val(i, 0);
-					alpha_answer[idx][i] = x[idx]->val(i, 0) + log(answer[idx][i] + eps);
+					alpha[idx][i] = x[idx]->val[i];
+					alpha_answer[idx][i] = x[idx]->val[i] + log(answer[idx][i] + eps);
 				}
 				else {
 					for (int j = 0; j < labelSize; ++j) {
-						buffer[j] = T.val(j, i) + x[idx]->val(i, 0) + alpha[idx - 1][j];
+						buffer[j] = T.val[j][i] + x[idx]->val[i] + alpha[idx - 1][j];
 					}
 					alpha[idx][i] = logsumexp(buffer);
 
 					for (int j = 0; j < labelSize; ++j) {
-						buffer[j] = T.val(j, i) + x[idx]->val(i, 0) + alpha_answer[idx - 1][j];
+						buffer[j] = T.val[j][i] + x[idx]->val[i] + alpha_answer[idx - 1][j];
 					}
 					alpha_answer[idx][i] = logsumexp(buffer) + log(answer[idx][i] + eps);
 				}

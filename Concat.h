@@ -5,30 +5,29 @@
 #include "Node.h"
 #include "Graph.h"
 
+
 struct ConcatNode : Node{
 public:
-	int nSize, distance;
+	int nSize;
 	vector<int> inDims;
 	vector<PNode> ins;
 
 public:
-	ConcatNode(){
-		clear();
-	}
-
-	inline void clear(){
-		Node::clear();
+	ConcatNode() : Node(){
 		nSize = 0;
-		distance = 0;
 		inDims.clear();
+		ins.clear();
 	}
 
 	inline void clearValue(){
 		Node::clearValue();
 	}
+	
+	inline void init(int dim, dtype dropOut, AlignedMemoryPool* mem = NULL){
+		Node::init(dim, -1, mem);	
+	}
 
 public:
-	// please better restrict col to 1
 	void forward(Graph *cg, const vector<PNode>& x) {
 		if (x.size() == 0){
 			std::cout << "empty inputs for concat" << std::endl;
@@ -45,23 +44,6 @@ public:
 		cg->addNode(this);
 	}
 
-	void forward(Graph *cg, const vector<PNode>& x, int distance) {
-		// distance denotes right shift position, if less than zero,
-		// denotes right (-distance) values are filled with zeors
-		if (x.size() == 0){
-			std::cout << "empty inputs for concat" << std::endl;
-			return;
-		}
-
-		ins.clear();
-		for (int i = 0; i < x.size(); i++){
-			ins.push_back(x[i]);
-		}
-
-		forward(distance);
-
-		cg->addNode(this);
-	}
 
 	void forward(Graph *cg, PNode x1, PNode x2){
 		ins.clear();
@@ -124,16 +106,10 @@ public:
 	}
 
 	void backward(){
-		for (int i = 0; i < ins.size(); i++){
-			if (ins[i]->loss.size() == 0){
-				ins[i]->loss = Mat::Zero(inDims[i], 1);
-			}
-		}
-
-		int offset = distance > 0 ? distance : 0;
+		int offset = 0;
 		for (int i = 0; i < nSize; ++i){
 			for (int idx = 0; idx < inDims[i]; idx++){
-				ins[i]->loss(idx, 0) += loss(offset + idx, 0);				
+				ins[i]->loss[idx] += loss[offset + idx];				
 			}
 			offset += inDims[i];
 		}
@@ -143,27 +119,30 @@ public:
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lock--;
 		}
+		if(!lossed)return;
+		for (int i = 0; i < nSize; i++){
+			ins[i]->lossed = true;
+		}		
 	}
 
 protected:
 	inline void forward(){
-		assert(ins.size() > 0);
-
-		distance = 0;
 		nSize = ins.size();
 		inDims.clear();
-		dim = 0;
+		int curDim = 0;
 		for (int i = 0; i < nSize; ++i){
-			inDims.push_back(ins[i]->val.rows());
-			dim += inDims[i];
+			inDims.push_back(ins[i]->val.dim);
+			curDim += inDims[i];
+		}
+		if(curDim != dim){
+			std::cout << "input dim size not match" << std::endl;
+			return;
 		}
 
-		val = Mat::Zero(dim, 1);
 		int offset = 0;
 		for (int i = 0; i < nSize; ++i){
-			assert(ins[i]->val.rows() == inDims[i]);
 			for (int idx = 0; idx < inDims[i]; idx++){
-				val(offset + idx, 0) = ins[i]->val(idx, 0);
+				val[offset + idx] = ins[i]->val[idx];
 			}
 			offset += inDims[i];
 		}
@@ -173,32 +152,6 @@ protected:
 		}
 	}
 
-	inline void forward(int distance){
-		assert(ins.size() > 0);
-
-		this->distance = distance;
-		nSize = ins.size();
-		inDims.clear();
-		dim = 0;
-		for (int i = 0; i < nSize; ++i){
-			inDims.push_back(ins[i]->val.rows());
-			dim += inDims[i];
-		}
-		dim += distance;
-		val = Mat::Zero(dim, 1);
-		int offset = distance > 0 ? distance : 0;
-		for (int i = 0; i < nSize; ++i){
-			assert(ins[i]->val.rows() == inDims[i]);
-			for (int idx = 0; idx < inDims[i]; idx++){
-				val(offset + idx, 0) = ins[i]->val(idx, 0);
-			}
-			offset += inDims[i];
-		}
-
-		for (int i = 0; i < nSize; ++i){
-			ins[i]->lock++;
-		}
-	}
 };
 
 

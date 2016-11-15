@@ -41,7 +41,7 @@ public:
 		for (int idx = count - 1; idx >= 0; idx--){
 			//
 			if (execs[idx]->lock > 0){
-				//execs[idx]->backward();
+				execs[idx]->backward();
 				std::cout << "bug exists, please check: " << execs[idx]->sid << " " << execs[idx]->lock << std::endl;
 				continue;  // impossible.....
 			}
@@ -64,6 +64,12 @@ public:
 		x->executed = true;
 		x->applydrop_forward(train);
 		execs.push_back(x);
+
+		//check randomly
+		int point = rand() % x->dim;
+		if (std::isnan(x->val[point])) {
+			std::cout << "debug" << std::endl;
+		}
 		//std::cout << "for" << x->sid << std::endl;
 			
 	}

@@ -8,14 +8,13 @@
 #ifndef BasePARAM_H_
 #define BasePARAM_H_
 
-
-#include "Utils.h"
-using namespace Eigen;
+#include "MyTensor.h"
 
 struct BaseParam {
-
+	Tensor2D val;
+	Tensor2D grad;
 public:
-	virtual inline void initial(int outDim, int inDim) = 0;
+	virtual inline void initial(int outDim, int inDim, AlignedMemoryPool* mem) = 0;
 	virtual inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) = 0;
 	virtual inline int outDim() = 0;
 	virtual inline int inDim() = 0;

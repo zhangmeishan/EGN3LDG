@@ -31,11 +31,13 @@ public:
 		}
 	}
 
-	inline void initial(int nOSize, int nISize, bool useB = true) {
-		W.initial(nOSize, nISize);
-		b.initial(nOSize, 1);
+	inline void initial(int nOSize, int nISize, bool useB = true, AlignedMemoryPool* mem = NULL) {
+		W.initial(nOSize, nISize, mem);
 
-		bUseB = useB;
+		bUseB = useB;		
+		if(bUseB){
+			b.initial(nOSize, 1, mem);
+		}
 	}
 
 };
@@ -47,29 +49,22 @@ public:
 struct UniNode : Node{
 public:
 	PNode in;
-	Mat ty, lty; // t means temp, ty is to save temp vector before activate
+	Tensor1D ty, lty; // t means temp, ty is to save temp vector before activate
 	int inDim;
 
 	UniParams* param;
 
-	Mat (*activate)(const Mat&);   // activate function
-	Mat (*derivate)(const Mat&, const Mat&); // derivation function of activate function
+	dtype (*activate)(const dtype&);   // activation function
+	dtype (*derivate)(const dtype&, const dtype&);  // derivation function of activation function
 
 
 public:
-	UniNode() {
-		clear();
-	}
-
-
-	inline void clear(){
-		Node::clear();
-		in = NULL;
-		activate = tanh;
-		derivate = tanh_deri;
-		ty.setZero();
-		lty.setZero();
+	UniNode()  : Node(){
+		in = NULL;		
+		activate = ftanh;
+		derivate = dtanh;
 		param = NULL;
+		
 		inDim = 0;
 	}
 
@@ -77,68 +72,117 @@ public:
 	inline void setParam(UniParams* paramInit) {
 		param = paramInit;
 		inDim = param->W.inDim();
-		dim = param->W.outDim();	
-		if (!param->bUseB) {
-			cout
-					<< "please check whether bUseB is true, usually this should be true for non-linear layer"
-					<< endl;
-		}
 	}
-
-	// define the activate function and its derivation form
-	inline void setFunctions(Mat (*f)(const Mat&),
-			Mat (*f_deri)(const Mat&, const Mat&)) {
-		activate = f;
-		derivate = f_deri;
-	}
-
+	
 	inline void clearValue(){
 		Node::clearValue();
 		in = NULL;
-		ty.setZero();
-		lty.setZero();
+		ty.zero();
+		lty.zero();
+	}	
+
+	// define the activate function and its derivation form
+	inline void setFunctions(dtype (*f)(const dtype&), dtype (*f_deri)(const dtype&, const dtype&)) {
+		activate = f;
+		derivate = f_deri;
 	}
+	
+	inline void init(int dim, dtype dropOut, AlignedMemoryPool* mem = NULL){
+		Node::init(dim, dropOut, mem);
+		ty.init(dim, mem);
+		lty.init(dim, mem);
+	}	
 
 public:
 	void forward(Graph *cg, PNode x) {
-		assert(param != NULL);
-
 		in = x;
-		assert(inDim == in->val.rows());
 
-		ty = param->W.val * in->val;
+		ty.mat() = param->W.val.mat() * in->val.mat();
 
 		if(param->bUseB){
-			for (int idx = 0; idx < ty.cols(); idx++) {
-				ty.col(idx) += param->b.val.col(0);
-			}
+			ty.vec() += param->b.val.vec();
 		}
-
-		val = activate(ty);
+		
+		val.vec() = ty.vec().unaryExpr(ptr_fun(activate));
 
 		in->lock++;
 		cg->addNode(this);
 	}
 
 	void backward() {
-		assert(param != NULL);
+		lty.vec() = loss.vec() * ty.vec().binaryExpr(val.vec(), ptr_fun(derivate));
 
-		lty = loss.array() * derivate(ty, val).array();
-
-		param->W.grad += lty * in->val.transpose();
+		param->W.grad.mat() += lty.mat() * in->val.tmat();
 
 		if(param->bUseB){
-			for (int idx = 0; idx < val.cols(); idx++) {
-				param->b.grad.col(0) += lty.col(idx);
-			}
+			param->b.grad.vec() += lty.vec();
 		}
 
-		if (in->loss.size() == 0) {
-			in->loss = Mat::Zero(in->val.rows(), in->val.cols());
-		}
-
-		in->loss += param->W.val.transpose() * lty;
+		in->loss.mat() += param->W.val.mat().transpose() * lty.mat();
 		
+	}
+
+
+	inline void unlock(){
+		in->lock--;
+		if(!lossed)return;
+		in->lossed = true;
+	}
+
+};
+
+struct LinearUniNode : Node{
+public:
+	PNode in;
+	int inDim;
+
+	UniParams* param;
+
+
+public:
+	LinearUniNode()  : Node(){
+		in = NULL;
+
+		param = NULL;
+		
+		inDim = 0;
+	}
+
+
+	inline void setParam(UniParams* paramInit) {
+		param = paramInit;
+		inDim = param->W.inDim();
+	}
+	
+	inline void clearValue(){
+		Node::clearValue();
+		in = NULL;
+	}	
+
+
+public:
+	void forward(Graph *cg, PNode x) {
+		in = x;
+		
+		val.mat() = param->W.val.mat() * in->val.mat();
+
+		if(param->bUseB){
+			val.vec() += param->b.val.vec();
+		}
+		
+
+		in->lock++;
+		cg->addNode(this);
+	}
+
+	void backward() {
+		param->W.grad.mat() += loss.mat() * in->val.tmat();
+
+		if(param->bUseB){
+			param->b.grad.vec() += loss.vec();
+		}
+
+		in->loss.mat() += param->W.val.mat().transpose() * loss.mat();
 	}
 
 
@@ -154,61 +198,52 @@ public:
 // input nodes should be specified by forward function
 // for input variables, we exploit column vector,
 // which means a concrete input vector x_i is represented by x(0, i), x(1, i), ..., x(n, i)
-struct LinearNode : Node {
+struct LinearNode : Node{
 public:
 	PNode in;
 	int inDim;
+
 	UniParams* param;
 
-public:
-	LinearNode() {
-		clear();
-	}
 
-	inline void clear(){
-		Node::clear();
+public:
+	LinearNode() : Node(){
 		in = NULL;
+
 		param = NULL;
+		
 		inDim = 0;
 	}
 
+
 	inline void setParam(UniParams* paramInit) {
 		param = paramInit;
-		inDim = param->W.inDim();
-		dim = param->W.outDim();
-		if (param->bUseB) {
-			cout << "please check whether bUseB is false, usually this should be false for linear layer"
-					<< endl;
+		if(param->bUseB){
+			std::cout << "Please check bUseB of the param" << std::endl;
 		}
+		inDim = param->W.inDim();
 	}
-
+	
 	inline void clearValue(){
 		Node::clearValue();
 		in = NULL;
-	}
+	}	
+
 
 public:
 	void forward(Graph *cg, PNode x) {
-		assert(param != NULL);
-
-		in = x;
-		assert(inDim == in->val.rows());
-
-		val = param->W.val * (in->val);	
+		in = x;		
+		val.mat() = param->W.val.mat() * in->val.mat();
 
 		in->lock++;
 		cg->addNode(this);
 	}
 
 	void backward() {
-		assert(param != NULL);
-		param->W.grad += loss * in->val.transpose();
-		if (in->loss.size() == 0) {
-			in->loss = Mat::Zero(in->val.rows(), in->val.cols());
-		}
-
-		in->loss += param->W.val.transpose() * loss;
+		param->W.grad.mat() += loss.mat() * in->val.tmat();
+		in->loss.mat() += param->W.val.mat().transpose() * loss.mat();
 	}
+
 
 	inline void unlock(){
 		in->lock--;

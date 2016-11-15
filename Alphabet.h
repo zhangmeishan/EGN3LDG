@@ -19,7 +19,6 @@
  *  @author Naoaki Okazaki
  */
 class basic_quark {
-	static const  int max_freq = 100000;
 	static const  int max_capacity = 10000000;
 protected:
 	typedef unordered_map<std::string, int> StringToId;
@@ -27,7 +26,6 @@ protected:
 
 	StringToId m_string_to_id;
 	IdToString m_id_to_string;
-	std::vector<int> m_freqs;
 	bool m_b_fixed;
 	int m_size;
 
@@ -62,11 +60,6 @@ public:
 		}
 		else if (!m_b_fixed){
 			int newid = m_size;
-			if (newid > 0 && m_freqs[newid - 1] != max_freq){
-				std::cout << "not a descended sorted alphabet!" << std::endl;
-				assert(0);
-			}
-			m_freqs.push_back(max_freq);
 			m_id_to_string.push_back(str);
 			m_string_to_id.insert(std::pair<std::string, int>(str, newid));
 			m_size++;
@@ -103,20 +96,14 @@ public:
 	 *  @param  str         String value.
 	 *  @return           ID if any, otherwise -1.
 	 */
-	int from_string(const std::string& str, int curfreq = max_freq)
+	int from_string(const std::string& str)
 	{
 		StringToId::const_iterator it = m_string_to_id.find(str);
 		if (it != m_string_to_id.end()) {
 			return it->second;
 		}
 		else if (!m_b_fixed){
-			int normfreq = curfreq < max_freq ? curfreq : max_freq;
 			int newid = m_size;
-			if (newid > 0 && m_freqs[newid - 1] < normfreq){
-				std::cout << "not a descended sorted alphabet!" << std::endl;
-				assert(0);
-			}
-			m_freqs.push_back(normfreq);
 			m_id_to_string.push_back(str);
 			m_string_to_id.insert(std::pair<std::string, int>(str, newid));
 			m_size++;
@@ -133,7 +120,6 @@ public:
 	{
 		m_string_to_id.clear();
 		m_id_to_string.clear();
-		m_freqs.clear();
 		m_b_fixed = false;
 		m_size = 0;
 	}
@@ -141,6 +127,14 @@ public:
 	void set_fixed_flag(bool bfixed)
 	{
 		m_b_fixed = bfixed;
+		if (!m_b_fixed && m_size >= max_capacity){
+			m_b_fixed = true;
+		}
+	}
+
+	bool is_fixed() const
+	{
+		return m_b_fixed;
 	}
 
 	/**
@@ -160,71 +154,61 @@ public:
 		my_getline(inf, tmp);
 		chomp(tmp);
 		m_size = atoi(tmp.c_str());
-		assert(m_size >= 0);
 		std::vector<std::string> featids;
 		for (int i = 0; i < m_size; ++i) {
 			my_getline(inf, tmp);
 			split_bychars(tmp, featids);
 			m_string_to_id[featids[0]] = i;
 			assert(atoi(featids[1].c_str()) == i);
-			if (featids.size() > 2){
-				m_freqs[i] = atoi(featids[2].c_str());
-			}
 		}
 	}
 
 	void write(std::ofstream &outf) const
 	{
 		outf << m_size << std::endl;
-		for (int i = 0; i < m_size; i++)
+		for (int i = 0; i<m_size; i++)
 		{
-			if (m_freqs[i] < 0)outf << m_id_to_string[i] << " " << i << std::endl;
-			else outf << m_id_to_string[i] << " " << i << " " << m_freqs[i] << std::endl;
+			outf << m_id_to_string[i] << i << std::endl;
 		}
 	}
 
 	void initial(const unordered_map<string, int>& elem_stat, int cutOff = 0){
 		clear();
 		static unordered_map<string, int>::const_iterator elem_iter;
-		static vector<pair<string, int> > t_vec;
-
-		t_vec.clear();
 		for (elem_iter = elem_stat.begin(); elem_iter != elem_stat.end(); elem_iter++) {
 			if (elem_iter->second > cutOff) {
-				t_vec.push_back(make_pair(elem_iter->first, elem_iter->second));
+				from_string(elem_iter->first);
 			}
 		}
-		std::sort(t_vec.begin(), t_vec.end(), cmpStringIntPairByValue);
-
-		for (int idx = 0; idx < t_vec.size(); idx++) {
-			from_string(t_vec[idx].first, t_vec[idx].second);
-		}
-		t_vec.clear();
 		set_fixed_flag(true);
 	}
 
-	//ugly implemented
-	int highfreq(){		
-		if (m_size <= 512) return m_size;
-
-		blong sum = 0;
-		for (int idx = 0; idx < m_size; idx++){
-			sum += m_freqs[idx];
+	// initial by a file (first column), always an embedding file
+	void initial(const string& inFile){
+		clear();
+		static ifstream inf;
+		if (inf.is_open()) {
+			inf.close();
+			inf.clear();
 		}
+		inf.open(inFile.c_str());
 
-		blong reserved = (blong)(sum * 0.8);
-		int answer = 0;
-		sum = 0;
-		while (answer < m_size){
-			sum += m_freqs[answer];
-			if (sum >= reserved){
+		static string strLine;
+		static vector<string> vecInfo;
+		while (1) {
+			if (!my_getline(inf, strLine)) {
 				break;
 			}
-			answer++;
+			if (!strLine.empty()){
+				split_bychar(strLine, vecInfo, ' ');
+				from_string(vecInfo[0]);
+			}
 		}
-
-		return answer;
+		if (m_size > 0){
+			set_fixed_flag(true);
+		}
 	}
+
 };
 
 typedef basic_quark Alphabet;

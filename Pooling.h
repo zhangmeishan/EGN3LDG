@@ -7,26 +7,36 @@
 
 struct PoolNode : Node {
 public:
-	vector<Mat> masks;
+	vector<Tensor1D> masks; 
 	vector<PNode> ins;
 	int nSize;
 
 public:
-	PoolNode(){
-		clear();
+	PoolNode() : Node(){
+		ins.clear();
 	}
-
-	inline void clear(){
-		Node::clear();
+	
+	~PoolNode(){
 		masks.clear();
 		ins.clear();
 	}
 
 	inline void clearValue(){
 		Node::clearValue();
-		masks.clear();
 		ins.clear();
 	}
+	
+	inline void setParam(int maxsize){
+		masks.resize(maxsize);
+	}
+	
+	inline void init(int dim, dtype dropOut, AlignedMemoryPool* mem = NULL){
+		Node::init(dim, -1, mem);
+		int count = masks.size();	
+		for(int idx = 0; idx < count; idx++){
+			masks[idx].init(dim, mem);
+		}
+	}		
 
 public:
 
@@ -34,10 +44,7 @@ public:
 
 	void backward(){
 		for (int i = 0; i < nSize; i++){
-			if (ins[i]->loss.size() == 0){
-				ins[i]->loss = Mat::Zero(ins[i]->val.rows(), ins[i]->val.cols());
-			}
-			ins[i]->loss = ins[i]->loss.array() + loss.array() * masks[i].array();			
+			ins[i]->loss.vec() += loss.vec() * masks[i].vec();			
 		}
 	}
 
@@ -54,7 +61,7 @@ public:
 
 struct MaxPoolNode : PoolNode {
 public:
-	MaxPoolNode(){
+	MaxPoolNode() : PoolNode(){
 	}
 
 public:
@@ -71,31 +78,28 @@ public:
 			ins.push_back(x[i]);
 		}
 
-		dim = ins[0]->val.rows();
-		masks.resize(nSize);
 		for (int i = 0; i < nSize; ++i){
-			if (ins[i]->val.rows() != dim){
+			if (ins[i]->val.dim != dim){
 				std::cout << "input matrixes are not matched" << std::endl;
 				clearValue();
 				return;
 			}
-			masks[i] = Mat::Zero(dim, 1);
+			masks[i].zero();
 		}
-
 
 		for (int idx = 0; idx < dim; idx++){
 			int maxIndex = -1;
 			for (int i = 0; i < nSize; ++i){
-				if (maxIndex == -1 || ins[i]->val(idx, 0) > ins[maxIndex]->val(idx, 0)){
+				if (maxIndex == -1 || ins[i]->val[idx] > ins[maxIndex]->val[idx]){
 					maxIndex = i;
 				}
 			}
-			masks[maxIndex](idx, 0) = 1.0;
+			masks[maxIndex][idx] = 1.0;
 		}
 
-		val = Mat::Zero(dim, 1);
+		val.zero();
 		for (int i = 0; i < nSize; ++i){
-			val = val.array() + masks[i].array() *ins[i]->val.array();
+			val.vec() += masks[i].vec() * ins[i]->val.vec();
 		}
 
 		for (int i = 0; i < nSize; ++i){
@@ -110,7 +114,7 @@ public:
 
 struct SumPoolNode : PoolNode {
 public:
-	SumPoolNode(){
+	SumPoolNode() : PoolNode(){
 	}
 
 public:
@@ -128,20 +132,18 @@ public:
 			ins.push_back(x[i]);
 		}
 
-		dim = ins[0]->val.rows();
-		masks.resize(nSize);
 		for (int i = 0; i < nSize; ++i){
-			if (ins[i]->val.rows() != dim){
+			if (ins[i]->val.dim != dim){
 				std::cout << "input matrixes are not matched" << std::endl;
 				clearValue();
 				return;
 			}
-			masks[i] = Mat::Ones(dim, 1);
+			masks[i] = 1.0;
 		}
 
-		val = Mat::Zero(dim, 1);
+		val.zero();
 		for (int i = 0; i < nSize; ++i){
-			val = val.array() + masks[i].array() *ins[i]->val.array();
+			val.vec() += masks[i].vec() * ins[i]->val.vec();
 		}
 
 		for (int i = 0; i < nSize; ++i){
@@ -156,7 +158,7 @@ public:
 
 struct MinPoolNode : PoolNode {
 public:
-	MinPoolNode(){
+	MinPoolNode() : PoolNode(){
 	}
 
 public:
@@ -173,31 +175,29 @@ public:
 			ins.push_back(x[i]);
 		}
 
-		dim = ins[0]->val.rows();
-		masks.resize(nSize);
 		for (int i = 0; i < nSize; ++i){
-			if (ins[i]->val.rows() != dim){
+			if (ins[i]->val.dim != dim){
 				std::cout << "input matrixes are not matched" << std::endl;
 				clearValue();
 				return;
 			}
-			masks[i] = Mat::Zero(dim, 1);
+			masks[i].zero();
 		}
 
 
 		for (int idx = 0; idx < dim; idx++){
 			int minIndex = -1;
 			for (int i = 0; i < nSize; ++i){
-				if (minIndex == -1 || ins[i]->val(idx, 0) < ins[minIndex]->val(idx, 0)){
+				if (minIndex == -1 || ins[i]->val[idx] < ins[minIndex]->val[idx]){
 					minIndex = i;
 				}
 			}
-			masks[minIndex](idx, 0) = 1.0;
+			masks[minIndex][idx] = 1.0;
 		}
 
-		val = Mat::Zero(dim, 1);
+		val.zero();
 		for (int i = 0; i < nSize; ++i){
-			val = val.array() + masks[i].array() *ins[i]->val.array();
+			val.vec() += masks[i].vec() * ins[i]->val.vec();
 		}
 
 		for (int i = 0; i < nSize; ++i){
@@ -211,7 +211,7 @@ public:
 
 struct StdPoolNode : PoolNode {
 public:
-	StdPoolNode(){
+	StdPoolNode() : PoolNode(){
 	}
 
 public:
@@ -229,25 +229,22 @@ public:
 			ins.push_back(x[i]);
 		}
 
-		dim = ins[0]->val.rows();
-		masks.resize(nSize);
 		for (int i = 0; i < nSize; ++i){
-			if (ins[i]->val.rows() != dim){
+			if (ins[i]->val.dim != dim){
 				std::cout << "input matrixes are not matched" << std::endl;
 				clearValue();
 				return;
 			}
-			//masks[i] = Mat::Ones(dim, 1);
 		}
 
-		val = Mat::Zero(dim, 1);
+		val.zero();
 		for (int i = 0; i < nSize; ++i){
-			val = val.array() + ins[i]->val.array() * ins[i]->val.array();
+			val.vec() += ins[i]->val.vec() * ins[i]->val.vec();
 		}
-		val = val.array().sqrt();
+		val.vec() = val.vec().sqrt();
 
 		for (int i = 0; i < nSize; ++i){
-			masks[i] = ins[i]->val.array() / val.array();
+			masks[i].vec() = ins[i]->val.vec() / val.vec();
 		}
 
 		for (int i = 0; i < nSize; ++i){
@@ -280,20 +277,18 @@ public:
 			ins.push_back(x[i]);
 		}
 
-		dim = ins[0]->val.rows();
-		masks.resize(nSize);
 		for (int i = 0; i < nSize; ++i){
-			if (ins[i]->val.rows() != dim){
+			if (ins[i]->val.dim != dim){
 				std::cout << "input matrixes are not matched" << std::endl;
 				clearValue();
 				return;
 			}
-			masks[i] = Mat::Ones(dim, 1) / nSize;
+			masks[i] = 1.0 / nSize;
 		}
 
-		val = Mat::Zero(dim, 1);
+		val.zero();
 		for (int i = 0; i < nSize; ++i){
-			val = val.array() + masks[i].array() *ins[i]->val.array();
+			val.vec() += masks[i].vec() * ins[i]->val.vec();
 		}
 
 		for (int i = 0; i < nSize; ++i){

@@ -3,9 +3,8 @@
 
 #include "MyLib.h"
 #include "Metric.h"
-#include <Eigen/Dense>
+#include "Node.h"
 
-using namespace Eigen;
 
 struct SoftMaxLoss{
 public:
@@ -16,31 +15,27 @@ public:
 			std::cerr << "softmax_loss error: dim size invalid" << std::endl;
 			return -1.0;
 		}
-		if(x->loss.size() == 0){
-			x->loss = Mat::Zero(nDim, 1);			
-		}
 		x->lossed = true;
 
-		Mat scores = Mat::Zero(nDim, 1);
+		NRVec<dtype> scores(nDim);
 
 		dtype cost = 0.0;
-
 		int optLabel = -1;
 		for (int i = 0; i < nDim; ++i) {
 			if (answer[i] >= 0) {
-				if (optLabel < 0 || x->val(i, 0) > x->val(optLabel, 0))
+				if (optLabel < 0 || x->val[i] > x->val[optLabel])
 					optLabel = i;
 			}
 		}
 
-		dtype sum1 = 0, sum2 = 0, maxScore = x->val(optLabel, 0);
+		dtype sum1 = 0, sum2 = 0, maxScore = x->val[optLabel];
 		for (int i = 0; i < nDim; ++i) {
-			scores(i, 0) = -1e10;
+			scores[i] = -1e10;
 			if (answer[i] >= 0) {
-				scores(i, 0) = exp(x->val(i, 0) - maxScore);
+				scores[i] = exp(x->val[i] - maxScore);
 				if (answer[i] == 1)
-					sum1 += scores(i, 0);
-				sum2 += scores(i, 0);
+					sum1 += scores[i];
+				sum2 += scores[i];
 			}
 		}
 		cost += (log(sum2) - log(sum1)) / batchsize;
@@ -50,7 +45,7 @@ public:
 
 		for (int i = 0; i < nDim; ++i) {
 			if (answer[i] >= 0) {
-				x->loss(i, 0) = (scores(i, 0) / sum2 - answer[i]) / batchsize;
+				x->loss[i] = (scores[i] / sum2 - answer[i]) / batchsize;
 			}
 		}
 		
@@ -63,7 +58,7 @@ public:
 
 		int optLabel = -1;
 		for (int i = 0; i < nDim; ++i) {
-			if (optLabel < 0 || x->val(i, 0) >  x->val(optLabel, 0))
+			if (optLabel < 0 || x->val[i] >  x->val[optLabel])
 				optLabel = i;
 		}
 		y = optLabel;
@@ -77,26 +72,26 @@ public:
 			return -1.0;
 		}
 
-		Mat scores = Mat::Zero(nDim, 1);
+		NRVec<dtype> scores(nDim);
 
 		dtype cost = 0.0;
 
 		int optLabel = -1;
 		for (int i = 0; i < nDim; ++i) {
 			if (answer[i] >= 0) {
-				if (optLabel < 0 || x->val(i, 0) > x->val(optLabel, 0))
+				if (optLabel < 0 || x->val[i] > x->val[optLabel])
 					optLabel = i;
 			}
 		}
 
-		dtype sum1 = 0, sum2 = 0, maxScore = x->val(optLabel, 0);
+		dtype sum1 = 0, sum2 = 0, maxScore = x->val[optLabel];
 		for (int i = 0; i < nDim; ++i) {
-			scores(i, 0) = -1e10;
+			scores[i] = -1e10;
 			if (answer[i] >= 0) {
-				scores(i, 0) = exp(x->val(i, 0) - maxScore);
+				scores[i] = exp(x->val[i] - maxScore);
 				if (answer[i] == 1)
-					sum1 += scores(i, 0);
-				sum2 += scores(i, 0);
+					sum1 += scores[i];
+				sum2 += scores[i];
 			}
 		}
 		cost += (log(sum2) - log(sum1)) / batchsize;

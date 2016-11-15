@@ -449,22 +449,16 @@ struct SPAddNode : Node {
 	int nSize;
 	int dimId;
 public:
-	SPAddNode(){
-		clear();
+	SPAddNode() : Node(){
+		ins.clear();
+		nSize = 0;
+		dimId = -1;
 	}
 public:
 	virtual inline void clearValue(){
 		Node::clearValue();
 		ins.clear();
 		nSize = 0;
-		dimId = -1;
-	}
-
-	virtual inline void clear(){
-		Node::clear();
-		ins.clear();
-		nSize = 0;
-		dimId = -1;
 	}
 
 public:
@@ -553,30 +547,12 @@ public:
 	void backward(){
 		static int oDim;
 		for (int i = 0; i < nSize; i++){
-			if (ins[i]->smode){
-				oDim = ins[i]->sval.size();
-				if (ins[i]->sloss.size() == 0){
-					ins[i]->sloss.resize(oDim);
-					ins[i]->sloss = 0;
-				}
-				if (oDim == 1){
-					ins[i]->sloss[0] += loss.coeffRef(0);
-				}
-				else if (dimId < oDim){
-					ins[i]->sloss[dimId] += loss.coeffRef(0);
-				}
+			oDim = ins[i]->val.dim;
+			if (oDim == 1){
+				ins[i]->loss[0] += loss[0];
 			}
-			else{
-				oDim = ins[i]->val.size();
-				if (ins[i]->loss.size() == 0){
-					ins[i]->loss = Mat::Zero(oDim, 1);
-				}
-				if (oDim == 1){
-					ins[i]->loss.coeffRef(0) += loss.coeffRef(0);
-				}
-				else if (dimId < oDim){
-					ins[i]->loss.coeffRef(dimId) += loss.coeffRef(0);
-				}
+			else if (dimId < oDim){
+				ins[i]->loss[dimId] += loss[0];
 			}
 		}
 	}
@@ -585,7 +561,7 @@ public:
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lock--;
 		}
-		if (!lossed || !nonzeroloss(loss))return;
+		if (!lossed)return;
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lossed = true;
 		}
@@ -596,32 +572,18 @@ protected:
 		static int oDim;
 		dtype sum = 0;
 		for (int idx = 0; idx < nSize; idx++){
-			if (ins[idx]->smode){
-				oDim = ins[idx]->sval.size();
-				if (oDim == 1){
-					sum += ins[idx]->sval[0];
-				}
-				else if (dim < oDim){
-					sum += ins[idx]->sval[dim];
-				}
+			oDim = ins[idx]->val.dim;
+			if (oDim == 1){
+				sum += ins[idx]->val[0];
 			}
-			else{
-				oDim = ins[idx]->val.size();
-				if (oDim == 1){
-					sum += ins[idx]->val.coeffRef(0);
-				}
-				else if (dim < oDim){
-					sum += ins[idx]->val.coeffRef(dim);
-				}
+			else if (dim < oDim){
+				sum += ins[idx]->val[dim];
 			}
 		}
 		for (int idx = 0; idx < nSize; idx++){
 			ins[idx]->lock++;
 		}
-		if (val.size() == 0){
-			val = Mat::Zero(1, 1);
-		}
-		val.coeffRef(0) += sum;
+		val[0] += sum;
 		dimId = dim;
 	}
 
@@ -632,15 +594,11 @@ struct SPAddAllDimNode : Node {
 	vector<PNode> ins;
 	int nSize;
 public:
-	SPAddAllDimNode(){
-		clear();
-		smode = true;
+	SPAddAllDimNode() : Node(){
+		ins.clear();
+		nSize = 0;
 	}
 
-public:
-	inline void setParam(int oDim) {
-		dim = oDim;
-	}
 public:
 	virtual inline void clearValue(){
 		Node::clearValue();
@@ -648,14 +606,7 @@ public:
 		nSize = 0;
 	}
 
-	virtual inline void clear(){
-		Node::clear();
-		ins.clear();
-		nSize = 0;
-	}
-
 public:
-	// please better restrict col to 1
 	void forward(Graph *cg, const vector<PNode>& x) {
 		nSize = x.size();
 		ins.clear();
@@ -730,12 +681,8 @@ public:
 
 	void backward(){
 		for (int i = 0; i < nSize; i++){
-			if (ins[i]->sloss.size() == 0){
-				ins[i]->sloss.resize(dim);
-				ins[i]->sloss = 0;
-			}
 			for (int idy = 0; idy < dim; idy++){
-				ins[i]->sloss[idy] += sloss[idy];
+				ins[i]->loss[idy] += loss[idy];
 			}
 		}
 	}
@@ -744,7 +691,7 @@ public:
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lock--;
 		}
-		if (!lossed || !nonzeroloss(loss))return;
+		if (!lossed)return;
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lossed = true;
 		}
@@ -752,18 +699,9 @@ public:
 
 protected:
 	void forward() {
-		if (sval.size() != dim){
-			sval.resize(dim);
-			sval = 0;
-		}
 		for (int idx = 0; idx < nSize; idx++){
-			if (ins[idx]->smode){
-				for (int idy = 0; idy < dim; idy++){
-					sval[idy] += ins[idx]->sval[idy];
-				}
-			}
-			else{
-				std::cout << "input must be in sparse mode" << std::endl;
+			for (int idy = 0; idy < dim; idy++){
+				val[idy] += ins[idx]->val[idy];
 			}
 		}
 		for (int idx = 0; idx < nSize; idx++){
@@ -778,25 +716,20 @@ struct SPAddAllDimScaleNode : Node {
 	int nSize;
 	dtype scale;
 public:
-	SPAddAllDimScaleNode(){
-		clear();
-		smode = true;
+	SPAddAllDimScaleNode() : Node(){
+		ins.clear();
+		nSize = 0;
+		scale = 1.0;
 	}
 
 public:
-	inline void setParam(int oDim, dtype oScale = 1.0) {
-		dim = oDim;
+	inline void setParam(dtype oScale = 1.0) {
 		scale = oScale;
 	}
+	
 public:
 	virtual inline void clearValue(){
 		Node::clearValue();
-		ins.clear();
-		nSize = 0;
-	}
-
-	virtual inline void clear(){
-		Node::clear();
 		ins.clear();
 		nSize = 0;
 	}
@@ -877,12 +810,8 @@ public:
 
 	void backward(){
 		for (int i = 0; i < nSize; i++){
-			if (ins[i]->sloss.size() == 0){
-				ins[i]->sloss.resize(dim);
-				ins[i]->sloss = 0;
-			}
 			for (int idy = 0; idy < dim; idy++){
-				ins[i]->sloss[idy] += scale * sloss[idy];
+				ins[i]->loss[idy] += scale * loss[idy];
 			}
 		}
 	}
@@ -891,7 +820,7 @@ public:
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lock--;
 		}
-		if (!lossed || !nonzeroloss(loss))return;
+		if (!lossed)return;
 		for (int i = 0; i < nSize; i++){
 			ins[i]->lossed = true;
 		}
@@ -899,18 +828,9 @@ public:
 
 protected:
 	void forward() {
-		if (sval.size() != dim){
-			sval.resize(dim);
-			sval = 0;
-		}
 		for (int idx = 0; idx < nSize; idx++){
-			if (ins[idx]->smode){
-				for (int idy = 0; idy < dim; idy++){
-					sval[idy] += scale * ins[idx]->sval[idy];
-				}
-			}
-			else{
-				std::cout << "input must be in sparse mode" << std::endl;
+			for (int idy = 0; idy < dim; idy++){
+				val[idy] += scale * ins[idx]->val[idy];
 			}
 		}
 		for (int idx = 0; idx < nSize; idx++){

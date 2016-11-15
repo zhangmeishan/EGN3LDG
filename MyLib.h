@@ -28,17 +28,22 @@
 #include <unordered_set>
 
 #include "NRMat.h"
-#include "Utils.h"
 #include "Eigen/Dense"
 
 using namespace nr;
 using namespace std;
 using namespace Eigen;
 
-
+#if USE_FLOAT
+typedef float dtype;
+typedef Eigen::TensorMap<Eigen::Tensor<float, 1>>  Vec;
+typedef Eigen::Map<MatrixXf> Mat;
+#else
 typedef double dtype;
-typedef MatrixXd Mat;
-typedef MatrixXd* PMat;
+typedef Eigen::TensorMap<Eigen::Tensor<double, 1>>  Vec;
+typedef Eigen::Map<MatrixXd> Mat;
+#endif
+
 typedef long long blong;
 
 const static dtype minlogvalue = -1000;
@@ -49,6 +54,7 @@ const static string unknownkey = "-unknown-";
 const static string seperateKey = "#";
 const static int max_sentence_clength = 512;
 const static int max_sentence_wlength = 256;
+const static int max_length = 512;
 
 typedef std::vector<std::string> CStringVector;
 
@@ -177,13 +183,6 @@ inline void Free(dtype** p) {
   *p = NULL;
 }
 
-//(-scale,scale)
-inline void randomMatAssign(dtype* p, int length, dtype scale = 1.0) {
-  for (int idx = 0; idx < length; idx++) {
-    p[idx] = 2.0 * rand() * scale / RAND_MAX - scale;
-  }
-}
-
 inline int mod(int v1, int v2) {
   if (v1 < 0 || v2 <= 0)
     return -1;
@@ -203,58 +202,6 @@ inline void zeros(dtype* p, int length) {
     p[idx] = 0.0;
   }
 }
-
-
-inline void scaleMat(dtype* p, dtype scale, int length) {
-  for (int idx = 0; idx < length; idx++) {
-    p[idx] = p[idx] * scale;
-  }
-}
-
-inline void elemMulMat(dtype* p, dtype* q, int length) {
-  for (int idx = 0; idx < length; idx++) {
-    p[idx] = p[idx] * q[idx];
-  }
-}
-
-inline void elemMulMat(dtype* p, dtype* q, dtype *t, int length) {
-  for (int idx = 0; idx < length; idx++) {
-    t[idx] = p[idx] * q[idx];
-  }
-}
-
-inline void normalize_mat_onerow(dtype* p, int row, int rowSize, int colSize) {
-  dtype sum = 0.000001;
-  int start_pos = row * colSize;
-  int end_pos = start_pos + colSize;
-  for (int idx = start_pos; idx < end_pos; idx++)
-    sum = sum + p[idx] * p[idx];
-  dtype norm = sqrt(sum);
-  for (int idx = start_pos; idx < end_pos; idx++)
-    p[idx] = p[idx] / norm;
-}
-
-//shift to avg = 0, and then norm = 1
-inline void normalize_mat_onecol(dtype* p, int col, int rowSize, int colSize) {
-  dtype sum = 0.0;
-  int maxLength = rowSize * colSize;
-  for (int idx = col; idx < maxLength; idx += rowSize) {
-    sum += p[idx];
-  }
-  dtype avg = sum / colSize;
-
-  sum = 0.000001;
-  for (int idx = col; idx < maxLength; idx += rowSize) {
-    p[idx] = p[idx] - avg;
-    sum += p[idx] * p[idx];
-  }
-
-  dtype norm = sqrt(sum);
-  for (int idx = col; idx < maxLength; idx += rowSize) {
-    p[idx] = p[idx] / norm;
-  }
-}
-
 
 inline dtype logsumexp(dtype a[], int length) {
   dtype max = a[0];
@@ -353,34 +300,6 @@ inline void sortMapbyValue(const unordered_map<int, int> &t_map, vector<pair<int
     t_vec.push_back(make_pair(iter->first, iter->second));
   }
   std::sort(t_vec.begin(), t_vec.end(), cmpIntIntPairByValue);
-}
-
-template<typename T>
-T min(T const& a, T const& b, T const& c) {
-  return std::min(std::min(a, b), c);
-}
-
-inline int edit_distance(const string& A, const string& B) {
-  int NA = A.size();
-  int NB = B.size();
-
-  vector<vector<int> > M(NA + 1, vector<int>(NB + 1));
-
-  for (int a = 0; a <= NA; ++a)
-    M[a][0] = a;
-
-  for (int b = 0; b <= NB; ++b)
-    M[0][b] = b;
-
-  for (int a = 1; a <= NA; ++a)
-    for (int b = 1; b <= NB; ++b) {
-      int x = M[a - 1][b] + 1;
-      int y = M[a][b - 1] + 1;
-      int z = M[a - 1][b - 1] + (A[a - 1] == B[b - 1] ? 0 : 1);
-      M[a][b] = min(x, y, z);
-    }
-
-  return M[A.size()][B.size()];
 }
 
 inline void replace_char_by_char(string &str, char c1, char c2) {

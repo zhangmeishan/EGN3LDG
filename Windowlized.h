@@ -6,7 +6,7 @@
 #include "Concat.h"
 #include "Graph.h"
 
-class WindowBuilder : NodeBuilder{
+class WindowBuilder{
 public:
 	int _context;
 	int _window;
@@ -42,13 +42,21 @@ public:
 	}
 
 
-	inline void setContext(int context){
+	inline void init(int inDim, int context, AlignedMemoryPool* mem = NULL){
 		_context = context;
 		_window = 2 * _context + 1;
+		_inDim = inDim;
+		_outDim = _window * _inDim;
+		int maxsize = _outputs.size();
+		for(int idx = 0; idx < maxsize; idx++){
+			_outputs[idx].init(_outDim, -1, mem); // dropout is not supported here
+		}
+		bucket.init(_inDim, -1, mem);
 	}
+	
+	
 
 public:	
-
 	inline void forward(Graph *cg, const vector<PNode>& x){
 		if (x.size() == 0){
 			std::cout << "empty inputs for windowlized operation" << std::endl;
@@ -56,11 +64,6 @@ public:
 		}
 
 		_nSize = x.size();
-		_inDim = x[0]->val.rows();
-		_outDim = _window * _inDim;
-
-		bucket.clear();
-		bucket.val = Mat::Zero(_inDim, 1);
 
 		vector<PNode> in_nodes(_window);
 		for (int idx = 0; idx < _nSize; idx++){

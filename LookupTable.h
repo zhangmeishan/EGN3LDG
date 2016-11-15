@@ -7,10 +7,6 @@
 #include "Node.h"
 #include "Graph.h"
 
-#include <Eigen/Dense>
-
-using namespace Eigen;
-
 struct LookupTable {
 public:
 	PAlphabet elems;
@@ -39,11 +35,11 @@ public:
 	}
 
 	//initialization by pre-trained embeddings
-	inline void initial(PAlphabet alpha, const string& inFile, bool bFineTune = true){
+	inline bool initial(PAlphabet alpha, const string& inFile, bool bFineTune = true, bool bNormalize = true){
 		elems = alpha;
 		nVSize = elems->size();
 		nUNKId = elems->from_string(unknownkey);
-		initialWeights(inFile, bFineTune);
+		return initialWeights(inFile, bFineTune, bNormalize);
 	}
 
 	inline void initialWeights(int dim, bool tune) {
@@ -53,18 +49,15 @@ public:
 		}
 		nDim = dim;
 		E.initial(nDim, nVSize);
-		for (int idx = 0; idx < nVSize; idx++){
-			norm2one(E.val, idx);
-		}
-
+		E.val.norm2one();
 		bFineTune = tune;
 	}
 
 	// default should be fineTune, just for initialization
-	inline void initialWeights(const string& inFile, bool tune) {
-		if (nVSize == 0){
+	inline bool initialWeights(const string& inFile, bool tune, bool normalize = true) {
+		if (nVSize == 0 || !elems->is_fixed()){
 			std::cout << "please check the alphabet" << std::endl;
-			return;
+			return false;
 		}
 
 		static ifstream inf;
@@ -88,6 +81,9 @@ public:
 			}
 		}
 		inf.close();
+		if (sLines.size() == 0){
+			return false;
+		}
 
 		//find the first line, decide the wordDim;
 		static vector<string> vecInfo;
@@ -101,7 +97,8 @@ public:
 
 		bool bHasUnknown = false;
 		unordered_set<int> indexers;
-		VectorXd sum = VectorXd::Zero(nDim);
+		NRVec<dtype> sum(nDim);
+		sum = 0.0;
 		int count = 0;
 		for (int idx = 0; idx < sLines.size(); idx++){
 			split_bychar(sLines[idx], vecInfo, ' ');
@@ -120,7 +117,7 @@ public:
 
 				for (int idy = 0; idy < nDim; idy++) {
 					dtype curValue = atof(vecInfo[idy + 1].c_str());
-					sum(idy) += curValue;
+					sum[idy] += curValue;
 					E.val[wordId][idy] += curValue;
 				}
 			}
@@ -128,7 +125,7 @@ public:
 
 		if (nUNKId >= 0 && !bHasUnknown){
 			for (int idx = 0; idx < nDim; idx++) {
-				E.val[nUNKId][idx] = sum(idx) / count;
+				E.val[nUNKId][idx] = sum[idx] / count;
 			}
 			indexers.insert(nUNKId);
 			count++;
@@ -140,7 +137,7 @@ public:
 			if (indexers.find(id) == indexers.end()) {
 				oovWords++;
 				for (int idy = 0; idy < nDim; idy++){
-					E.val[id][idy] = nUNKId >= 0 ? E.val[nUNKId][idy] : sum(idy) / count;
+					E.val[id][idy] = nUNKId >= 0 ? E.val[nUNKId][idy] : sum[idy] / count;
 				}
 			}
 		}
@@ -148,12 +145,10 @@ public:
 		std::cout << "OOV num is " << oovWords << ", total num is " << nVSize << ", embedding oov ratio is " << oovWords * 1.0 / nVSize << std::endl;
 
 		bFineTune = tune;
-		if (bFineTune){
-			for (int idx = 0; idx < nVSize; idx++){
-				norm2one(E.val, idx);
-			}
+		if (normalize){
+			E.val.norm2one();
 		}
-	
+		return true;
 	}
 
 	inline void exportAdaParams(ModelUpdate& ada) {
@@ -176,18 +171,12 @@ public:
 
 public:
 	LookupNode() {
-		clear();
+		xid = -1;
+		param = NULL;
 	}
 
 	inline void setParam(LookupTable* paramInit) {
 		param = paramInit;
-		dim = param->nDim;
-	}
-
-	inline void clear(){
-		Node::clear();
-		xid = -1;
-		param = NULL;
 	}
 
 	inline void clearValue(){
@@ -209,7 +198,7 @@ public:
 		}
 		else{
 			if (param->bFineTune)std::cout << "Caution: unknown words are not modeled !" << std::endl;
-			val = Mat::Zero(dim, 1);
+			val.zero();
 		}
 
 		cg->addNode(this);
