@@ -32,6 +32,7 @@
 #include "RNN.h"
 #include "GRNN.h"
 #include "MyTensor.h"
+#include "SoftmaxOP.h"
 
 
 #endif

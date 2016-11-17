@@ -49,6 +49,134 @@ public:
 };
 
 
+struct CHeadNode : Node {
+	PNode in;
+public:
+	CHeadNode() : Node() {
+		in = NULL;
+	}
+public:
+	virtual inline void clearValue() {
+		Node::clearValue();
+		in = NULL;
+	}
+
+public:
+	void forward(Graph *cg, PNode x) {
+		in = x;
+		for (int idx = 0; idx < dim && idx < in->dim; idx++) {
+			val[idx] = in->val[idx];
+		}
+		in->lock++;
+		cg->addNode(this);
+	}
+
+	void backward() {
+		for (int idx = 0; idx < dim && idx < in->dim; idx++) {
+			in->loss[idx] += loss[idx];
+		}
+	}
+
+	inline void unlock() {
+		in->lock--;
+		if (!lossed)return;
+		in->lossed = true;
+	}
+
+};
+
+struct HalfMergeNode : Node {
+	PNode in;
+public:
+	HalfMergeNode() : Node() {
+		in = NULL;
+	}
+public:
+	virtual inline void clearValue() {
+		Node::clearValue();
+		in = NULL;
+	}
+
+public:
+	void forward(Graph *cg, PNode x) {
+		in = x;
+		if (x->dim != 2 * dim) {
+			std::cout << "error during half merging" << std::endl;
+		}
+		for (int idx = 0; idx < dim; idx++) {
+			val[idx] = in->val[2 * idx] + in->val[2 * idx + 1];
+		}
+		in->lock++;
+		cg->addNode(this);
+	}
+
+	void backward() {
+		for (int idx = 0; idx < dim; idx++) {
+			in->loss[2 * idx] += loss[idx];
+			in->loss[2 * idx + 1] += loss[idx];
+		}
+	}
+
+	inline void unlock() {
+		in->lock--;
+		if (!lossed)return;
+		in->lossed = true;
+	}
+
+};
+
+//select a continus space from input
+struct SelectionNode : Node {
+	PNode in;
+	int start_pos;
+public:
+	SelectionNode() : Node() {
+		in = NULL;
+		start_pos = 0;
+	}
+public:
+	virtual inline void clearValue() {
+		Node::clearValue();
+		in = NULL;
+		start_pos = 0;
+	}
+
+public:
+	void forward(Graph *cg, PNode x, const int& start) {
+		in = x;
+		start_pos = start;
+		if (start_pos < 0 || start_pos + dim > in->dim) {
+			std::cout << "error: position overflow!" << std::endl;
+			return;
+		}
+		int end_pos = start_pos + dim;
+		int offset = 0;
+		for (int idx = start_pos; idx < end_pos; idx++) {
+			val[offset] = in->val[idx];
+			offset++;
+		}
+		in->lock++;
+		cg->addNode(this);
+	}
+
+	void backward() {
+		int end_pos = start_pos + dim;
+		int offset = 0;
+		for (int idx = start_pos; idx < end_pos; idx++) {
+			in->loss[idx] += loss[offset];
+			offset++;
+		}
+	}
+
+	inline void unlock() {
+		in->lock--;
+		if (!lossed)return;
+		in->lossed = true;
+	}
+};
+
+
+
 struct PSubNode : Node {
 	PNode in1, in2;
 public:
