@@ -77,7 +77,7 @@ public:
 					indexes.push_back(i);
 
 				int dropNum = (int)(val.dim * dropvalue);
-				
+				random_shuffle(indexes.begin(), indexes.end());
 				for (int i = 0; i < dropNum; i++){
 					mask[indexes[i]] = 0.0;
 				}
