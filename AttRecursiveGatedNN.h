@@ -137,9 +137,9 @@ public:
 		_update_nodes.push_back(&_update_tilde);
 
 		_softmax_layer.forward(cg, _update_nodes);
-		_muls[0].forward(cg, x[0], _update_nodes[0]);
-		_muls[1].forward(cg, x[1], _update_nodes[1]);
-		_muls[2].forward(cg, &_update_tilde, _update_nodes[2]);
+		_muls[0].forward(cg, x[0], &_softmax_layer._output[0]);
+		_muls[1].forward(cg, x[1], &_softmax_layer._output[1]);
+		_muls[2].forward(cg, &_update_tilde, &_softmax_layer._output[2]);
 		_output.forward(cg, getPNodes(_muls, 3));
 	}
 };
