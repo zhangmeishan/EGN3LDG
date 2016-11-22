@@ -93,10 +93,12 @@ public:
 		_update_right.init(_outDim, -1, mem);
 		_update_tilde.init(_outDim, -1, mem);
 		_recursive_tilde.init(_outDim, -1, mem);
-		_update_left.setFunctions(&fsigmoid, &dsigmoid);
-		_update_right.setFunctions(&fsigmoid, &dsigmoid);
-		_update_tilde.setFunctions(&fsigmoid, &dsigmoid);
-		_recursive_tilde.setFunctions(&fexp, &dexp);
+		_reset_left.setFunctions(&fsigmoid, &dsigmoid);
+		_reset_right.setFunctions(&fsigmoid, &dsigmoid);
+
+		_update_left.setFunctions(&fexp, &dexp);
+		_update_right.setFunctions(&fexp, &dexp);
+		_update_tilde.setFunctions(&fexp, &dexp);
 
 		_softmax_layer.init(_outDim, mem);
 
