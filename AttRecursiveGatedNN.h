@@ -27,6 +27,7 @@ struct AttRecursiveGatedParams{
 		_update_left_param.exportAdaParams(ada);
 		_update_right_param.exportAdaParams(ada);
 		_update_tilde_param.exportAdaParams(ada);
+		_recursive_tilde_param.exportAdaParams(ada);
 	}
 
 	inline int inDim(){
