@@ -2,7 +2,7 @@
 #define _Gate_pool_param_H_
 
 #include "UniOP.h"
-#include "SoftMaxOP.h"
+#include "SoftmaxOP.h"
 #include "Pooling.h"
 #include "ModelUpdate.h"
 
@@ -77,7 +77,7 @@ public:
 		_output.init(_outDim, -1, mem);
 	}
 
-	inline void forward(Graph *cg, vector<PNode>& x){
+	inline void forward(Graph *cg, const vector<PNode>& x){
 		if (x.size() == 0) {
 			std::cout << "empty inputs for GatedPoolNode operation" << std::endl;
 			return;
