@@ -2,6 +2,7 @@
 #define _AttRecursiveGatedNN_H_
 
 #include "BiOP.h"
+#include "SoftmaxOP.h"
 
 struct AttRecursiveGatedParams{
 	BiParams  _reset_left_param;
@@ -37,7 +38,8 @@ struct AttRecursiveGatedParams{
 	}
 };
 
-struct AttRecursiveGatedBuilder{
+class AttRecursiveGatedBuilder{
+public:
 	int _outDim;
 	int _inDim;
 
@@ -55,7 +57,7 @@ struct AttRecursiveGatedBuilder{
 
 	SoftmaxBuilder _softmax_layer;
 	vector<PMultNode> _muls;
-	SumPoolNode _output;
+	PAddNode _output;
 
 	AttRecursiveGatedBuilder(){
 		clear();
@@ -103,16 +105,29 @@ struct AttRecursiveGatedBuilder{
 		_output.init(_outDim, dropout, mem);
 	}
 
-	inline void forward(Graph *cg, PNode& left, PNode& right,  PNode& target){
-		_reset_left.forward(cg, left, target);
-		_reset_right.forward(cg, right, target);
-		_mul_left.forward(cg, &_reset_left, left);
-		_mul_right.forward(cg, &_reset_right, right);
+	inline void forward(Graph *cg, PNode left, PNode right, PNode target){
+		vector<PNode> x;
+		x.push_back(left);
+		x.push_back(right);
+		x.push_back(target);
+		forward(cg, x);
+	}
+
+	// 0 left, 1 right, 2target
+	inline void forward(Graph *cg, const vector<PNode>& x){
+		if (x.size() != 3) {
+			std::cout << "please check the input of AttRecursiveGated" << std::endl;
+			return;
+		}
+		_reset_left.forward(cg, x[0], x[2]);
+		_reset_right.forward(cg, x[1], x[2]);
+		_mul_left.forward(cg, &_reset_left, x[0]);
+		_mul_right.forward(cg, &_reset_right, x[1]);
 		_recursive_tilde.forward(cg, &_mul_left, &_mul_right);
 
-		_update_left.forward(cg, left, target);
-		_update_right.forward(cg, right, target);
-		_update_tilde.forward(cg, &_recursive_tilde, target);
+		_update_left.forward(cg, x[0], x[2]);
+		_update_right.forward(cg, x[1], x[2]);
+		_update_tilde.forward(cg, &_recursive_tilde, x[2]);
 
 		vector<PNode> _update_nodes;
 		_update_nodes.push_back(&_update_left);
@@ -120,6 +135,10 @@ struct AttRecursiveGatedBuilder{
 		_update_nodes.push_back(&_update_tilde);
 
 		_softmax_layer.forward(cg, _update_nodes);
+		_muls[0].forward(cg, x[0], _update_nodes[0]);
+		_muls[1].forward(cg, x[1], _update_nodes[1]);
+		_muls[2].forward(cg, &_update_tilde, _update_nodes[2]);
+		_output.forward(cg, getPNodes(_muls, 3));
 	}
 };
 
