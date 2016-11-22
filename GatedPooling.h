@@ -26,7 +26,7 @@ struct GatedPoolParam{
 	}
 };
 
-struct GatedPoolNode :Node{
+class GatedPoolBuilder {
 
 public:
 	int _nSize;
@@ -39,15 +39,15 @@ public:
 
 	vector<PMultNode> _mul;
 
-	SumPoolNode  _output;
+	PAddNode  _output;
 
 	GatedPoolParam* _param;
 
-	GatedPoolNode(){
+	GatedPoolBuilder(){
 		clear();
 	}
 
-	~GatedPoolNode(){
+	~GatedPoolBuilder(){
 		clear();
 	}
 
@@ -73,18 +73,17 @@ public:
 		_softmax_project.init(_outDim, mem);
 		for (int idx = 0; idx < maxsize; idx++)
 			_mul[idx].init(_outDim, -1, mem);
-		_output.setParam(_outDim);
 		_output.init(_outDim, -1, mem);
 	}
 
 	inline void forward(Graph *cg, const vector<PNode>& x){
 		if (x.size() == 0) {
-			std::cout << "empty inputs for GatedPoolNode operation" << std::endl;
+			std::cout << "empty inputs for GatedPoolBuilder operation" << std::endl;
 			return;
 		}
 		_nSize = x.size();
 		if (x[0]->val.dim != _inDim) {
-			std::cout << "input dim does not for GatedPoolNode operation" << std::endl;
+			std::cout << "input dim does not for GatedPoolBuilder operation" << std::endl;
 			return;
 		}
 		for (int idx = 0; idx < _nSize; idx++)

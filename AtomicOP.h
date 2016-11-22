@@ -236,10 +236,12 @@ public:
 	// please better restrict col to 1
 	void forward(Graph *cg, const vector<PNode>& x) {
 		nSize = x.size();
+		/*
 		if (nSize < 2){
 			std::cout << "at least two nodes are required" << std::endl;
 			return;
 		}
+		*/
 
 		ins.clear();
 		for (int i = 0; i < nSize; i++){
