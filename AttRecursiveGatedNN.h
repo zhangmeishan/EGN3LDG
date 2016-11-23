@@ -97,10 +97,6 @@ public:
 		_reset_left.setFunctions(&fsigmoid, &dsigmoid);
 		_reset_right.setFunctions(&fsigmoid, &dsigmoid);
 
-		_update_left.setFunctions(&fexp, &dexp);
-		_update_right.setFunctions(&fexp, &dexp);
-		_update_tilde.setFunctions(&fexp, &dexp);
-
 		_softmax_layer.init(_outDim, mem);
 
 		for (int idx = 0; idx < 3; idx++)
