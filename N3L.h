@@ -33,6 +33,8 @@
 #include "GRNN.h"
 #include "MyTensor.h"
 #include "SoftmaxOP.h"
+#include "GatedPooling.h"
+#include "AttRecursiveGatedNN.h"
 
 
 #endif
