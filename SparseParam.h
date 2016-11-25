@@ -74,8 +74,8 @@ struct SparseParam : BaseParam{
 		random_shuffle(idRows.begin(), idRows.end());
 		random_shuffle(idCols.begin(), idCols.end());
 
-		idy = idRows[0];
-		idx = idCols[0];
+		idx = idRows[0];
+		idy = idCols[0];
 	}
 
 	inline dtype squareGradNorm(){
