@@ -64,18 +64,18 @@ struct SparseParam : BaseParam{
 		idCols.clear();
 		static unordered_set<int>::iterator it;
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
-			idRows.push_back(*it);
+			idCols.push_back(*it);
 		}
 
 		for (int i = 0; i < val.row; i++){
-			idCols.push_back(i);
+			idRows.push_back(i);
 		}
 
 		random_shuffle(idRows.begin(), idRows.end());
 		random_shuffle(idCols.begin(), idCols.end());
 
-		idy = idRows[0];
 		idx = idCols[0];
+		idy = idRows[0];
 	}
 
 	inline dtype squareGradNorm(){
