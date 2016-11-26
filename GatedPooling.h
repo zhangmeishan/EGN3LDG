@@ -61,14 +61,14 @@ public:
 		_softmax_project.resize(maxsize);
 	}
 
-	inline void init(GatedPoolParam *paramInit, AlignedMemoryPool *mem = NULL){
+	inline void init(GatedPoolParam *paramInit, dtype dropout, AlignedMemoryPool *mem = NULL){
 		_param = paramInit;
 		int maxsize = _uni_gate.size();
 		_inDim = _param->inDim();
 		_outDim = _param->outDim();
 		for (int idx = 0; idx < maxsize; idx++) {
 			_uni_gate[idx].setParam(&_param->_uni_gate_param);
-			_uni_gate[idx].init(_outDim, -1, mem);
+			_uni_gate[idx].init(_outDim, dropout, mem);
 		}
 		_softmax_project.init(_outDim, mem);
 		for (int idx = 0; idx < maxsize; idx++)
