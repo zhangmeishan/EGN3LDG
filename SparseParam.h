@@ -136,6 +136,16 @@ struct SparseParam : BaseParam{
 			}
 		}
 	}
+
+	inline void save(std::ofstream &os)const {
+		val.save(os);
+		aux.save(os);
+	}
+
+	inline void load(std::ifstream &is, AlignedMemoryPool* mem = NULL) {
+		val.load(is);
+		aux.load(is);
+	}
 	
 };
 

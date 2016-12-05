@@ -23,7 +23,6 @@ struct Param : BaseParam {
 
 		dtype bound = sqrt(6.0 / (outDim + inDim + 1));
 		val.random(bound);
-
 	}
 
 	inline int outDim() {
@@ -71,6 +70,16 @@ struct Param : BaseParam {
 
 	inline void rescaleGrad(dtype scale) {
 		grad.vec() = grad.vec() * scale;
+	}
+
+	inline void save(std::ofstream &os)const {
+		val.save(os);
+		aux.save(os);
+	}
+
+	inline void load(std::ifstream &is, AlignedMemoryPool* mem = NULL) {
+		val.load(is, mem);
+		aux.load(is, mem);
 	}
 };
 

@@ -122,9 +122,25 @@ public:
 		}
 	}
 
+	inline void save(std::ostream &os) const {
+		os << dim << std::endl;
+		os << v[0];
+		for (int idx = 1; idx < dim; idx++) {
+			os << " " << v[idx];
+		}
+		os << std::endl;
+	}
+
+	inline void load(std::istream &is, AlignedMemoryPool* mem = NULL) {
+		int curDim;
+		is >> curDim;
+		init(curDim, mem);
+		for (int idx = 0; idx < dim; idx++) {
+			is >> v[idx];
+		}
+	}
 	
 };
-
 
 
 struct Tensor2D {
@@ -265,6 +281,27 @@ public:
 			for (int idy = 0; idy < row; idy++) {
 				(*this)[idx][idy] /= scale;
 			}
+		}
+	}
+
+
+	inline void save(std::ofstream &os) const {
+		os << size << " " << row << " " << col << std::endl;
+		os << v[0];
+		for (int idx = 1; idx < size; idx++) {
+			os << " " << v[idx];
+		}
+		os << std::endl;
+	}
+
+	inline void load(std::ifstream &is, AlignedMemoryPool* mem = NULL) {
+		int curSize, curRow, curCol;
+		is >> curSize;
+		is >> curRow;
+		is >> curCol;
+		init(curRow, curCol, mem);
+		for (int idx = 0; idx < size; idx++) {
+			is >> v[idx];
 		}
 	}
 

@@ -150,16 +150,16 @@ public:
 	void read(std::ifstream &inf)
 	{
 		clear();
-		static string tmp;
-		my_getline(inf, tmp);
-		chomp(tmp);
-		m_size = atoi(tmp.c_str());
-		std::vector<std::string> featids;
+		static string featKey;
+		static int featId;
+		inf >> m_size;
 		for (int i = 0; i < m_size; ++i) {
-			my_getline(inf, tmp);
-			split_bychars(tmp, featids);
-			m_string_to_id[featids[0]] = i;
-			assert(atoi(featids[1].c_str()) == i);
+			inf >> featKey >> featId;
+			m_string_to_id[featKey] = i;
+			assert(featId == i);
+		}
+		if (m_size > 0) {
+			set_fixed_flag(true);
 		}
 	}
 
@@ -168,7 +168,7 @@ public:
 		outf << m_size << std::endl;
 		for (int i = 0; i<m_size; i++)
 		{
-			outf << m_id_to_string[i] << i << std::endl;
+			outf << m_id_to_string[i] << " " << i << std::endl;
 		}
 	}
 

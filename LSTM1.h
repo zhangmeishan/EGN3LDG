@@ -39,6 +39,20 @@ struct LSTM1Params {
 		return input.W2.outDim();
 	}
 
+	inline void save(std::ofstream &os) const {
+		input.save(os);
+		output.save(os);
+		forget.save(os);
+		cell.save(os);
+	}
+
+	inline void load(std::ifstream &is, AlignedMemoryPool* mem = NULL) {
+		input.load(is, mem);
+		output.load(is, mem);
+		forget.load(is, mem);
+		cell.load(is, mem);
+	}
+
 };
 
 // standard LSTM1 using tanh as activation function

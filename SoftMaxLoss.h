@@ -53,7 +53,7 @@ public:
 
 	}
 
-	inline void predict(PNode x, int& y){
+	inline dtype predict(PNode x, int& y){
 		int nDim = x->dim;
 
 		int optLabel = -1;
@@ -61,7 +61,18 @@ public:
 			if (optLabel < 0 || x->val[i] >  x->val[optLabel])
 				optLabel = i;
 		}
+
+		dtype prob = 0.0;
+		dtype sum = 0.0;
+		NRVec<dtype> scores(nDim);
+		dtype maxScore = x->val[optLabel];
+		for (int i = 0; i < nDim; ++i) {
+			scores[i] = exp(x->val[i] - maxScore);
+			sum += scores[i];
+		}
+		prob = scores[optLabel] / sum;
 		y = optLabel;
+		return prob;
 	}
 
 	inline dtype cost(PNode x, const vector<dtype> &answer, int batchsize = 1){

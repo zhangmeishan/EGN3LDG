@@ -43,6 +43,24 @@ public:
 		}
 	}
 
+	inline void save(std::ofstream &os) const {
+		os << bUseB << std::endl;
+		W1.save(os);
+		W2.save(os);
+		if (bUseB) {
+			b.save(os);
+		}
+	}
+
+	inline void load(std::ifstream &is, AlignedMemoryPool* mem = NULL) {
+		is >> bUseB;
+		W1.load(is, mem);
+		W2.load(is, mem);
+		if (bUseB) {
+			b.load(is, mem);
+		}
+	}
+
 };
 
 // non-linear feed-forward node

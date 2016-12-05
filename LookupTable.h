@@ -162,6 +162,24 @@ public:
 		return elems->from_string(strFeat);
 	}
 
+	inline void save(std::ofstream &os) const {
+		E.save(os);
+		os << bFineTune << std::endl;
+		os << nDim << std::endl;
+		os << nVSize << std::endl;
+		os << nUNKId << std::endl;
+	}
+
+	//set alpha directly
+	inline void load(std::ifstream &is, PAlphabet alpha, AlignedMemoryPool* mem = NULL) {
+		E.load(is, mem);
+		is >> bFineTune;
+		is >> nDim;
+		is >> nVSize;
+		is >> nUNKId;
+		elems = alpha;
+	}
+
 };
 
 struct LookupNode : Node {

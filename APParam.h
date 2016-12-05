@@ -174,6 +174,30 @@ struct APParam : BaseParam{
 		}
 	}
 
+	inline void save(std::ofstream &os)const {
+		val.save(os);
+		aux.save(os);
+		os << max_update << std::endl;
+		os << val.col << std::endl;
+		os << last_update[0];
+		for (int idx = 1; idx < val.col; idx++) {
+			os << " " << last_update[idx];
+		}
+		os << std::endl;
+	}
+
+	inline void load(std::ifstream &is, AlignedMemoryPool* mem = NULL) {
+		val.load(is);
+		aux.load(is);
+		is >> max_update;
+		int curInDim; 
+		is >> curInDim;
+		last_update.resize(curInDim);
+		for (int idx = 0; idx < curInDim; idx++) {
+			is >> last_update[idx];
+		}
+	}
+
 };
 
 #endif /* AVGPARAM_H_ */
