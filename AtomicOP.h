@@ -491,4 +491,50 @@ public:
 };
 
 
+struct PDotNode : Node {
+	PNode in1, in2;
+public:
+	PDotNode() : Node() {
+		in1 = NULL;
+		in2 = NULL;
+	}
+public:
+	virtual inline void clearValue() {
+		Node::clearValue();
+		in1 = NULL;
+		in2 = NULL;
+	}
+
+public:
+	void forward(Graph *cg, PNode x1, PNode x2) {
+		in1 = x1;
+		in2 = x2;
+		//assert(dim == 1 && in1->dim == in2->dim);
+		val[0] = 0.0;
+		for (int idx = 0; idx < in1->dim; idx++) {
+			val[0] += x1->val[idx] * x2->val[idx];
+		}
+		in1->lock++;
+		in2->lock++;
+		cg->addNode(this);
+	}
+
+	void backward() {
+		for (int idx = 0; idx < in1->dim; idx++) {
+			in1->loss[idx] += loss[0] * in2->val[idx];
+			in2->loss[idx] += loss[0] * in1->val[idx];
+		}
+	}
+
+	inline void unlock() {
+		in1->lock--;
+		in2->lock--;
+		if (!lossed)return;
+		in1->lossed = true;
+		in2->lossed = true;
+	}
+
+};
+
+
 #endif

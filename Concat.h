@@ -24,7 +24,7 @@ public:
 	}
 	
 	inline void init(int dim, dtype dropOut, AlignedMemoryPool* mem = NULL){
-		Node::init(dim, -1, mem);	
+		Node::init(dim, -1, mem);
 	}
 
 public:

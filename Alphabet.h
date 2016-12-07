@@ -184,7 +184,7 @@ public:
 	}
 
 	// initial by a file (first column), always an embedding file
-	void initial(const string& inFile){
+	void initial(const string& inFile, bool bUseUnknown = true){
 		clear();
 		static ifstream inf;
 		if (inf.is_open()) {
@@ -203,6 +203,9 @@ public:
 				split_bychar(strLine, vecInfo, ' ');
 				from_string(vecInfo[0]);
 			}
+		}
+		if (bUseUnknown) {
+			from_string(unknownkey);
 		}
 		if (m_size > 0){
 			set_fixed_flag(true);

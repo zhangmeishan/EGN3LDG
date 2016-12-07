@@ -55,6 +55,9 @@ const static string seperateKey = "#";
 const static int max_sentence_clength = 512;
 const static int max_sentence_wlength = 256;
 const static int max_length = 512;
+const static int max_word_length = 16;
+const static int max_stroke_length = 64;
+const static int max_spell_length = 16;
 
 typedef std::vector<std::string> CStringVector;
 
