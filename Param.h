@@ -13,16 +13,20 @@
 
  // Notice: aux is an auxiliary variable to help parameter updating
 struct Param : BaseParam {
-	Tensor2D aux;
+	Tensor2D aux_square;
+	Tensor2D aux_mean;
+	int iter;
 
 	// allow sparse and dense parameters have different parameter initialization methods
 	inline void initial(int outDim, int inDim, AlignedMemoryPool* mem = NULL) {
 		val.init(outDim, inDim, mem);
 		grad.init(outDim, inDim, mem);
-		aux.init(outDim, inDim, mem);
+		aux_square.init(outDim, inDim, mem);
+		aux_mean.init(outDim, inDim, mem);
 
 		dtype bound = sqrt(6.0 / (outDim + inDim + 1));
 		val.random(bound);
+		iter = 0;
 	}
 
 	inline int outDim() {
@@ -39,8 +43,17 @@ struct Param : BaseParam {
 
 	inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) {
 		grad.vec() = grad.vec() + val.vec() * reg;
-		aux.vec() = aux.vec() + grad.vec().square();
-		val.vec() = val.vec() - grad.vec() * alpha / (aux.vec() + eps).sqrt();
+		aux_square.vec() = aux_square.vec() + grad.vec().square();
+		val.vec() = val.vec() - grad.vec() * alpha / (aux_square.vec() + eps).sqrt();
+	}
+
+	inline void updateAdam(dtype belta1, dtype belta2, dtype alpha, dtype reg, dtype eps) {
+		grad.vec() = grad.vec() + val.vec() * reg;
+		aux_mean.vec() = belta1 * aux_mean.vec() + (1 - belta1) * grad.vec();
+		aux_square.vec() = belta2 * aux_square.vec() + (1- belta2) * grad.vec().square();
+		dtype lr_t = alpha * sqrt(1 - pow(belta2, iter + 1)) / (1 - pow(belta1, iter + 1));
+		val.vec() = val.vec() - aux_mean.vec() * lr_t / (aux_square.vec() + eps).sqrt();
+		iter++;
 	}
 
 	inline void randpoint(int& idx, int &idy) {
@@ -74,12 +87,12 @@ struct Param : BaseParam {
 
 	inline void save(std::ofstream &os)const {
 		val.save(os);
-		aux.save(os);
+		aux_square.save(os);
 	}
 
 	inline void load(std::ifstream &is, AlignedMemoryPool* mem = NULL) {
 		val.load(is, mem);
-		aux.load(is, mem);
+		aux_square.load(is, mem);
 	}
 };
 

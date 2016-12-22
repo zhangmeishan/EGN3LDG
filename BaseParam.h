@@ -16,6 +16,7 @@ struct BaseParam {
 public:
 	virtual inline void initial(int outDim, int inDim, AlignedMemoryPool* mem) = 0;
 	virtual inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) = 0;
+	virtual inline void updateAdam(dtype belta1, dtype belta2, dtype alpha, dtype reg, dtype eps) = 0;
 	virtual inline int outDim() = 0;
 	virtual inline int inDim() = 0;
 	virtual inline void clearGrad() = 0;

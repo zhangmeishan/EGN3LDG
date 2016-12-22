@@ -10,11 +10,14 @@
 
 #include "BaseParam.h"
 
-// Notice: aux is an auxiliary variable to help parameter updating
+// Notice: aux_square is an aux_squareiliary variable to help parameter updating
 // The in-out dimension definiation is different with dense parameters.
 struct SparseParam : BaseParam{
-	Tensor2D aux;
+	Tensor2D aux_square;
+	Tensor2D aux_mean;
 	unordered_set<int> indexers;
+	NRVec<int> last_update;
+
 
 	// allow sparse and dense parameters have different parameter initialization methods
 	inline void initial(int outDim, int inDim, AlignedMemoryPool* mem = NULL) {
@@ -22,8 +25,11 @@ struct SparseParam : BaseParam{
 		val.init(outDim, inDim); 
 		val.random(0.01);
 		grad.init(outDim, inDim); 
-		aux.init(outDim, inDim); 
+		aux_square.init(outDim, inDim); 
+		aux_mean.init(outDim, inDim);
 		indexers.clear();
+		last_update.resize(inDim);
+		last_update = 0;
 	}
 
 	inline void clearGrad() {
@@ -51,9 +57,25 @@ struct SparseParam : BaseParam{
 			int index = *it;
 			for (int idx = 0; idx < grad.row; idx++){
 				grad[index][idx] = grad[index][idx] + val[index][idx] * reg;
-				aux[index][idx] = aux[index][idx] + grad[index][idx] * grad[index][idx];
-				val[index][idx] = val[index][idx] - grad[index][idx] * alpha / sqrt(aux[index][idx] + eps);
+				aux_square[index][idx] = aux_square[index][idx] + grad[index][idx] * grad[index][idx];
+				val[index][idx] = val[index][idx] - grad[index][idx] * alpha / sqrt(aux_square[index][idx] + eps);
 			}
+		}
+	}
+
+	inline void updateAdam(dtype belta1, dtype belta2, dtype alpha, dtype reg, dtype eps) {
+		static unordered_set<int>::iterator it;
+		static dtype lr_t;
+		for (it = indexers.begin(); it != indexers.end(); ++it) {
+			int index = *it;
+			for (int idx = 0; idx < grad.row; idx++) {
+				grad[index][idx] = grad[index][idx] + val[index][idx] * reg;
+				aux_mean[index][idx] = belta1 * aux_mean[index][idx] + (1- belta1) * grad[index][idx];
+				aux_square[index][idx] = belta2 * aux_square[index][idx] + (1 - belta2) * grad[index][idx] * grad[index][idx];
+				lr_t = alpha * sqrt(1 - pow(belta2, last_update[index] + 1)) / (1 - pow(belta1, last_update[index] + 1));
+				val[index][idx] = val[index][idx] - aux_mean[index][idx] * lr_t / sqrt(aux_square[index][idx] + eps);
+			}
+			last_update[index]++;
 		}
 	}
 
@@ -139,12 +161,12 @@ struct SparseParam : BaseParam{
 
 	inline void save(std::ofstream &os)const {
 		val.save(os);
-		aux.save(os);
+		aux_square.save(os);
 	}
 
 	inline void load(std::ifstream &is, AlignedMemoryPool* mem = NULL) {
 		val.load(is);
-		aux.load(is);
+		aux_square.load(is);
 	}
 	
 };

@@ -65,6 +65,19 @@ struct APParam : BaseParam{
 		}
 	}
 
+	inline void updateAdam(dtype belta1, dtype belta2, dtype alpha, dtype reg, dtype eps) {
+		static unordered_set<int>::iterator it;
+		max_update++;
+		for (it = indexers.begin(); it != indexers.end(); ++it) {
+			int index = *it;
+			for (int idx = 0; idx < val.row; idx++) {
+				aux[index][idx] += (max_update - last_update[index]) * val[index][idx] - grad[index][idx];
+				val[index][idx] = val[index][idx] - grad[index][idx];
+			}
+			last_update[index] = max_update;
+		}
+	}
+
 	inline void randpoint(int& idx, int &idy){
 		//select indexes randomly		
 		std::vector<int> idRows, idCols;
