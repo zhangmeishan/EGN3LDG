@@ -265,6 +265,8 @@ public:
 	int _inDim;
 	int _outDim;
 
+  IncLSTM1Builder* _pPrev;
+
 	BiNode _inputgate;
 	BiNode _forgetgate;
 	BiNode _halfcell;
@@ -299,6 +301,7 @@ public:
 		_inDim = 0;
 		_outDim = 0;
 		_param = NULL;
+    _pPrev = NULL;
 	}
 
 public:
@@ -370,6 +373,8 @@ public:
 			
 			_nSize = prev->_nSize + 1;
 		}
+
+    _pPrev = prev;
 	}	
 
 };
