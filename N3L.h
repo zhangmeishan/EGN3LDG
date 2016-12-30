@@ -35,6 +35,7 @@
 #include "SoftmaxOP.h"
 #include "GatedPooling.h"
 #include "AttRecursiveGatedNN.h"
+#include "TransferOP.h"
 
 
 #endif

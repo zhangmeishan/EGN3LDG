@@ -61,6 +61,10 @@ public:
 	}
 
 	inline void addNode(PNode x){
+        if (x->executed) {
+            std::cout << "serious bug here: one node is excuted more than once" << std::endl;
+            return;
+        }
 		x->executed = true;
 		x->applydrop_forward(train);
 		execs.push_back(x);
