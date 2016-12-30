@@ -64,6 +64,28 @@ public:
 	virtual inline void backward(){
 	}
 
+    virtual inline void set_bucket() {
+        executed = true;
+    }
+
+    //increace the lock by one
+    virtual inline void increase_loc() {
+        if (!executed) {
+            std::cout << "bug exist: a node is called without being excuted, id = " << sid << std::endl;
+            return;
+        }
+        lock++;
+    }
+
+    //increace the lock by one
+    virtual inline void decrease_loc() {
+        if (lock <= 0) {
+            std::cout << "bug exist: already zero lock, could be decrased, id = " << sid << std::endl;
+            return;
+        }
+        lock--;
+    }
+
 	virtual inline void unlock(){
 	}
 

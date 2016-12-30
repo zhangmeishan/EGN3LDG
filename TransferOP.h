@@ -96,7 +96,7 @@ public:
 			val = 0;
 		}
 
-		in->lock++;
+		in->increase_loc();
 		cg->addNode(this);
 	}
 
@@ -109,7 +109,7 @@ public:
 
 
 	inline void unlock(){
-		in->lock--;
+		in->decrease_loc();
 		if(!lossed)return;
 		in->lossed = true;
 	}

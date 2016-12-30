@@ -111,6 +111,7 @@ public:
 		}
 				
 		_bucket.init(_outDim, -1, mem);
+		_bucket.set_bucket();
 	}
 
 	inline void resize(int maxsize){
@@ -314,6 +315,7 @@ public:
 		_hidden.init(_outDim, dropout, mem);		
 
 		_bucket.init(_outDim, -1, mem);
+		_bucket.set_bucket();
 	}
 
 

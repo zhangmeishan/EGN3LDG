@@ -95,7 +95,9 @@ public:
 		}
 		
 		_bucket_zero.init(_outDim, -1, mem);
+		_bucket_zero.set_bucket();
 		_bucket_one.init(_outDim, -1, mem);
+		_bucket_one.set_bucket();
 		_bucket_one.val = 1.0;
 	}
 
@@ -246,7 +248,9 @@ public:
 		_output.init(_outDim, dropout, mem);		
 
 		_bucket_zero.init(_outDim, -1, mem);
+		_bucket_zero.set_bucket();
 		_bucket_one.init(_outDim, -1, mem);
+		_bucket_one.set_bucket();
 		_bucket_one.val = 1.0;
 	}
 

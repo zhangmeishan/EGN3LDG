@@ -559,7 +559,7 @@ public:
 
 	inline void unlock(){
 		for (int i = 0; i < nSize; i++){
-			ins[i]->lock--;
+			ins[i]->decrease_loc();
 		}
 		if (!lossed)return;
 		for (int i = 0; i < nSize; i++){
@@ -581,7 +581,7 @@ protected:
 			}
 		}
 		for (int idx = 0; idx < nSize; idx++){
-			ins[idx]->lock++;
+			ins[idx]->increase_loc();
 		}
 		val[0] += sum;
 		dimId = dim;
@@ -689,7 +689,7 @@ public:
 
 	inline void unlock(){
 		for (int i = 0; i < nSize; i++){
-			ins[i]->lock--;
+			ins[i]->decrease_loc();
 		}
 		if (!lossed)return;
 		for (int i = 0; i < nSize; i++){
@@ -705,7 +705,7 @@ protected:
 			}
 		}
 		for (int idx = 0; idx < nSize; idx++){
-			ins[idx]->lock++;
+			ins[idx]->increase_loc();
 		}
 	}
 
@@ -818,7 +818,7 @@ public:
 
 	inline void unlock(){
 		for (int i = 0; i < nSize; i++){
-			ins[i]->lock--;
+			ins[i]->decrease_loc();
 		}
 		if (!lossed)return;
 		for (int i = 0; i < nSize; i++){
@@ -834,7 +834,7 @@ protected:
 			}
 		}
 		for (int idx = 0; idx < nSize; idx++){
-			ins[idx]->lock++;
+			ins[idx]->increase_loc();
 		}
 	}
 

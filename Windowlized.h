@@ -52,6 +52,7 @@ public:
 			_outputs[idx].init(_outDim, -1, mem); // dropout is not supported here
 		}
 		bucket.init(_inDim, -1, mem);
+		bucket.set_bucket();
 	}
 	
 	

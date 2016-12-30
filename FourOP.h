@@ -154,10 +154,10 @@ public:
 		
 		val.vec() = ty.vec().unaryExpr(ptr_fun(activate));
 
-		in1->lock++;
-		in2->lock++;
-		in3->lock++;
-		in4->lock++;
+		in1->increase_loc();
+		in2->increase_loc();
+		in3->increase_loc();
+		in4->increase_loc();
 
 		cg->addNode(this);
 	}
@@ -182,10 +182,10 @@ public:
 	}
 
 	inline void unlock(){
-		in1->lock--;
-		in2->lock--;
-		in3->lock--;
-		in4->lock--;
+		in1->decrease_loc();
+		in2->decrease_loc();
+		in3->decrease_loc();
+		in4->decrease_loc();
 		if(!lossed)return;
 		in1->lossed = true;
 		in2->lossed = true;
@@ -251,10 +251,10 @@ public:
 			val.vec() += param->b.val.vec();
 		}
 		
-		in1->lock++;
-		in2->lock++;
-		in3->lock++;
-		in4->lock++;
+		in1->increase_loc();
+		in2->increase_loc();
+		in3->increase_loc();
+		in4->increase_loc();
 
 		cg->addNode(this);
 	}
@@ -276,10 +276,10 @@ public:
 	}
 
 	inline void unlock(){
-		in1->lock--;
-		in2->lock--;
-		in3->lock--;
-		in4->lock--;
+		in1->decrease_loc();
+		in2->decrease_loc();
+		in3->decrease_loc();
+		in4->decrease_loc();
 		if(!lossed)return;
 		in1->lossed = true;
 		in2->lossed = true;

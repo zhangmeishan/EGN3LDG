@@ -50,7 +50,7 @@ public:
 
 	inline void unlock(){
 		for (int i = 0; i < nSize; i++){
-			ins[i]->lock--;
+			ins[i]->decrease_loc();
 		}
 		if(!lossed)return;
 		for (int i = 0; i < nSize; i++){
@@ -103,7 +103,7 @@ public:
 		}
 
 		for (int i = 0; i < nSize; ++i){
-			ins[i]->lock++;
+			ins[i]->increase_loc();
 		}
 
 		cg->addNode(this);
@@ -147,7 +147,7 @@ public:
 		}
 
 		for (int i = 0; i < nSize; ++i){
-			ins[i]->lock++;
+			ins[i]->increase_loc();
 		}
 
 		cg->addNode(this);
@@ -201,7 +201,7 @@ public:
 		}
 
 		for (int i = 0; i < nSize; ++i){
-			ins[i]->lock++;
+			ins[i]->increase_loc();
 		}
 
 		cg->addNode(this);
@@ -248,7 +248,7 @@ public:
 		}
 
 		for (int i = 0; i < nSize; ++i){
-			ins[i]->lock++;
+			ins[i]->increase_loc();
 		}
 
 		cg->addNode(this);
@@ -292,7 +292,7 @@ public:
 		}
 
 		for (int i = 0; i < nSize; ++i){
-			ins[i]->lock++;
+			ins[i]->increase_loc();
 		}
 
 		cg->addNode(this);

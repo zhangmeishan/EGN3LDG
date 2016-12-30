@@ -62,7 +62,7 @@ public:
 
 	inline void addNode(PNode x){
         if (x->executed) {
-            std::cout << "serious bug here: one node is excuted more than once" << std::endl;
+            std::cout << "serious bug here: one node is excuted more than once, id = " << x->sid << std::endl;
             return;
         }
 		x->executed = true;

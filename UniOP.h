@@ -121,7 +121,7 @@ public:
 		
 		val.vec() = ty.vec().unaryExpr(ptr_fun(activate));
 
-		in->lock++;
+		in->increase_loc();
 		cg->addNode(this);
 	}
 
@@ -140,7 +140,7 @@ public:
 
 
 	inline void unlock(){
-		in->lock--;
+		in->decrease_loc();
 		if(!lossed)return;
 		in->lossed = true;
 	}
@@ -187,7 +187,7 @@ public:
 		}
 		
 
-		in->lock++;
+		in->increase_loc();
 		cg->addNode(this);
 	}
 
@@ -203,7 +203,7 @@ public:
 
 
 	inline void unlock(){
-		in->lock--;
+		in->decrease_loc();
 		if(!lossed)return;
 		in->lossed = true;
 	}
@@ -251,7 +251,7 @@ public:
 		in = x;		
 		val.mat() = param->W.val.mat() * in->val.mat();
 
-		in->lock++;
+		in->increase_loc();
 		cg->addNode(this);
 	}
 
@@ -262,7 +262,7 @@ public:
 
 
 	inline void unlock(){
-		in->lock--;
+		in->decrease_loc();
 		if(!lossed)return;
 		in->lossed = true;
 	}

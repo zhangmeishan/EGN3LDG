@@ -28,8 +28,8 @@ public:
 		in1 = x1;
 		in2 = x2;
 		val.vec() = x1->val.vec() * x2->val.vec();
-		in1->lock++;
-		in2->lock++;
+		in1->increase_loc();
+		in2->increase_loc();
 		cg->addNode(this);
 	}
 
@@ -39,8 +39,8 @@ public:
 	}
 
 	inline void unlock(){
-		in1->lock--;
-		in2->lock--;
+		in1->decrease_loc();
+		in2->decrease_loc();
 		if(!lossed)return;
 		in1->lossed = true;
 		in2->lossed = true;
@@ -67,7 +67,7 @@ public:
 		for (int idx = 0; idx < dim && idx < in->dim; idx++) {
 			val[idx] = in->val[idx];
 		}
-		in->lock++;
+		in->increase_loc();
 		cg->addNode(this);
 	}
 
@@ -78,7 +78,7 @@ public:
 	}
 
 	inline void unlock() {
-		in->lock--;
+		in->decrease_loc();
 		if (!lossed)return;
 		in->lossed = true;
 	}
@@ -106,7 +106,7 @@ public:
 		for (int idx = 0; idx < dim; idx++) {
 			val[idx] = in->val[2 * idx] + in->val[2 * idx + 1];
 		}
-		in->lock++;
+		in->increase_loc();
 		cg->addNode(this);
 	}
 
@@ -118,7 +118,7 @@ public:
 	}
 
 	inline void unlock() {
-		in->lock--;
+		in->decrease_loc();
 		if (!lossed)return;
 		in->lossed = true;
 	}
@@ -155,7 +155,7 @@ public:
 			val[offset] = in->val[idx];
 			offset++;
 		}
-		in->lock++;
+		in->increase_loc();
 		cg->addNode(this);
 	}
 
@@ -169,7 +169,7 @@ public:
 	}
 
 	inline void unlock() {
-		in->lock--;
+		in->decrease_loc();
 		if (!lossed)return;
 		in->lossed = true;
 	}
@@ -196,8 +196,8 @@ public:
 		in1 = x1;
 		in2 = x2;
 		val.vec() = x1->val.vec() - x2->val.vec();
-		in1->lock++;
-		in2->lock++;
+		in1->increase_loc();
+		in2->increase_loc();
 		cg->addNode(this);
 	}
 
@@ -207,8 +207,8 @@ public:
 	}
 
 	inline void unlock(){
-		in1->lock--;
-		in2->lock--;
+		in1->decrease_loc();
+		in2->decrease_loc();
 		if(!lossed)return;
 		in1->lossed = true;
 		in2->lossed = true;
@@ -321,7 +321,7 @@ public:
 
 	inline void unlock(){
 		for (int i = 0; i < nSize; i++){
-			ins[i]->lock--;
+			ins[i]->decrease_loc();
 		}
 		if(!lossed)return;
 		for (int i = 0; i < nSize; i++){
@@ -335,7 +335,7 @@ protected:
 			val.vec() = val.vec() + ins[idx]->val.vec();		
 		}
 		for (int idx = 0; idx < nSize; idx++){
-			ins[idx]->lock++;
+			ins[idx]->increase_loc();
 		}
 	}
 
@@ -368,7 +368,7 @@ public:
 	inline void forward(Graph *cg, PNode x){
 		in = x;
 		val.vec() = in->val.vec().unaryExpr(ptr_fun(activate));
-		in->lock++;
+		in->increase_loc();
 		cg->addNode(this);
 	}
 
@@ -377,7 +377,7 @@ public:
 	}
 
 	inline void unlock(){
-		in->lock--;
+		in->decrease_loc();
 		if(!lossed)return;
 		in->lossed = true;
 	}
@@ -404,7 +404,7 @@ public:
 	inline void forward(Graph *cg, PNode x){
 		in = x;
 		val.vec() = in->val.vec().unaryExpr(ptr_fun(ftanh));
-		in->lock++;
+		in->increase_loc();
 		cg->addNode(this);
 	}
 
@@ -413,7 +413,7 @@ public:
 	}
 
 	inline void unlock(){
-		in->lock--;
+		in->decrease_loc();
 		if(!lossed)return;
 		in->lossed = true;
 	}
@@ -440,7 +440,7 @@ public:
 	inline void forward(Graph *cg, PNode x){
 		in = x;
 		val.vec() = in->val.vec().unaryExpr(ptr_fun(fsigmoid));
-		in->lock++;
+		in->increase_loc();
 		cg->addNode(this);
 	}
 
@@ -449,7 +449,7 @@ public:
 	}
 
 	inline void unlock(){
-		in->lock--;
+		in->decrease_loc();
 		if(!lossed)return;
 		in->lossed = true;
 	}
@@ -474,7 +474,7 @@ public:
 	inline void forward(Graph *cg, PNode x){
 		in = x;
 		val.vec() = in->val.vec().unaryExpr(ptr_fun(frelu));
-		in->lock++;
+		in->increase_loc();
 		cg->addNode(this);
 	}
 
@@ -483,7 +483,7 @@ public:
 	}
 
 	inline void unlock(){
-		in->lock--;
+		in->decrease_loc();
 		if(!lossed)return;
 		in->lossed = true;
 	}
@@ -514,8 +514,8 @@ public:
 		for (int idx = 0; idx < in1->dim; idx++) {
 			val[0] += x1->val[idx] * x2->val[idx];
 		}
-		in1->lock++;
-		in2->lock++;
+		in1->increase_loc();
+		in2->increase_loc();
 		cg->addNode(this);
 	}
 
@@ -527,8 +527,8 @@ public:
 	}
 
 	inline void unlock() {
-		in1->lock--;
-		in2->lock--;
+		in1->decrease_loc();
+		in2->decrease_loc();
 		if (!lossed)return;
 		in1->lossed = true;
 		in2->lossed = true;
