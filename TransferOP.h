@@ -93,6 +93,7 @@ public:
 			val.mat() = param->W[xid].val.mat() * in->val.mat();
 		}
 		else{
+            std::cout << "TransferNode warning: could find the label: " << strNorm << std::endl;
 			val = 0;
 		}
 
