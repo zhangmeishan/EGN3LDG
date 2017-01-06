@@ -18,16 +18,14 @@ inline void hash_combine(size_t& seed, const int& v){
 }
 
 inline size_t hash_func(const int& v1, const int& v2){
-	static size_t curIndex;
-	curIndex = 0;
+	size_t curIndex = 0;
 	hash_combine(curIndex, v1);
 	hash_combine(curIndex, v2);
 	return curIndex;
 }
 
 inline size_t hash_func(const int& v1, const int& v2, const int& v3){
-	static size_t curIndex;
-	curIndex = 0;
+	size_t curIndex = 0;
 	hash_combine(curIndex, v1);
 	hash_combine(curIndex, v2);
 	hash_combine(curIndex, v3);
@@ -35,8 +33,7 @@ inline size_t hash_func(const int& v1, const int& v2, const int& v3){
 }
 
 inline size_t hash_func(const int& v1, const int& v2, const int& v3, const int& v4){
-	static size_t curIndex;
-	curIndex = 0;
+	size_t curIndex = 0;
 	hash_combine(curIndex, v1);
 	hash_combine(curIndex, v2);
 	hash_combine(curIndex, v3);
@@ -45,8 +42,7 @@ inline size_t hash_func(const int& v1, const int& v2, const int& v3, const int& 
 }
 
 inline size_t hash_func(const int& v1, const int& v2, const int& v3, const int& v4, const int& v5){
-	static size_t curIndex;
-	curIndex = 0;
+	size_t curIndex = 0;
 	hash_combine(curIndex, v1);
 	hash_combine(curIndex, v2);
 	hash_combine(curIndex, v3);
@@ -56,8 +52,7 @@ inline size_t hash_func(const int& v1, const int& v2, const int& v3, const int& 
 }
 
 inline size_t hash_func(const int& v1, const int& v2, const int& v3, const int& v4, const int& v5, const int& v6){
-	static size_t curIndex;
-	curIndex = 0;
+	size_t curIndex = 0;
 	hash_combine(curIndex, v1);
 	hash_combine(curIndex, v2);
 	hash_combine(curIndex, v3);
@@ -68,8 +63,7 @@ inline size_t hash_func(const int& v1, const int& v2, const int& v3, const int& 
 }
 
 inline size_t hash_func(const int& v1, const int& v2, const int& v3, const int& v4, const int& v5, const int& v6, const int& v7){
-	static size_t curIndex;
-	curIndex = 0;
+	size_t curIndex = 0;
 	hash_combine(curIndex, v1);
 	hash_combine(curIndex, v2);
 	hash_combine(curIndex, v3);
@@ -545,7 +539,7 @@ public:
 
 
 	void backward(){
-		static int oDim;
+		int oDim;
 		for (int i = 0; i < nSize; i++){
 			oDim = ins[i]->val.dim;
 			if (oDim == 1){
@@ -569,7 +563,7 @@ public:
 
 protected:
 	void forward(const int& dim) {
-		static int oDim;
+		int oDim;
 		dtype sum = 0;
 		for (int idx = 0; idx < nSize; idx++){
 			oDim = ins[idx]->val.dim;

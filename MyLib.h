@@ -644,8 +644,8 @@ struct segIndex{
 
 
 inline void getSegs(const vector<string>& labels, vector<segIndex>& segs){
-	static int idx, idy, endpos;
-	static segIndex seg;
+	int idx, idy, endpos;
+	segIndex seg;
 	// segmentation should be agree in both layers, usually, the first layer defines segmentation
 	idx = 0;
 	segs.clear();
@@ -674,8 +674,7 @@ inline void getSegs(const vector<string>& labels, vector<segIndex>& segs){
 // vector operations
 template<typename A>
 inline void clearVec(vector<vector<A> >& bivec){
-	static int count;
-	count = bivec.size();
+	int count = bivec.size();
 	for (int idx = 0; idx < count; idx++){
 		bivec[idx].clear();
 	}
@@ -684,7 +683,7 @@ inline void clearVec(vector<vector<A> >& bivec){
 
 template<typename A>
 inline void clearVec(vector<vector<vector<A> > >& trivec){
-	static int count1, count2;
+	int count1, count2;
 	count1 = trivec.size();
 	for (int idx = 0; idx < count1; idx++){
 		count2 = trivec[idx].size();
@@ -717,8 +716,7 @@ inline void resizeVec(vector<vector<vector<A> > >& trivec, const int& size1, con
 
 template<typename A>
 inline void assignVec(vector<A>& univec, const A& a){
-	static int count;
-	count = univec.size();
+	int count = univec.size();
 	for (int idx = 0; idx < count; idx++){
 		univec[idx] = a;
 	}
@@ -726,7 +724,7 @@ inline void assignVec(vector<A>& univec, const A& a){
 
 template<typename A>
 inline void assignVec(vector<vector<A> >& bivec, const A& a){
-	static int count1, count2;
+	int count1, count2;
 	count1 = bivec.size();
 	for (int idx = 0; idx < bivec.size(); idx++){
 		count2 = bivec[idx].size();
@@ -738,7 +736,7 @@ inline void assignVec(vector<vector<A> >& bivec, const A& a){
 
 template<typename A>
 inline void assignVec(vector<vector<vector<A> > >& trivec, const A& a){
-	static int count1, count2, count3;
+	int count1, count2, count3;
 	count1 = trivec.size();
 	for (int idx = 0; idx < count1; idx++){
 		count2 = trivec[idx].size();
@@ -754,8 +752,7 @@ inline void assignVec(vector<vector<vector<A> > >& trivec, const A& a){
 
 template<typename A>
 inline void addAllItems(vector<A>& target, const vector<A>& sources){
-	static int count;
-	count = sources.size();
+	int count = sources.size();
 	for (int idx = 0; idx < count; idx++){
 		target.push_back(sources[idx]);
 	}

@@ -30,9 +30,9 @@ public:
 public:
 	template<typename Example, typename Classifier>
 	inline void check(Classifier* classifier, const vector<Example>& examples, const string& description){
-		static dtype orginValue, lossAdd, lossPlus;
-		static int idx, idy;
-		static dtype mockGrad, computeGrad;
+		dtype orginValue, lossAdd, lossPlus;
+		int idx, idy;
+		dtype mockGrad, computeGrad;
 		for (int i = 0; i < _params.size(); i++){
 			_params[i]->randpoint(idx, idy);
 			orginValue = _params[i]->val[idx][idy];

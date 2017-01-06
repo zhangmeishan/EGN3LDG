@@ -117,8 +117,7 @@ public:
 public:
 	inline void forward(Graph* cg, const int& x1){
 		//assert(param != NULL);
-		static int featId;
-		featId = param->getFeatureId(x1, cg->train);
+		int featId = param->getFeatureId(x1, cg->train);
 		if (featId < 0){
 			tx = -1;
 			return;
@@ -243,8 +242,7 @@ public:
 public:
 	inline void forward(Graph* cg, const int& x1, const int& x2) {
 		//assert(param != NULL);
-		static int featId;
-		featId = param->getFeatureId(x1, x2, cg->train);
+		int featId = param->getFeatureId(x1, x2, cg->train);
 		if (featId < 0){
 			tx = -1;
 			return;
@@ -366,8 +364,7 @@ public:
 public:
 	inline void forward(Graph* cg, const int& x1, const int& x2, const int& x3) {
 		//assert(param != NULL);
-		static int featId;
-		featId = param->getFeatureId(x1, x2, x3, cg->train);
+		int featId = param->getFeatureId(x1, x2, x3, cg->train);
 		if (featId < 0){
 			tx = -1;
 			return;
@@ -491,8 +488,7 @@ public:
 public:
 	inline void forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4) {
 		//assert(param != NULL);
-		static int featId;
-		featId = param->getFeatureId(x1, x2, x3, x4, cg->train);
+		int featId = param->getFeatureId(x1, x2, x3, x4, cg->train);
 		if (featId < 0){
 			tx = -1;
 			return;
@@ -614,8 +610,7 @@ public:
 public:
 	inline void forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4, const int& x5) {
 		//assert(param != NULL);
-		static int featId;
-		featId = param->getFeatureId(x1, x2, x3, x4, x5, cg->train);
+		int featId = param->getFeatureId(x1, x2, x3, x4, x5, cg->train);
 		if (featId < 0){
 			tx = -1;
 			return;
@@ -737,8 +732,7 @@ public:
 public:
 	inline void forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4, const int& x5, const int& x6) {
 		//assert(param != NULL);
-		static int featId;
-		featId = param->getFeatureId(x1, x2, x3, x4, x5, x6, cg->train);
+		int featId = param->getFeatureId(x1, x2, x3, x4, x5, x6, cg->train);
 		if (featId < 0){
 			tx = -1;
 			return;
@@ -859,8 +853,7 @@ public:
 public:
 	inline void forward(Graph* cg, const int& x1, const int& x2, const int& x3, const int& x4, const int& x5, const int& x6, const int& x7) {
 		//assert(param != NULL);
-		static int featId;
-		featId = param->getFeatureId(x1, x2, x3, x4, x5, x6, x7, cg->train);
+		int featId = param->getFeatureId(x1, x2, x3, x4, x5, x6, x7, cg->train);
 		if (featId < 0){
 			tx = -1;
 			return;
@@ -980,7 +973,7 @@ public:
 public:
 	inline void forward(Graph* cg, const vector<CFeat*>& xs){
 		//assert(param != NULL);
-		static int featId, count;
+		int featId, count;
 		count = xs.size();
 		for (int idx = 0; idx < count; idx++){
 			featId = param->getFeatureId(*(xs[idx]), cg->train);

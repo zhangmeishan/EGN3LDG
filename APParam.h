@@ -33,7 +33,7 @@ struct APParam : BaseParam{
 	}
 
 	inline void clearGrad() {
-		static unordered_set<int>::iterator it;
+		unordered_set<int>::iterator it;
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
 			for (int idx = 0; idx < val.row; idx++){
@@ -53,7 +53,7 @@ struct APParam : BaseParam{
 	}	
 
 	inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) {
-		static unordered_set<int>::iterator it;
+		unordered_set<int>::iterator it;
 		max_update++;
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
@@ -66,7 +66,7 @@ struct APParam : BaseParam{
 	}
 
 	inline void updateAdam(dtype belta1, dtype belta2, dtype alpha, dtype reg, dtype eps) {
-		static unordered_set<int>::iterator it;
+		unordered_set<int>::iterator it;
 		max_update++;
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
@@ -83,7 +83,7 @@ struct APParam : BaseParam{
 		std::vector<int> idRows, idCols;
 		idRows.clear();
 		idCols.clear();
-		static unordered_set<int>::iterator it;
+		unordered_set<int>::iterator it;
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			idCols.push_back(*it);
 		}
@@ -100,7 +100,7 @@ struct APParam : BaseParam{
 	}
 
 	inline dtype squareGradNorm(){
-		static unordered_set<int>::iterator it;
+		unordered_set<int>::iterator it;
 		dtype sumNorm = 0.0;
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
@@ -113,7 +113,7 @@ struct APParam : BaseParam{
 	}
 
 	inline void rescaleGrad(dtype scale){
-		static unordered_set<int>::iterator it;
+		unordered_set<int>::iterator it;
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
 			for (int idx = 0; idx < val.row; idx++){

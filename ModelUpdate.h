@@ -94,6 +94,12 @@ public:
 		updateAdam();
 	}
 
+    inline void rescaleGrad(dtype scale) {
+        for (int idx = 0; idx < _params.size(); idx++) {
+            _params[idx]->rescaleGrad(scale);
+        }
+    }
+
 	inline void clearGrad(){
 		for(int idx = 0; idx < _params.size(); idx++){
 			_params[idx]->clearGrad();

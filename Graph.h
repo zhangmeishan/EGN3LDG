@@ -25,8 +25,7 @@ public:
 
 public:
 	inline void clearValue(const bool& bTrain = false){
-		static int count;
-		count = execs.size();
+		int count = execs.size();
 		for (int idx = 0; idx < count; idx++){
 			execs[idx]->clearValue();
 		}
@@ -36,8 +35,7 @@ public:
 	}
 
 	inline void backward(){
-		static int count;
-		count = execs.size();
+		int count = execs.size();
 		for (int idx = count - 1; idx >= 0; idx--){
 			//
 			if (execs[idx]->lock > 0){

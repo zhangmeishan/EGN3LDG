@@ -229,8 +229,7 @@ protected:
     return (i - 1) / 2;
   }
   inline void swap(int i, int j) {
-    static T tmp;
-  	tmp = v[i];
+  	T tmp = v[i];
     v[i] = v[j];
     v[j] = tmp;
   }

@@ -80,7 +80,7 @@ public:
 public:
 	//notice the output
 	void forward(Graph *cg, const vector<string>& x) {
-		static int featId;
+		int featId;
 		int featSize = x.size();
 		for (int idx = 0; idx < featSize; idx++) {
 			featId = param->getFeatureId(x[idx]);

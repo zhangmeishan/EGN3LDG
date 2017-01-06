@@ -33,7 +33,7 @@ struct SparseParam : BaseParam{
 	}
 
 	inline void clearGrad() {
-		static unordered_set<int>::iterator it;
+		unordered_set<int>::iterator it;
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
 			for (int idx = 0; idx < grad.row; idx++){
@@ -52,7 +52,7 @@ struct SparseParam : BaseParam{
 	}	
 
 	inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) {
-		static unordered_set<int>::iterator it;
+		unordered_set<int>::iterator it;
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
 			for (int idx = 0; idx < grad.row; idx++){
@@ -64,8 +64,8 @@ struct SparseParam : BaseParam{
 	}
 
 	inline void updateAdam(dtype belta1, dtype belta2, dtype alpha, dtype reg, dtype eps) {
-		static unordered_set<int>::iterator it;
-		static dtype lr_t;
+		unordered_set<int>::iterator it;
+		dtype lr_t;
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
 			for (int idx = 0; idx < grad.row; idx++) {
@@ -84,7 +84,7 @@ struct SparseParam : BaseParam{
 		std::vector<int> idRows, idCols;
 		idRows.clear();
 		idCols.clear();
-		static unordered_set<int>::iterator it;
+		unordered_set<int>::iterator it;
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			idCols.push_back(*it);
 		}
@@ -101,7 +101,7 @@ struct SparseParam : BaseParam{
 	}
 
 	inline dtype squareGradNorm(){
-		static unordered_set<int>::iterator it;
+		unordered_set<int>::iterator it;
 		dtype sumNorm = 0.0;
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
@@ -114,7 +114,7 @@ struct SparseParam : BaseParam{
 	}
 
 	inline void rescaleGrad(dtype scale){
-		static unordered_set<int>::iterator it;
+		unordered_set<int>::iterator it;
 		for (it = indexers.begin(); it != indexers.end(); ++it) {
 			int index = *it;
 			for (int idx = 0; idx < val.row; idx++){
