@@ -22,8 +22,9 @@ struct SparseParam : BaseParam{
 	// allow sparse and dense parameters have different parameter initialization methods
 	inline void initial(int outDim, int inDim, AlignedMemoryPool* mem = NULL) {
 		//not in the aligned memory pool
-		val.init(outDim, inDim); 
-		val.random(0.01);
+		val.init(outDim, inDim);
+		dtype bound = sqrt(3.0 / (outDim)); 
+		val.random(bound);
 		grad.init(outDim, inDim); 
 		aux_square.init(outDim, inDim); 
 		aux_mean.init(outDim, inDim);

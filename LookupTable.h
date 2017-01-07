@@ -49,7 +49,7 @@ public:
 		}
 		nDim = dim;
 		E.initial(nDim, nVSize);
-		E.val.norm2one();
+		//E.val.norm2one();
 		bFineTune = tune;
 	}
 
