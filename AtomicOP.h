@@ -510,6 +510,9 @@ public:
 		in1 = x1;
 		in2 = x2;
 		//assert(dim == 1 && in1->dim == in2->dim);
+		if(dim != 1 || in1->dim != in2->dim){
+			std::cout << "warning: input dims of PDotNode do not match" << std::endl;
+		}
 		val[0] = 0.0;
 		for (int idx = 0; idx < in1->dim; idx++) {
 			val[0] += x1->val[idx] * x2->val[idx];
