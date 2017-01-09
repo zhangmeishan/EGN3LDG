@@ -14,202 +14,214 @@ using namespace nr;
 
 // Notice: aux is an auxiliary variable to help parameter updating
 // The in-out dimension definiation is different with dense parameters.
-struct APParam : BaseParam{
-	Tensor2D aux;
-	unordered_set<int> indexers;
-	int max_update;
-	NRVec<int> last_update;
+struct APParam : BaseParam {
+    Tensor2D aux;
+    unordered_set<int> indexers;
+    int max_update;
+    NRVec<int> last_update;
 
-	// allow sparse and dense parameters have different parameter initialization methods
-	inline void initial(int outDim, int inDim, AlignedMemoryPool* mem = NULL) {
-		//not in the aligned memory pool
-		val.init(outDim, inDim); 
-		grad.init(outDim, inDim); 
-		aux.init(outDim, inDim); 
-		indexers.clear();
-		max_update = 0;
-		last_update.resize(inDim); 
-		last_update = 0;
-	}
+    // allow sparse and dense parameters have different parameter initialization methods
+    inline void initial(int outDim, int inDim, AlignedMemoryPool* mem = NULL) {
+        //not in the aligned memory pool
+        val.init(outDim, inDim);
+        grad.init(outDim, inDim);
+        aux.init(outDim, inDim);
+        indexers.clear();
+        max_update = 0;
+        last_update.resize(inDim);
+        last_update = 0;
+    }
 
-	inline void clearGrad() {
-		unordered_set<int>::iterator it;
-		for (it = indexers.begin(); it != indexers.end(); ++it) {
-			int index = *it;
-			for (int idx = 0; idx < val.row; idx++){
-				grad[index][idx] = 0;
-			}
-		
-		}
-		indexers.clear();
-	}
-	
-	inline int outDim() {
-		return val.row;
-	}
+    inline void clearGrad() {
+        unordered_set<int>::iterator it;
+        for (it = indexers.begin(); it != indexers.end(); ++it) {
+            int index = *it;
+            for (int idx = 0; idx < val.row; idx++) {
+                grad[index][idx] = 0;
+            }
 
-	inline int inDim() {
-		return val.col;
-	}	
+        }
+        indexers.clear();
+    }
 
-	inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) {
-		unordered_set<int>::iterator it;
-		max_update++;
-		for (it = indexers.begin(); it != indexers.end(); ++it) {
-			int index = *it;
-			for (int idx = 0; idx < val.row; idx++){
-				aux[index][idx] += (max_update - last_update[index]) * val[index][idx] - grad[index][idx];
-				val[index][idx] = val[index][idx] - grad[index][idx];				
-			}
-			last_update[index] = max_update;
-		}
-	}
+    inline int outDim() {
+        return val.row;
+    }
 
-	inline void updateAdam(dtype belta1, dtype belta2, dtype alpha, dtype reg, dtype eps) {
-		unordered_set<int>::iterator it;
-		max_update++;
-		for (it = indexers.begin(); it != indexers.end(); ++it) {
-			int index = *it;
-			for (int idx = 0; idx < val.row; idx++) {
-				aux[index][idx] += (max_update - last_update[index]) * val[index][idx] - grad[index][idx];
-				val[index][idx] = val[index][idx] - grad[index][idx];
-			}
-			last_update[index] = max_update;
-		}
-	}
+    inline int inDim() {
+        return val.col;
+    }
 
-	inline void randpoint(int& idx, int &idy){
-		//select indexes randomly		
-		std::vector<int> idRows, idCols;
-		idRows.clear();
-		idCols.clear();
-		unordered_set<int>::iterator it;
-		for (it = indexers.begin(); it != indexers.end(); ++it) {
-			idCols.push_back(*it);
-		}
+    inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) {
+        unordered_set<int>::iterator it;
+        max_update++;
+        for (it = indexers.begin(); it != indexers.end(); ++it) {
+            int index = *it;
+            for (int idx = 0; idx < val.row; idx++) {
+                aux[index][idx] += (max_update - last_update[index]) * val[index][idx] - grad[index][idx];
+                val[index][idx] = val[index][idx] - grad[index][idx];
+            }
+            last_update[index] = max_update;
+        }
+    }
 
-		for (int i = 0; i < val.row; i++){
-			idRows.push_back(i);
-		}
+    inline void updateAdam(dtype belta1, dtype belta2, dtype alpha, dtype reg, dtype eps) {
+        unordered_set<int>::iterator it;
+        max_update++;
+        for (it = indexers.begin(); it != indexers.end(); ++it) {
+            int index = *it;
+            for (int idx = 0; idx < val.row; idx++) {
+                aux[index][idx] += (max_update - last_update[index]) * val[index][idx] - grad[index][idx];
+                val[index][idx] = val[index][idx] - grad[index][idx];
+            }
+            last_update[index] = max_update;
+        }
+    }
 
-		random_shuffle(idRows.begin(), idRows.end());
-		random_shuffle(idCols.begin(), idCols.end());
+    inline void randpoint(int& idx, int &idy) {
+        //select indexes randomly		
+        std::vector<int> idRows, idCols;
+        idRows.clear();
+        idCols.clear();
+        unordered_set<int>::iterator it;
+        for (it = indexers.begin(); it != indexers.end(); ++it) {
+            idCols.push_back(*it);
+        }
 
-		idx = idCols[0];
-		idy = idRows[0];
-	}
+        for (int i = 0; i < val.row; i++) {
+            idRows.push_back(i);
+        }
 
-	inline dtype squareGradNorm(){
-		unordered_set<int>::iterator it;
-		dtype sumNorm = 0.0;
-		for (it = indexers.begin(); it != indexers.end(); ++it) {
-			int index = *it;
-			for (int idx = 0; idx < val.row; idx++){
-				sumNorm += grad[index][idx] * grad[index][idx];
-			}
-		}
+        random_shuffle(idRows.begin(), idRows.end());
+        random_shuffle(idCols.begin(), idCols.end());
 
-		return sumNorm;
-	}
+        idx = idCols[0];
+        idy = idRows[0];
+    }
 
-	inline void rescaleGrad(dtype scale){
-		unordered_set<int>::iterator it;
-		for (it = indexers.begin(); it != indexers.end(); ++it) {
-			int index = *it;
-			for (int idx = 0; idx < val.row; idx++){
-				grad[index][idx] = grad[index][idx] * scale;
-			}
-		}
-	}
+    inline dtype squareGradNorm() {
+        unordered_set<int>::iterator it;
+        dtype sumNorm = 0.0;
+        for (it = indexers.begin(); it != indexers.end(); ++it) {
+            int index = *it;
+            for (int idx = 0; idx < val.row; idx++) {
+                sumNorm += grad[index][idx] * grad[index][idx];
+            }
+        }
 
-	inline void sumWeight(int featId) {
-		if (last_update[featId] < max_update) {
-			int times = max_update - last_update[featId];
-			for (int idx = 0; idx < val.row; idx++){
-				aux[featId][idx] += val[featId][idx] * times;
-				last_update[featId] = max_update;
-			}
-		}
-	}
+        return sumNorm;
+    }
 
-	inline void value(const int& featId, Tensor1D& out, const bool& bTrain){
-		if (bTrain){
-			for (int idx = 0; idx < val.row; idx++){
-				out[idx] = val[featId][idx];
-			}
-		}
-		else{
-			sumWeight(featId);
-			for (int idx = 0; idx < val.row; idx++){
-				out[idx] = aux[featId][idx];
-			}
-		}
-	}
+    inline void rescaleGrad(dtype scale) {
+        unordered_set<int>::iterator it;
+        for (it = indexers.begin(); it != indexers.end(); ++it) {
+            int index = *it;
+            for (int idx = 0; idx < val.row; idx++) {
+                grad[index][idx] = grad[index][idx] * scale;
+            }
+        }
+    }
 
-	inline void value(const vector<int>& featIds, Tensor1D& out, const bool& bTrain){
-		int featNum = featIds.size();
-		int featId;
-		if (bTrain){
-			for (int i = 0; i < featNum; i++){
-				featId = featIds[i];
-				for (int idx = 0; idx < val.row; idx++){
-					out[idx] += val[featId][idx];
-				}
-			}
-		}
-		else{
-			for (int i = 0; i < featNum; i++){
-				featId = featIds[i];
-				sumWeight(featId);
-				for (int idx = 0; idx < val.row; idx++){
-					out[idx] += aux[featId][idx];
-				}
-			}
-		}
-	}
+    inline void sumWeight(int featId) {
+        if (last_update[featId] < max_update) {
+            int times = max_update - last_update[featId];
+            for (int idx = 0; idx < val.row; idx++) {
+                aux[featId][idx] += val[featId][idx] * times;
+                last_update[featId] = max_update;
+            }
+        }
+    }
 
-	inline void loss(const int& featId, const Tensor1D& loss){
-		indexers.insert(featId);
-		for (int idx = 0; idx < val.row; idx++){
-			grad[featId][idx] += loss[idx];
-		}
-	}
+    inline void value(const int& featId, Tensor1D& out, const bool& bTrain) {
+        if (out.dim != val.row) {
+            std::cout << "warning: output dim not equal lookup param dim." << std::endl;
+        }
+        if (bTrain) {
+            for (int idx = 0; idx < val.row; idx++) {
+                out[idx] = val[featId][idx];
+            }
+        }
+        else {
+            sumWeight(featId);
+            for (int idx = 0; idx < val.row; idx++) {
+                out[idx] = aux[featId][idx];
+            }
+        }
+    }
 
-	inline void loss(const vector<int>& featIds, const Tensor1D& loss){
-		int featNum = featIds.size();
-		int featId;
-		for (int i = 0; i < featNum; i++){
-			featId = featIds[i];
-			indexers.insert(featId);
-			for (int idx = 0; idx < val.row; idx++){
-				grad[featId][idx] += loss[idx];
-			}
-		}
-	}
+    inline void value(const vector<int>& featIds, Tensor1D& out, const bool& bTrain) {
+        if (out.dim != val.row) {
+            std::cout << "warning: output dim not equal lookup param dim." << std::endl;
+        }
+        int featNum = featIds.size();
+        int featId;
+        if (bTrain) {
+            for (int i = 0; i < featNum; i++) {
+                featId = featIds[i];
+                for (int idx = 0; idx < val.row; idx++) {
+                    out[idx] += val[featId][idx];
+                }
+            }
+        }
+        else {
+            for (int i = 0; i < featNum; i++) {
+                featId = featIds[i];
+                sumWeight(featId);
+                for (int idx = 0; idx < val.row; idx++) {
+                    out[idx] += aux[featId][idx];
+                }
+            }
+        }
+    }
 
-	inline void save(std::ofstream &os)const {
-		val.save(os);
-		aux.save(os);
-		os << max_update << std::endl;
-		os << val.col << std::endl;
-		os << last_update[0];
-		for (int idx = 1; idx < val.col; idx++) {
-			os << " " << last_update[idx];
-		}
-		os << std::endl;
-	}
+    inline void loss(const int& featId, const Tensor1D& loss) {
+        if (loss.dim != val.row) {
+            std::cout << "warning: loss dim not equal lookup param dim." << std::endl;
+        }
+        indexers.insert(featId);
+        for (int idx = 0; idx < val.row; idx++) {
+            grad[featId][idx] += loss[idx];
+        }
+    }
 
-	inline void load(std::ifstream &is, AlignedMemoryPool* mem = NULL) {
-		val.load(is);
-		aux.load(is);
-		is >> max_update;
-		int curInDim; 
-		is >> curInDim;
-		last_update.resize(curInDim);
-		for (int idx = 0; idx < curInDim; idx++) {
-			is >> last_update[idx];
-		}
-	}
+    inline void loss(const vector<int>& featIds, const Tensor1D& loss) {
+        if (loss.dim != val.row) {
+            std::cout << "warning: loss dim not equal lookup param dim." << std::endl;
+        }
+        int featNum = featIds.size();
+        int featId;
+        for (int i = 0; i < featNum; i++) {
+            featId = featIds[i];
+            indexers.insert(featId);
+            for (int idx = 0; idx < val.row; idx++) {
+                grad[featId][idx] += loss[idx];
+            }
+        }
+    }
+
+    inline void save(std::ofstream &os)const {
+        val.save(os);
+        aux.save(os);
+        os << max_update << std::endl;
+        os << val.col << std::endl;
+        os << last_update[0];
+        for (int idx = 1; idx < val.col; idx++) {
+            os << " " << last_update[idx];
+        }
+        os << std::endl;
+    }
+
+    inline void load(std::ifstream &is, AlignedMemoryPool* mem = NULL) {
+        val.load(is);
+        aux.load(is);
+        is >> max_update;
+        int curInDim;
+        is >> curInDim;
+        last_update.resize(curInDim);
+        for (int idx = 0; idx < curInDim; idx++) {
+            is >> last_update[idx];
+        }
+    }
 
 };
 
