@@ -156,6 +156,7 @@ public:
 		for (int i = 0; i < m_size; ++i) {
 			inf >> featKey >> featId;
 			m_string_to_id[featKey] = i;
+			m_id_to_string.push_back(featKey);
 			assert(featId == i);
 		}
 		if (m_size > 0) {
