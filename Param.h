@@ -42,13 +42,13 @@ struct Param : BaseParam {
 	}
 
 	inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) {
-		grad.vec() = grad.vec() + val.vec() * reg;
+		if(val.col > 1 && val.row > 1)grad.vec() = grad.vec() + val.vec() * reg;
 		aux_square.vec() = aux_square.vec() + grad.vec().square();
 		val.vec() = val.vec() - grad.vec() * alpha / (aux_square.vec() + eps).sqrt();
 	}
 
 	inline void updateAdam(dtype belta1, dtype belta2, dtype alpha, dtype reg, dtype eps) {
-		grad.vec() = grad.vec() + val.vec() * reg;
+        if (val.col > 1 && val.row > 1)grad.vec() = grad.vec() + val.vec() * reg;
 		aux_mean.vec() = belta1 * aux_mean.vec() + (1 - belta1) * grad.vec();
 		aux_square.vec() = belta2 * aux_square.vec() + (1- belta2) * grad.vec().square();
 		dtype lr_t = alpha * sqrt(1 - pow(belta2, iter + 1)) / (1 - pow(belta1, iter + 1));
