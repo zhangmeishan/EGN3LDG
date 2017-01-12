@@ -84,7 +84,7 @@ public:
 			return;
 		}
 		dtype norm = sqrt(sumNorm);
-		if (norm > maxScale) {
+		if (maxScale > 0 && norm > maxScale) {
 			dtype scale = maxScale / norm;
 			for (int idx = 0; idx < _params.size(); idx++) {
 				_params[idx]->rescaleGrad(scale);
