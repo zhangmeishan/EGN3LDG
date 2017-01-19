@@ -58,6 +58,12 @@ const static int max_length = 512;
 const static int max_word_length = 16;
 const static int max_stroke_length = 64;
 const static int max_spell_length = 16;
+const static string path_separator =
+#ifdef _WIN32
+                            "\\";
+#else
+                            "/";
+#endif
 
 typedef std::vector<std::string> CStringVector;
 
