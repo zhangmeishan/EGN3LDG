@@ -38,6 +38,12 @@ public:
 	inline void addParam(BaseParam* param){
 		_params.push_back(param);
 	}
+	
+	inline void addParam(const vector<BaseParam*>& params){
+		for(int idx = 0; idx < params.size(); idx++){
+			_params.push_back(params[idx]);
+		}
+	}	
 
 
 	inline void update(){
@@ -106,6 +112,24 @@ public:
 		}
 	}
 
+	inline void gradClip(dtype maxScale) {
+		dtype sumNorm = 0.0;
+		for (int idx = 0; idx < _params.size(); idx++) {
+			sumNorm += _params[idx]->squareGradNorm();
+		}
+		if (std::isnan(double(sumNorm)) || sumNorm > 1e20) { //too large
+			clearGrad();
+			return;
+		}
+		dtype norm = sqrt(sumNorm);
+		if (maxScale > 0 && norm > maxScale) {
+			dtype scale = maxScale / norm;
+			for (int idx = 0; idx < _params.size(); idx++) {
+				_params[idx]->rescaleGrad(scale);
+			}
+		}
+	}
+	
 	inline void clear(){
 		_params.clear();
 	}

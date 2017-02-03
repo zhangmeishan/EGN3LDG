@@ -175,11 +175,23 @@ struct SparseParam : BaseParam {
     inline void save(std::ofstream &os)const {
         val.save(os);
         aux_square.save(os);
+	    aux_mean.save(os);
+        os << val.col << std::endl;
+        for (int idx = 0; idx < val.col; idx++) {
+	       os << last_update[idx] << std::endl;
+        }
     }
 
     inline void load(std::ifstream &is, AlignedMemoryPool* mem = NULL) {
         val.load(is);
         aux_square.load(is);
+	    aux_mean.load(is);
+	    int curInDim;
+	    is >> curInDim;
+	    last_update.resize(curInDim);
+	    for (int idx = 0; idx < curInDim; idx++) {
+	       is >> last_update[idx];
+	    }
     }
 
 };

@@ -88,11 +88,15 @@ struct Param : BaseParam {
 	inline void save(std::ofstream &os)const {
 		val.save(os);
 		aux_square.save(os);
+		aux_mean.save(os);
+		os << iter << endl;
 	}
 
 	inline void load(std::ifstream &is, AlignedMemoryPool* mem = NULL) {
 		val.load(is, mem);
 		aux_square.load(is, mem);
+		aux_mean.load(is, mem);
+		is >> iter;
 	}
 };
 

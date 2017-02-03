@@ -224,7 +224,7 @@ public:
 
 	void backward() {
 		assert(param != NULL);
-		if (xid >= 0 && param->bFineTune){
+		if (xid == param->nUNKId || (xid >= 0 && param->bFineTune)){
 			param->E.loss(xid, loss);
 		}
 	}
