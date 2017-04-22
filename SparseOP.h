@@ -53,6 +53,19 @@ public:
 		return elems->from_string(strFeat);
 	}
 
+	inline void save(std::ofstream &os) const {
+		W.save(os);
+		os << nVSize << std::endl;
+		os << nDim << std::endl;
+	}
+
+	inline void load(std::ifstream &is, PAlphabet alpha, AlignedMemoryPool* mem = NULL) {
+		W.load(is, mem);
+		is >> nVSize;
+		is >> nDim;
+		elems = alpha;
+	}
+
 };
 
 //only implemented sparse linear node.
