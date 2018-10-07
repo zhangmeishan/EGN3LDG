@@ -16,9 +16,9 @@ You can get EIGEN from http://eigen.tuxfamily.org/index.php?title=Main_Page
 If you have any problem, please send an email to mason.zms@gmail.com
 ## Examples:
 Some examples are realeased at:
-* https://github.com/zhangmeishan/NNTranSegmentor
-* https://github.com/zhangmeishan/NNTranJSTagger
 * https://github.com/zhangmeishan/N3LDGClassifier
+* https://github.com/zhangmeishan/NNTranJSTagger
+
 
 ## Histories:
 * [LibN3L:A Lightweight Package for Neural NLP](https://zhangmeishan.github.io/description(expect-for-lrec2016).pdf). (Zhang et al., LREC 2016); initial
