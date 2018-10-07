@@ -1,6 +1,6 @@
 EGN3LDG
 ===========================
-A lightweight neural network libary based on dynamic graph for natural language processing
+A lightweight neural network library based on dynamic graph for natural language processing
 * The library supports only cpu, where tensors are implemented based on eigen.
 * The library is fast if only cpu is available. (eigen can be speeded up by MKL)
 * To use this library, just include the directory in your code and call it by "#include N3LDG.h"
@@ -10,8 +10,7 @@ Download and include the directory
 ### Prerequisitions:
 #### EIGEN
 You can get EIGEN from http://eigen.tuxfamily.org/index.php?title=Main_Page
-#### CMake
-You can get CMake from https://cmake.org/install/
+
 
 
 If you have any problem, please send an email to mason.zms@gmail.com
