@@ -1,5 +1,0 @@
-1.
-a -> o1
-a -> o2
-but only o2 losses,
-then a nevel backward

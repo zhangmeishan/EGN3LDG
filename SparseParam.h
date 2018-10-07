@@ -10,38 +10,41 @@
 
 #include "BaseParam.h"
 
- // Notice: aux_square is an aux_squareiliary variable to help parameter updating
- // The in-out dimension definiation is different with dense parameters.
-struct SparseParam : BaseParam {
+// Notice: aux_square is an aux_squareiliary variable to help parameter updating
+// The in-out dimension definiation is different with dense parameters.
+class SparseParam : public BaseParam {
+  public:
     Tensor2D aux_square;
     Tensor2D aux_mean;
-    unordered_set<int> indexers;
+    NRVec<bool> indexers;
     NRVec<int> last_update;
 
 
     // allow sparse and dense parameters have different parameter initialization methods
-    inline void initial(int outDim, int inDim, AlignedMemoryPool* mem = NULL) {
+    inline void initial(int outDim, int inDim) {
         //not in the aligned memory pool
         val.init(outDim, inDim);
         dtype bound = sqrt(3.0 / (outDim));
+		//dtype bound = 0.001;
         val.random(bound);
         grad.init(outDim, inDim);
         aux_square.init(outDim, inDim);
         aux_mean.init(outDim, inDim);
-        indexers.clear();
+        indexers.resize(inDim);
+        indexers = false;
         last_update.resize(inDim);
         last_update = 0;
     }
 
     inline void clearGrad() {
-        unordered_set<int>::iterator it;
-        for (it = indexers.begin(); it != indexers.end(); ++it) {
-            int index = *it;
+        int inDim = indexers.size();
+        for (int index = 0; index < inDim; index++) {
+            if (!indexers[index]) continue;
             for (int idx = 0; idx < grad.row; idx++) {
                 grad[index][idx] = 0;
             }
         }
-        indexers.clear();
+        indexers = false;
     }
 
     inline int outDim() {
@@ -53,9 +56,9 @@ struct SparseParam : BaseParam {
     }
 
     inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) {
-        unordered_set<int>::iterator it;
-        for (it = indexers.begin(); it != indexers.end(); ++it) {
-            int index = *it;
+        int inDim = indexers.size();
+        for (int index = 0; index < inDim; index++) {
+            if (!indexers[index]) continue;
             for (int idx = 0; idx < grad.row; idx++) {
                 grad[index][idx] = grad[index][idx] + val[index][idx] * reg;
                 aux_square[index][idx] = aux_square[index][idx] + grad[index][idx] * grad[index][idx];
@@ -65,10 +68,10 @@ struct SparseParam : BaseParam {
     }
 
     inline void updateAdam(dtype belta1, dtype belta2, dtype alpha, dtype reg, dtype eps) {
-        unordered_set<int>::iterator it;
         dtype lr_t;
-        for (it = indexers.begin(); it != indexers.end(); ++it) {
-            int index = *it;
+        int inDim = indexers.size();
+        for (int index = 0; index < inDim; index++) {
+            if (!indexers[index]) continue;
             for (int idx = 0; idx < grad.row; idx++) {
                 grad[index][idx] = grad[index][idx] + val[index][idx] * reg;
                 aux_mean[index][idx] = belta1 * aux_mean[index][idx] + (1 - belta1) * grad[index][idx];
@@ -81,13 +84,14 @@ struct SparseParam : BaseParam {
     }
 
     inline void randpoint(int& idx, int &idy) {
-        //select indexes randomly		
+        //select indexes randomly
         std::vector<int> idRows, idCols;
         idRows.clear();
         idCols.clear();
-        unordered_set<int>::iterator it;
-        for (it = indexers.begin(); it != indexers.end(); ++it) {
-            idCols.push_back(*it);
+        int inDim = indexers.size();
+        for (int index = 0; index < inDim; index++) {
+            if (!indexers[index]) continue;
+            idCols.push_back(index);
         }
 
         for (int i = 0; i < val.row; i++) {
@@ -102,10 +106,10 @@ struct SparseParam : BaseParam {
     }
 
     inline dtype squareGradNorm() {
-        unordered_set<int>::iterator it;
         dtype sumNorm = 0.0;
-        for (it = indexers.begin(); it != indexers.end(); ++it) {
-            int index = *it;
+        int inDim = indexers.size();
+        for (int index = 0; index < inDim; index++) {
+            if (!indexers[index]) continue;
             for (int idx = 0; idx < val.row; idx++) {
                 sumNorm += grad[index][idx] * grad[index][idx];
             }
@@ -115,9 +119,9 @@ struct SparseParam : BaseParam {
     }
 
     inline void rescaleGrad(dtype scale) {
-        unordered_set<int>::iterator it;
-        for (it = indexers.begin(); it != indexers.end(); ++it) {
-            int index = *it;
+        int inDim = indexers.size();
+        for (int index = 0; index < inDim; index++) {
+            if (!indexers[index]) continue;
             for (int idx = 0; idx < val.row; idx++) {
                 grad[index][idx] = grad[index][idx] * scale;
             }
@@ -151,7 +155,7 @@ struct SparseParam : BaseParam {
         if (loss.dim != val.row) {
             std::cout << "warning: loss dim not equal lookup param dim." << std::endl;
         }
-        indexers.insert(featId);
+        indexers[featId] = true;
         for (int idx = 0; idx < val.row; idx++) {
             grad[featId][idx] += loss[idx];
         }
@@ -165,7 +169,7 @@ struct SparseParam : BaseParam {
         int featId;
         for (int i = 0; i < featNum; i++) {
             featId = featIds[i];
-            indexers.insert(featId);
+            indexers[featId] = true;
             for (int idx = 0; idx < val.row; idx++) {
                 grad[featId][idx] += loss[idx];
             }
@@ -175,23 +179,23 @@ struct SparseParam : BaseParam {
     inline void save(std::ofstream &os)const {
         val.save(os);
         aux_square.save(os);
-	    aux_mean.save(os);
+        aux_mean.save(os);
         os << val.col << std::endl;
         for (int idx = 0; idx < val.col; idx++) {
-	       os << last_update[idx] << std::endl;
+            os << last_update[idx] << std::endl;
         }
     }
 
-    inline void load(std::ifstream &is, AlignedMemoryPool* mem = NULL) {
+    inline void load(std::ifstream &is) {
         val.load(is);
         aux_square.load(is);
-	    aux_mean.load(is);
-	    int curInDim;
-	    is >> curInDim;
-	    last_update.resize(curInDim);
-	    for (int idx = 0; idx < curInDim; idx++) {
-	       is >> last_update[idx];
-	    }
+        aux_mean.load(is);
+        int curInDim;
+        is >> curInDim;
+        last_update.resize(curInDim);
+        for (int idx = 0; idx < curInDim; idx++) {
+            is >> last_update[idx];
+        }
     }
 
 };

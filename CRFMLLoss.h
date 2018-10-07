@@ -8,7 +8,7 @@
 
 using namespace Eigen;
 
-struct CRFMLLoss{
+class CRFMLLoss{
 public:
 	Param T;
 	int labelSize;
@@ -30,7 +30,7 @@ public:
 public:
 	inline void initial(int labelNum){
 		labelSize = labelNum;
-		T.initial(labelSize, labelSize); //not in the aligned memory pool
+		T.initial(labelSize, labelSize); //not in the aligned memory pool		
 		buffer.resize(labelSize);
 	}
 
@@ -47,9 +47,6 @@ public:
 			return -1.0;
 		}
 		int seq_size = x.size();
-		for (int idx = 0; idx < seq_size; idx++){
-			x[idx]->lossed = true;
-		}
 
 		// comute alpha values
 		NRMat<dtype> alpha(seq_size, labelSize);

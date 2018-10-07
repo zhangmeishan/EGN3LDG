@@ -1,12 +1,22 @@
 #ifndef LSTM1
 #define LSTM1
 
+/*
+*  LSTM1.h:
+*  LSTM variation 1
+*
+*  Created on: June 13, 2017
+*      Author: mszhang
+*/
+
 #include "MyLib.h"
 #include "Node.h"
-#include "TriOP.h"
 #include "BiOP.h"
 #include "AtomicOP.h"
 #include "Graph.h"
+#include "PMultiOP.h"
+#include "PAddOP.h"
+#include "BucketOP.h"
 
 struct LSTM1Params {
     BiParams input;
@@ -24,11 +34,12 @@ struct LSTM1Params {
         cell.exportAdaParams(ada);
     }
 
-    inline void initial(int nOSize, int nISize, AlignedMemoryPool* mem = NULL) {
-        input.initial(nOSize, nOSize, nISize, true, mem);
-        output.initial(nOSize, nOSize, nISize, true, mem);
-        forget.initial(nOSize, nOSize, nISize, true, mem);
-        cell.initial(nOSize, nOSize, nISize, true, mem);
+    inline void initial(int nOSize, int nISize) {
+        input.initial(nOSize, nOSize, nISize, true);
+        output.initial(nOSize, nOSize, nISize, true);
+        forget.initial(nOSize, nOSize, nISize, true);
+        cell.initial(nOSize, nOSize, nISize, true);
+
     }
 
     inline int inDim() {
@@ -46,11 +57,11 @@ struct LSTM1Params {
         cell.save(os);
     }
 
-    inline void load(std::ifstream &is, AlignedMemoryPool* mem = NULL) {
-        input.load(is, mem);
-        output.load(is, mem);
-        forget.load(is, mem);
-        cell.load(is, mem);
+    inline void load(std::ifstream &is) {
+        input.load(is);
+        output.load(is);
+        forget.load(is);
+        cell.load(is);
     }
 
 };
@@ -58,7 +69,7 @@ struct LSTM1Params {
 // standard LSTM1 using tanh as activation function
 // other conditions are not implemented unless they are clear
 class LSTM1Builder {
-public:
+  public:
     int _nSize;
     int _inDim;
     int _outDim;
@@ -67,24 +78,21 @@ public:
     vector<BiNode> _forgetgates;
     vector<BiNode> _halfcells;
 
-    vector<PMultNode> _inputfilters;
-    vector<PMultNode> _forgetfilters;
+    vector<PMultiNode> _inputfilters;
+    vector<PMultiNode> _forgetfilters;
 
     vector<PAddNode> _cells;
-
     vector<BiNode> _outputgates;
-
     vector<TanhNode> _halfhiddens;
+    vector<PMultiNode> _hiddens;  // intermediate result without dropout
 
-    vector<PMultNode> _hiddens;
-
-    Node _bucket;
+    BucketNode _bucket;
 
     LSTM1Params* _param;
 
     bool _left2right;
 
-public:
+  public:
     LSTM1Builder() {
         clear();
     }
@@ -93,8 +101,8 @@ public:
         clear();
     }
 
-public:
-    inline void init(LSTM1Params* paramInit, dtype dropout, bool left2right = true, AlignedMemoryPool* mem = NULL) {
+  public:
+    inline void init(LSTM1Params* paramInit, dtype dropout, bool left2right = true) {
         _param = paramInit;
         _inDim = _param->input.W2.inDim();
         _outDim = _param->input.W2.outDim();
@@ -112,18 +120,19 @@ public:
         _left2right = left2right;
 
         for (int idx = 0; idx < maxsize; idx++) {
-            _inputgates[idx].init(_outDim, -1, mem);
-            _forgetgates[idx].init(_outDim, -1, mem);
-            _halfcells[idx].init(_outDim, -1, mem);
-            _inputfilters[idx].init(_outDim, -1, mem);
-            _forgetfilters[idx].init(_outDim, -1, mem);
-            _cells[idx].init(_outDim, -1, mem);
-            _outputgates[idx].init(_outDim, -1, mem);
-            _halfhiddens[idx].init(_outDim, -1, mem);
-            _hiddens[idx].init(_outDim, dropout, mem);
+            _inputgates[idx].init(_outDim, -1);
+            _forgetgates[idx].init(_outDim, -1);
+            _halfcells[idx].init(_outDim, -1);
+            _inputfilters[idx].init(_outDim, -1);
+            _forgetfilters[idx].init(_outDim, -1);
+            _cells[idx].init(_outDim, -1);
+            _outputgates[idx].init(_outDim, -1);
+            _halfhiddens[idx].init(_outDim, -1);
+            _hiddens[idx].init(_outDim, dropout);
         }
-        _bucket.init(_outDim, -1, mem);
-        _bucket.set_bucket();
+
+        _bucket.init(_outDim, -1);
+
     }
 
     inline void resize(int maxsize) {
@@ -138,6 +147,10 @@ public:
         _hiddens.resize(maxsize);
     }
 
+    //whether vectors have been allocated
+    inline bool empty() {
+        return _hiddens.empty();
+    }
 
     inline void clear() {
         _inputgates.clear();
@@ -157,31 +170,31 @@ public:
         _outDim = 0;
     }
 
-public:
+  public:
     inline void forward(Graph *cg, const vector<PNode>& x) {
         if (x.size() == 0) {
             std::cout << "empty inputs for lstm operation" << std::endl;
             return;
         }
-
         _nSize = x.size();
         if (x[0]->val.dim != _inDim) {
-            std::cout << "input dim does not match for seg operation" << std::endl;
+            std::cout << "input dim does not match for lstm operation" << std::endl;
             return;
         }
 
         if (_left2right) {
             left2right_forward(cg, x);
-        }
-        else {
+        } else {
             right2left_forward(cg, x);
         }
     }
 
-protected:
+  protected:
     inline void left2right_forward(Graph *cg, const vector<PNode>& x) {
         for (int idx = 0; idx < _nSize; idx++) {
             if (idx == 0) {
+                _bucket.forward(cg, 0);
+
                 _inputgates[idx].forward(cg, &_bucket, x[idx]);
 
                 _halfcells[idx].forward(cg, &_bucket, x[idx]);
@@ -195,8 +208,8 @@ protected:
                 _outputgates[idx].forward(cg, &_bucket, x[idx]);
 
                 _hiddens[idx].forward(cg, &_halfhiddens[idx], &_outputgates[idx]);
-            }
-            else {
+
+            } else {
                 _inputgates[idx].forward(cg, &_hiddens[idx - 1], x[idx]);
 
                 _forgetgates[idx].forward(cg, &_hiddens[idx - 1], x[idx]);
@@ -221,6 +234,8 @@ protected:
     inline void right2left_forward(Graph *cg, const vector<PNode>& x) {
         for (int idx = _nSize - 1; idx >= 0; idx--) {
             if (idx == _nSize - 1) {
+                _bucket.forward(cg, 0);
+
                 _inputgates[idx].forward(cg, &_bucket, x[idx]);
 
                 _halfcells[idx].forward(cg, &_bucket, x[idx]);
@@ -234,8 +249,7 @@ protected:
                 _outputgates[idx].forward(cg, &_bucket, x[idx]);
 
                 _hiddens[idx].forward(cg, &_halfhiddens[idx], &_outputgates[idx]);
-            }
-            else {
+            } else {
                 _inputgates[idx].forward(cg, &_hiddens[idx + 1], x[idx]);
 
                 _forgetgates[idx].forward(cg, &_hiddens[idx + 1], x[idx]);
@@ -254,14 +268,14 @@ protected:
 
                 _hiddens[idx].forward(cg, &_halfhiddens[idx], &_outputgates[idx]);
             }
+
         }
     }
-
-
 };
 
+
 class IncLSTM1Builder {
-public:
+  public:
     int _nSize;
     int _inDim;
     int _outDim;
@@ -272,8 +286,8 @@ public:
     BiNode _forgetgate;
     BiNode _halfcell;
 
-    PMultNode _inputfilter;
-    PMultNode _forgetfilter;
+    PMultiNode _inputfilter;
+    PMultiNode _forgetfilter;
 
     PAddNode _cell;
 
@@ -281,13 +295,13 @@ public:
 
     TanhNode _halfhidden;
 
-    PMultNode _hidden;
+    PMultiNode _hidden;  // intermediate result without dropout
 
-    Node _bucket;
+    BucketNode _bucket;
 
     LSTM1Params* _param;
 
-public:
+  public:
     IncLSTM1Builder() {
         clear();
     }
@@ -304,8 +318,8 @@ public:
         _pPrev = NULL;
     }
 
-public:
-    inline void init(LSTM1Params* paramInit, dtype dropout, AlignedMemoryPool* mem = NULL) {
+  public:
+    inline void init(LSTM1Params* paramInit, dtype dropout) {
         _param = paramInit;
         _inDim = _param->input.W2.inDim();
         _outDim = _param->input.W2.outDim();
@@ -319,24 +333,25 @@ public:
         _outputgate.setFunctions(&fsigmoid, &dsigmoid);
         _halfcell.setFunctions(&ftanh, &dtanh);
 
-        _inputgate.init(_outDim, -1, mem);
-        _forgetgate.init(_outDim, -1, mem);
-        _halfcell.init(_outDim, -1, mem);
-        _inputfilter.init(_outDim, -1, mem);
-        _forgetfilter.init(_outDim, -1, mem);
-        _cell.init(_outDim, -1, mem);
-        _outputgate.init(_outDim, -1, mem);
-        _halfhidden.init(_outDim, -1, mem);
-        _hidden.init(_outDim, dropout, mem);
+        _inputgate.init(_outDim, -1);
+        _forgetgate.init(_outDim, -1);
+        _halfcell.init(_outDim, -1);
+        _inputfilter.init(_outDim, -1);
+        _forgetfilter.init(_outDim, -1);
+        _cell.init(_outDim, -1);
+        _outputgate.init(_outDim, -1);
+        _halfhidden.init(_outDim, -1);
+        _hidden.init(_outDim, dropout);
 
-        _bucket.init(_outDim, -1, mem);
-        _bucket.set_bucket();
+        _bucket.init(_outDim, -1);
     }
 
 
-public:
+  public:
     inline void forward(Graph *cg, PNode x, IncLSTM1Builder* prev = NULL) {
         if (prev == NULL) {
+            _bucket.forward(cg, 0);
+
             _inputgate.forward(cg, &_bucket, x);
 
             _halfcell.forward(cg, &_bucket, x);
@@ -352,8 +367,7 @@ public:
             _hidden.forward(cg, &_halfhidden, &_outputgate);
 
             _nSize = 1;
-        }
-        else {
+        } else {
             _inputgate.forward(cg, &(prev->_hidden), x);
 
             _forgetgate.forward(cg, &(prev->_hidden), x);
@@ -379,5 +393,6 @@ public:
     }
 
 };
+
 
 #endif

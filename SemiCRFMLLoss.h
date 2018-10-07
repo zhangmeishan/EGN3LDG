@@ -6,7 +6,7 @@
 #include "Param.h"
 #include "Node.h"
 
-struct SemiCRFMLLoss{
+class SemiCRFMLLoss{
 public:
 	int labelSize;
 	vector<dtype> buffer;
@@ -61,13 +61,6 @@ public:
 
 		int seq_size = x.nrows();
 		//int maxLength = x.ncols();
-
-		for (int idx = 0; idx < seq_size; idx++) {
-			for (int dist = 0; dist < seq_size - idx && dist < maxLen; dist++) {
-				x[idx][dist]->lossed = true;
-			}
-		}
-
 
 		// comute alpha values, only the above parts are valid
 		NRMat3d<dtype> alpha(seq_size, maxLen, labelSize);

@@ -16,32 +16,32 @@ using namespace nr;
 // The in-out dimension definiation is different with dense parameters.
 struct APParam : BaseParam {
     Tensor2D aux;
-    unordered_set<int> indexers;
+    NRVec<bool> indexers;
     int max_update;
     NRVec<int> last_update;
 
     // allow sparse and dense parameters have different parameter initialization methods
-    inline void initial(int outDim, int inDim, AlignedMemoryPool* mem = NULL) {
+    inline void initial(int outDim, int inDim) {
         //not in the aligned memory pool
         val.init(outDim, inDim);
         grad.init(outDim, inDim);
         aux.init(outDim, inDim);
-        indexers.clear();
+        indexers.resize(inDim);
+        indexers = false;
         max_update = 0;
         last_update.resize(inDim);
         last_update = 0;
     }
 
     inline void clearGrad() {
-        unordered_set<int>::iterator it;
-        for (it = indexers.begin(); it != indexers.end(); ++it) {
-            int index = *it;
+        int inDim = indexers.size();
+        for (int index = 0; index < inDim; index++) {
+            if (!indexers[index]) continue;
             for (int idx = 0; idx < val.row; idx++) {
                 grad[index][idx] = 0;
             }
-
         }
-        indexers.clear();
+        indexers = false;
     }
 
     inline int outDim() {
@@ -53,10 +53,10 @@ struct APParam : BaseParam {
     }
 
     inline void updateAdagrad(dtype alpha, dtype reg, dtype eps) {
-        unordered_set<int>::iterator it;
         max_update++;
-        for (it = indexers.begin(); it != indexers.end(); ++it) {
-            int index = *it;
+        int inDim = indexers.size();
+        for (int index = 0; index < inDim; index++) {
+            if (!indexers[index]) continue;
             for (int idx = 0; idx < val.row; idx++) {
                 aux[index][idx] += (max_update - last_update[index]) * val[index][idx] - grad[index][idx];
                 val[index][idx] = val[index][idx] - grad[index][idx];
@@ -66,10 +66,10 @@ struct APParam : BaseParam {
     }
 
     inline void updateAdam(dtype belta1, dtype belta2, dtype alpha, dtype reg, dtype eps) {
-        unordered_set<int>::iterator it;
         max_update++;
-        for (it = indexers.begin(); it != indexers.end(); ++it) {
-            int index = *it;
+        int inDim = indexers.size();
+        for (int index = 0; index < inDim; index++) {
+            if (!indexers[index]) continue;
             for (int idx = 0; idx < val.row; idx++) {
                 aux[index][idx] += (max_update - last_update[index]) * val[index][idx] - grad[index][idx];
                 val[index][idx] = val[index][idx] - grad[index][idx];
@@ -79,13 +79,14 @@ struct APParam : BaseParam {
     }
 
     inline void randpoint(int& idx, int &idy) {
-        //select indexes randomly		
+        //select indexes randomly
         std::vector<int> idRows, idCols;
         idRows.clear();
         idCols.clear();
-        unordered_set<int>::iterator it;
-        for (it = indexers.begin(); it != indexers.end(); ++it) {
-            idCols.push_back(*it);
+        int inDim = indexers.size();
+        for (int index = 0; index < inDim; index++) {
+            if (!indexers[index]) continue;
+            idCols.push_back(index);
         }
 
         for (int i = 0; i < val.row; i++) {
@@ -100,10 +101,10 @@ struct APParam : BaseParam {
     }
 
     inline dtype squareGradNorm() {
-        unordered_set<int>::iterator it;
         dtype sumNorm = 0.0;
-        for (it = indexers.begin(); it != indexers.end(); ++it) {
-            int index = *it;
+        int inDim = indexers.size();
+        for (int index = 0; index < inDim; index++) {
+            if (!indexers[index]) continue;
             for (int idx = 0; idx < val.row; idx++) {
                 sumNorm += grad[index][idx] * grad[index][idx];
             }
@@ -113,9 +114,9 @@ struct APParam : BaseParam {
     }
 
     inline void rescaleGrad(dtype scale) {
-        unordered_set<int>::iterator it;
-        for (it = indexers.begin(); it != indexers.end(); ++it) {
-            int index = *it;
+        int inDim = indexers.size();
+        for (int index = 0; index < inDim; index++) {
+            if (!indexers[index]) continue;
             for (int idx = 0; idx < val.row; idx++) {
                 grad[index][idx] = grad[index][idx] * scale;
             }
@@ -140,8 +141,7 @@ struct APParam : BaseParam {
             for (int idx = 0; idx < val.row; idx++) {
                 out[idx] = val[featId][idx];
             }
-        }
-        else {
+        } else {
             sumWeight(featId);
             for (int idx = 0; idx < val.row; idx++) {
                 out[idx] = aux[featId][idx];
@@ -162,8 +162,7 @@ struct APParam : BaseParam {
                     out[idx] += val[featId][idx];
                 }
             }
-        }
-        else {
+        } else {
             for (int i = 0; i < featNum; i++) {
                 featId = featIds[i];
                 sumWeight(featId);
@@ -178,7 +177,7 @@ struct APParam : BaseParam {
         if (loss.dim != val.row) {
             std::cout << "warning: loss dim not equal lookup param dim." << std::endl;
         }
-        indexers.insert(featId);
+        indexers[featId] = true;
         for (int idx = 0; idx < val.row; idx++) {
             grad[featId][idx] += loss[idx];
         }
@@ -192,7 +191,7 @@ struct APParam : BaseParam {
         int featId;
         for (int i = 0; i < featNum; i++) {
             featId = featIds[i];
-            indexers.insert(featId);
+            indexers[featId] = true;
             for (int idx = 0; idx < val.row; idx++) {
                 grad[featId][idx] += loss[idx];
             }
@@ -211,7 +210,8 @@ struct APParam : BaseParam {
         os << std::endl;
     }
 
-    inline void load(std::ifstream &is, AlignedMemoryPool* mem = NULL) {
+
+    inline void load(std::ifstream &is) {
         val.load(is);
         aux.load(is);
         is >> max_update;

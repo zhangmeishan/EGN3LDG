@@ -8,7 +8,7 @@
 
 using namespace Eigen;
 
-struct Semi0CRFMLLoss{
+class Semi0CRFMLLoss{
 public:
 	int labelSize;
 	vector<dtype> buffer;
@@ -57,12 +57,6 @@ public:
 
 		int seq_size = x.nrows();
 		//int maxLength = x.ncols();
-
-		for (int idx = 0; idx < seq_size; idx++) {
-			for (int dist = 0; dist < seq_size - idx && dist < maxLen; dist++) {
-				x[idx][dist]->lossed = true;
-			}
-		}
 
 
 		// comute alpha values, only the above parts are valid
