@@ -24,7 +24,7 @@ Some examples are realeased at:
 * LibN3L:A Lightweight Package for Neural NLP. (Zhang et al., LREC 2016); initial
 * LibN3L-2.0, auto-differentiation
 * EGN3LDG, dynamic batching, much faster (if limited gpu resource like me, a good choice)
-* N3LDG (enable gpu), in progress, just for interest since dynet exists.
+* N3LDG (enable gpu), in progress, just for interest since [dynet](https://github.com/clab/dynet) exists.
 
 ## Authors:
 Zhang Meishan, Yu Nan
